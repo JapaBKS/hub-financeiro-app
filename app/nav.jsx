@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 const links = [
   { href: '/', label: 'Visão geral' },
   { href: '/registrar', label: 'Registrar' },
+  { href: '/cartoes', label: 'Cartões' },
 ];
 
 export default function Nav() {
