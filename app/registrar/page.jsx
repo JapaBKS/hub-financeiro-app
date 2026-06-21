@@ -1,5 +1,5 @@
 import { supabaseServer } from '../../lib/supabase';
-import FormNegociacao from './FormNegociacao';
+import FormNegociacao from './form-client';
 
 export const dynamic = 'force-dynamic';
 
