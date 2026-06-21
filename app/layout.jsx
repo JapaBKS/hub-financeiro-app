@@ -1,4 +1,5 @@
 import './globals.css';
+import Nav from './nav';
 
 export const metadata = {
   title: 'Hub Financeiro',
@@ -16,7 +17,10 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <Nav />
+        {children}
+      </body>
     </html>
   );
 }
