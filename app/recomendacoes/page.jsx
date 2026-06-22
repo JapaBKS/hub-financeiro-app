@@ -8,7 +8,7 @@ export default async function Recomendacoes() {
   const sb = supabaseServer();
   const [{ data: pos }, { data: alvoAssets }, { data: alloc }] = await Promise.all([
     sb.from('v_positions').select('*'),
-    sb.from('assets').select('ticker, target_pct, asset_classes(name)').gt('target_pct', 0),
+    sb.from('assets').select('ticker, target_pct, asset_classes(name, target_pct)').gt('target_pct', 0),
     sb.from('v_class_allocation').select('valor'),
   ]);
 
@@ -18,7 +18,11 @@ export default async function Recomendacoes() {
 
   // universo: ativos com alvo + ativos que possuo
   const universo = new Map();
-  (alvoAssets || []).forEach((a) => universo.set(a.ticker, { ticker: a.ticker, target: Number(a.target_pct), classe: a.asset_classes?.name }));
+  (alvoAssets || []).forEach((a) => universo.set(a.ticker, {
+    ticker: a.ticker,
+    target: Number(a.target_pct) * Number(a.asset_classes?.target_pct || 0),
+    classe: a.asset_classes?.name,
+  }));
   Object.values(posMap).forEach((p) => {
     if (!universo.has(p.ticker)) universo.set(p.ticker, { ticker: p.ticker, target: 0, classe: p.classe });
   });
