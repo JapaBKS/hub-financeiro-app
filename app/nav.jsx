@@ -8,6 +8,7 @@ const links = [
   { href: '/recomendacoes', label: 'Recomendações' },
   { href: '/alvos', label: 'Alvos' },
   { href: '/registrar', label: 'Registrar' },
+  { href: '/negociacoes', label: 'Negociações' },
   { href: '/cartoes', label: 'Cartões' },
   { href: '/faturas', label: 'Faturas' },
   { href: '/dividendos', label: 'Proventos' },
