@@ -2,7 +2,6 @@ import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
@@ -54,8 +53,8 @@ export default async function Recomendacoes() {
     itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto, acao, tom, motivo, forca, p });
   }
 
-  const comprar = itens.filter((i) => i.acao === 'comprar').sort((a, b) => b.forca - a.forca || b.sugestaoRs - a.sugestaoRs);
-  const reduzir = itens.filter((i) => i.acao === 'reduzir').sort((a, b) => a.sugestaoRs - b.sugestaoRs);
+  const comprar = itens.filter((i) => i.acao === 'comprar').sort((a, b) => a.ticker.localeCompare(b.ticker));
+  const reduzir = itens.filter((i) => i.acao === 'reduzir').sort((a, b) => a.ticker.localeCompare(b.ticker));
   const manter = itens.filter((i) => i.acao === 'manter');
 
   const Linha = ({ i }) => (
