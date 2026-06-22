@@ -2,7 +2,6 @@ import { supabaseServer } from '../lib/supabase';
 import { brl, brlShort, pct } from '../lib/format';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 function mesAtualISO() {
   const d = new Date();
@@ -45,6 +44,9 @@ export default async function Home() {
   const CLASSES_RICO = ['FIIS', 'Ações BR', 'BDRS', 'Tesouro', 'Fundos de Investimentos'];
   const investidoRico = classes.filter((c) => CLASSES_RICO.includes(c.classe)).reduce((s, c) => s + Number(c.valor), 0);
   const ricoComReceber = investidoRico + aReceber;
+
+  const CLASSES_BINANCE = ['BTC', 'PENDLE', 'SOLANA'];
+  const binanceTotal = classes.filter((c) => CLASSES_BINANCE.includes(c.classe)).reduce((s, c) => s + Number(c.valor), 0);
   const anos = Object.keys(porAno).map(Number).sort().slice(-5);
   const maxAno = Math.max(1, ...anos.map((a) => porAno[a]));
 
@@ -173,6 +175,11 @@ export default async function Home() {
           <section className="card" style={{ marginBottom: 16, padding: '16px 20px' }}>
             <div className="eyebrow" style={{ marginBottom: 6 }}>Na Rico</div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 22, color: 'var(--forest-2)' }}>{brl(ricoComReceber)}</div>
+          </section>
+
+          <section className="card" style={{ marginBottom: 16, padding: '16px 20px' }}>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Binance · cripto</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 22, color: 'var(--brass)' }}>{brl(binanceTotal)}</div>
           </section>
 
           <section className="card">
