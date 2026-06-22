@@ -22,3 +22,30 @@ export async function POST(req) {
   if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(req) {
+  const { id } = await req.json().catch(() => ({}));
+  if (!id) return NextResponse.json({ ok: false, erro: 'id ausente' }, { status: 400 });
+  const sb = supabaseServer();
+  const { error } = await sb.from('card_purchases').delete().eq('id', id);
+  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+
+export async function PATCH(req) {
+  const b = await req.json().catch(() => ({}));
+  const { id } = b;
+  if (!id) return NextResponse.json({ ok: false, erro: 'id ausente' }, { status: 400 });
+
+  const patch = {};
+  if (b.card_id) patch.card_id = Number(b.card_id);
+  if (b.description) patch.description = String(b.description).trim();
+  if (b.installment_amount != null && b.installment_amount !== '') patch.installment_amount = Number(b.installment_amount);
+  if (b.installments_count != null && b.installments_count !== '') patch.installments_count = Number(b.installments_count);
+  if (b.first_billed_month) patch.first_billed_month = b.first_billed_month;
+
+  const sb = supabaseServer();
+  const { error } = await sb.from('card_purchases').update(patch).eq('id', id);
+  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
