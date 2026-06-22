@@ -25,24 +25,67 @@ export default async function Carteira() {
   const rentTotal = totalInvestido > 0 ? totalLucro / totalInvestido : 0;
   const aguardando = ativos.filter((p) => p.semCotacao).length;
 
-  // na carteira, Ações BR + BDRs aparecem juntas (como na Rico), mas seguem
-  // como classes separadas para alvo/rebalanceamento em outras telas.
-  const grupoCarteira = (classe) => (classe === 'Ações BR' || classe === 'BDRS' ? 'Ações e BDRs' : classe);
+  // agrupa por classe
+  const porClasse = {};
+  for (const p of ativos) (porClasse[p.classe] ||= []).push(p);
 
-  // agrupa por classe (de exibição)
-  const grupos = {};
-  for (const p of ativos) {
-    (grupos[grupoCarteira(p.classe)] ||= []).push(p);
+  const subgrupo = (classe) => {
+    const lista = (porClasse[classe] || []).slice().sort((a, b) => a.ticker.localeCompare(b.ticker));
+    return { classe, lista, total: lista.reduce((s, p) => s + p.valor, 0) };
+  };
+
+  // Renda Variável = Ações BR + BDRs (duas listas, total somado, como na Rico)
+  const RV = ['Ações BR', 'BDRS'];
+  const blocos = [];
+  const rvSubs = RV.filter((c) => porClasse[c]).map(subgrupo);
+  if (rvSubs.length) {
+    blocos.push({ titulo: 'Renda Variável', subgrupos: rvSubs, total: rvSubs.reduce((s, g) => s + g.total, 0) });
   }
-  const classesOrdenadas = Object.entries(grupos)
-    .map(([classe, lista]) => ({
-      classe,
-      lista: lista.sort((a, b) => a.ticker.localeCompare(b.ticker)),
-      total: lista.reduce((s, p) => s + p.valor, 0),
-    }))
-    .sort((a, b) => b.total - a.total);
+  for (const classe of Object.keys(porClasse)) {
+    if (RV.includes(classe)) continue;
+    const g = subgrupo(classe);
+    blocos.push({ titulo: classe, subgrupos: [g], total: g.total });
+  }
+  blocos.sort((a, b) => b.total - a.total);
 
   const corLucro = (v) => (v >= 0 ? 'var(--up)' : 'var(--down)');
+
+  const Linha = (p) => {
+    const investido = p.valor - p.lucro;
+    const rent = investido > 0 ? p.lucro / investido : 0;
+    return (
+      <div key={p.ticker} style={{
+        display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px',
+        borderBottom: '1px solid var(--line-soft)',
+      }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <b style={{ fontFamily: 'var(--font-display)', fontSize: 14 }}>{p.ticker}</b>
+            {p.semCotacao && (
+              <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--amber)', background: 'var(--amber-bg)', borderRadius: 5, padding: '1px 6px' }}>aguardando cotação</span>
+            )}
+            {!p.semCotacao && p.mais_barato && (
+              <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--up)', background: 'var(--up-bg)', borderRadius: 5, padding: '1px 6px' }}>abaixo do PM</span>
+            )}
+          </div>
+          <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 2, fontFamily: 'var(--font-display)' }}>
+            {fmtNum(p.quantidade, Number.isInteger(Number(p.quantidade)) ? 0 : 2)} · PM {fmtNum(p.preco_medio)}
+            {p.semCotacao ? '' : ` · agora ${fmtNum(p.preco_atual)}`}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{brl(p.valor)}</div>
+          {p.semCotacao ? (
+            <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>pelo PM</div>
+          ) : (
+            <div style={{ fontSize: 11.5, fontFamily: 'var(--font-display)', fontWeight: 600, color: corLucro(p.lucro), marginTop: 2 }}>
+              {p.lucro >= 0 ? '+' : ''}{pct(rent)}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="wrap" style={{ maxWidth: 820 }}>
@@ -54,7 +97,6 @@ export default async function Carteira() {
         <a href="/registrar" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>+ negociação</a>
       </header>
 
-      {/* resumo */}
       <section className="card" style={{ padding: '20px 22px', marginBottom: 16, display: 'flex', gap: 28, flexWrap: 'wrap' }}>
         <div>
           <div className="eyebrow" style={{ marginBottom: 3 }}>Valor da carteira</div>
@@ -72,71 +114,32 @@ export default async function Carteira() {
         </div>
       </section>
 
-      {/* por classe */}
-      {classesOrdenadas.map(({ classe, lista, total }) => (
-        <section className="card" key={classe} style={{ marginBottom: 16 }}>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-            padding: '15px 20px', borderBottom: '1px solid var(--line-soft)',
-          }}>
-            <h2 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>{classe}</h2>
+      {blocos.map((bloco) => (
+        <section className="card" key={bloco.titulo} style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '15px 20px', borderBottom: '1px solid var(--line-soft)' }}>
+            <h2 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>{bloco.titulo}</h2>
             <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>
-              <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)', fontSize: 14 }}>{brl(total)}</b>
-              {' · '}{pct(totalCarteira > 0 ? total / totalCarteira : 0)} da carteira
+              <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)', fontSize: 14 }}>{brl(bloco.total)}</b>
+              {' · '}{pct(totalCarteira > 0 ? bloco.total / totalCarteira : 0)} da carteira
             </div>
           </div>
 
-          {lista.map((p) => {
-            const investido = p.valor - p.lucro;
-            const rent = investido > 0 ? p.lucro / investido : 0;
-            return (
-              <div key={p.ticker} style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px',
-                borderBottom: '1px solid var(--line-soft)',
-              }}>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <b style={{ fontFamily: 'var(--font-display)', fontSize: 14 }}>{p.ticker}</b>
-                    {p.semCotacao && (
-                      <span style={{
-                        fontSize: 10, fontWeight: 600, color: 'var(--amber)', background: 'var(--amber-bg)',
-                        borderRadius: 5, padding: '1px 6px',
-                      }}>aguardando cotação</span>
-                    )}
-                    {!p.semCotacao && p.mais_barato && (
-                      <span style={{
-                        fontSize: 10, fontWeight: 600, color: 'var(--up)', background: 'var(--up-bg)',
-                        borderRadius: 5, padding: '1px 6px',
-                      }}>abaixo do PM</span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 2, fontFamily: 'var(--font-display)' }}>
-                    {fmtNum(p.quantidade, Number.isInteger(Number(p.quantidade)) ? 0 : 2)} · PM {fmtNum(p.preco_medio)}
-                    {p.semCotacao ? '' : ` · agora ${fmtNum(p.preco_atual)}`}
-                  </div>
+          {bloco.subgrupos.map((g) => (
+            <div key={g.classe}>
+              {bloco.subgrupos.length > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 20px', background: '#FAFBF9', borderBottom: '1px solid var(--line-soft)' }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-soft)' }}>{g.classe}</span>
+                  <span style={{ fontSize: 11.5, fontFamily: 'var(--font-display)', color: 'var(--ink-faint)' }}>{brl(g.total)}</span>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
-                    {brl(p.valor)}
-                  </div>
-                  {p.semCotacao ? (
-                    <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>pelo PM</div>
-                  ) : (
-                    <div style={{ fontSize: 11.5, fontFamily: 'var(--font-display)', fontWeight: 600, color: corLucro(p.lucro), marginTop: 2 }}>
-                      {p.lucro >= 0 ? '+' : ''}{pct(rent)}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+              )}
+              {g.lista.map((p) => Linha(p))}
+            </div>
+          ))}
         </section>
       ))}
 
       {ativos.length === 0 && (
-        <div className="card" style={{ padding: 20, fontSize: 13, color: 'var(--ink-faint)' }}>
-          Nenhuma posição no momento.
-        </div>
+        <div className="card" style={{ padding: 20, fontSize: 13, color: 'var(--ink-faint)' }}>Nenhuma posição no momento.</div>
       )}
     </div>
   );
