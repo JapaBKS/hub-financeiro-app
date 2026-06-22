@@ -28,20 +28,27 @@ export default function Recentes({ purchases, cards }) {
     setForm({
       card_id: String(p.card_id),
       description: p.description,
-      total: (Number(p.installment_amount) * Number(p.installments_count)).toFixed(2),
+      parcela: Number(p.installment_amount).toFixed(2),
       installments_count: p.installments_count,
       mes: (p.first_billed_month || '').slice(0, 7),
     });
   }
 
+  function dividirTotal() {
+    const total = Number(String(prompt('Valor total da compra (R$):') || '').replace(',', '.'));
+    const nParc = Math.max(1, Number(form.installments_count) || 1);
+    if (total > 0) setForm((f) => ({ ...f, parcela: (total / nParc).toFixed(2) }));
+  }
+
   async function salvar(id) {
     setBusy(id);
     const nParc = Math.max(1, Number(form.installments_count) || 1);
+    const valorParcela = Number(form.parcela) || 0;
     const res = await fetch('/api/card-purchases', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id, card_id: form.card_id, description: form.description,
-        installment_amount: (Number(form.total) || 0) / nParc,
+        installment_amount: valorParcela,
         installments_count: nParc, first_billed_month: form.mes + '-01',
       }),
     });
@@ -50,7 +57,7 @@ export default function Recentes({ purchases, cards }) {
         ...p, card_id: Number(form.card_id),
         cartao: cards.find((c) => String(c.id) === form.card_id)?.name || p.cartao,
         description: form.description, installments_count: nParc,
-        installment_amount: (Number(form.total) || 0) / nParc, first_billed_month: form.mes + '-01',
+        installment_amount: valorParcela, first_billed_month: form.mes + '-01',
       } : p)));
       setEditId(null);
     }
@@ -73,9 +80,13 @@ export default function Recentes({ purchases, cards }) {
                     {cards.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                   <input style={inp} type="month" value={form.mes} onChange={(e) => setForm({ ...form, mes: e.target.value })} />
-                  <input style={inp} type="number" step="any" value={form.total} onChange={(e) => setForm({ ...form, total: e.target.value })} placeholder="Valor total" />
+                  <input style={inp} type="number" step="any" value={form.parcela} onChange={(e) => setForm({ ...form, parcela: e.target.value })} placeholder="Valor da parcela" />
                   <input style={inp} type="number" min="1" value={form.installments_count} onChange={(e) => setForm({ ...form, installments_count: e.target.value })} placeholder="Parcelas" />
                 </div>
+                <button type="button" onClick={dividirTotal} style={{
+                  marginTop: 6, border: 0, background: 'transparent', color: 'var(--forest-2)',
+                  fontSize: 12, fontWeight: 500, cursor: 'pointer', padding: 0,
+                }}>dividir um total nas parcelas →</button>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => salvar(p.id)} disabled={busy === p.id} style={{
                     flex: 1, padding: '8px', borderRadius: 8, border: 0, cursor: 'pointer',
