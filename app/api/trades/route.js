@@ -49,3 +49,19 @@ export async function DELETE(req) {
   if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
+
+export async function PATCH(req) {
+  const { id, traded_at, side, quantity, price } = await req.json().catch(() => ({}));
+  if (!id) return NextResponse.json({ ok: false, erro: 'id ausente' }, { status: 400 });
+
+  const patch = {};
+  if (traded_at) patch.traded_at = traded_at;
+  if (side) patch.side = side;
+  if (quantity != null) patch.quantity = Number(quantity);
+  if (price != null) patch.price = Number(price);
+
+  const sb = supabaseServer();
+  const { error } = await sb.from('trades').update(patch).eq('id', id);
+  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
