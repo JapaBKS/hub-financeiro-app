@@ -2,7 +2,6 @@ import { supabaseServer } from '../lib/supabase';
 import { brl, brlShort, pct } from '../lib/format';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 function mesAtualISO() {
   const d = new Date();
@@ -74,14 +73,14 @@ export default async function Home() {
         <div className="hero-top">
           <div>
             <div className="eyebrow">Patrimônio total</div>
-            <div className="big"><small>R$</small>{Math.round(total).toLocaleString('pt-BR')}</div>
+            <div className="big"><small>R$</small>{total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600,
             padding: '5px 11px', borderRadius: 999,
             color: subiu ? 'var(--up)' : 'var(--down)', background: subiu ? 'var(--up-bg)' : 'var(--down-bg)',
           }}>
-            {subiu ? '▲' : '▼'} {pct(Math.abs(varDiaPct), 2)} · {subiu ? '+' : '−'}{brlShort(Math.abs(varDia))} hoje
+            {subiu ? '▲' : '▼'} {pct(Math.abs(varDiaPct), 2)} · {subiu ? '+' : '−'}{brl(Math.abs(varDia))} hoje
           </span>
         </div>
         <div className="meta">
