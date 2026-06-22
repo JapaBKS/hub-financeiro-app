@@ -171,7 +171,7 @@ export default async function Home() {
 
         <div className="col">
           <section className="card" style={{ marginBottom: 16, padding: '16px 20px' }}>
-            <div className="eyebrow" style={{ marginBottom: 6 }}>Na Rico · com a receber</div>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Na Rico</div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 22, color: 'var(--forest-2)' }}>{brl(ricoComReceber)}</div>
           </section>
 
