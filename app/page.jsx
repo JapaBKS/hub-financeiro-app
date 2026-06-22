@@ -14,7 +14,7 @@ export default async function Home() {
   const [alloc, divs, pend, faturas, goal, positions, precos] = await Promise.all([
     sb.from('v_class_allocation').select('*'),
     sb.from('dividends').select('paid_at, amount'),
-    sb.from('dividends_pending').select('amount'),
+    sb.from('dividends_pending').select('amount, classe'),
     sb.from('v_card_invoice').select('*'),
     sb.from('goal_config').select('*').single(),
     sb.from('v_positions').select('ticker, quantidade, preco_atual'),
@@ -37,6 +37,13 @@ export default async function Home() {
     if (ano === anoAtual) divAno += v;
   }
   const aReceber = (pend.data || []).reduce((s, p) => s + Number(p.amount), 0);
+  const aReceberFiis = (pend.data || []).filter((p) => p.classe === 'fiis').reduce((s, p) => s + Number(p.amount), 0);
+  const aReceberAcoes = aReceber - aReceberFiis;
+
+  // total "na Rico" = classes que ficam na corretora
+  const CLASSES_RICO = ['FIIS', 'Ações BR', 'BDRS', 'Tesouro', 'Fundos de Investimentos'];
+  const investidoRico = classes.filter((c) => CLASSES_RICO.includes(c.classe)).reduce((s, c) => s + Number(c.valor), 0);
+  const ricoComReceber = investidoRico + aReceber;
   const anos = Object.keys(porAno).map(Number).sort().slice(-5);
   const maxAno = Math.max(1, ...anos.map((a) => porAno[a]));
 
@@ -141,7 +148,13 @@ export default async function Home() {
             <div className="card-h"><h2>Dividendos</h2></div>
             <div className="div-top">
               <div><div className="eyebrow" style={{ marginBottom: 3 }}>Em {anoAtual}</div><div className="v">{brl(divAno)}</div></div>
-              <div><div className="eyebrow" style={{ marginBottom: 3 }}>A receber</div><div className="v brass">{brl(aReceber)}</div></div>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 3 }}>A receber</div>
+                <div className="v brass">{brl(aReceber)}</div>
+                <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 2 }}>
+                  ações {brl(aReceberAcoes)} · fiis {brl(aReceberFiis)}
+                </div>
+              </div>
               <div><div className="eyebrow" style={{ marginBottom: 3 }}>Acumulado</div><div className="v">{brl(divTotal)}</div></div>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 78, padding: '8px 20px 16px' }}>
@@ -156,6 +169,20 @@ export default async function Home() {
         </div>
 
         <div className="col">
+          <section className="card" style={{ marginBottom: 16, padding: '16px 20px' }}>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Na Rico</div>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>investido</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19 }}>{brl(investidoRico)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>com a receber</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19, color: 'var(--forest-2)' }}>{brl(ricoComReceber)}</div>
+              </div>
+            </div>
+          </section>
+
           <section className="card">
             <div className="card-h"><h2>Faturas do mês</h2></div>
             {faturasMes.length === 0 && (
