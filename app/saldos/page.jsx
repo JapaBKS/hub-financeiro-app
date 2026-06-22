@@ -2,6 +2,7 @@ import { supabaseServer } from '../../lib/supabase';
 import SaldosClient from './saldos-client';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Saldos() {
   const sb = supabaseServer();
