@@ -10,6 +10,7 @@ const links = [
   { href: '/cartoes', label: 'Cartões' },
   { href: '/faturas', label: 'Faturas' },
   { href: '/dividendos', label: 'Proventos' },
+  { href: '/saldos', label: 'Saldos' },
 ];
 
 export default function Nav() {
