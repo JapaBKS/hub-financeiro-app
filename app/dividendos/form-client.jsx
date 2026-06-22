@@ -25,19 +25,30 @@ function parseData(s) {
 }
 
 function parseRico(raw) {
-  let linhas = raw.split(/[\n\t]/).map((l) => l.trim()).filter(Boolean).filter((l) => !ehNoise(l));
+  const linhas = raw.split(/[\n\t]/).map((l) => l.trim()).filter(Boolean);
   const registros = [];
   let atual = [];
+  let secao = 'acoes';
+  let secaoReg = 'acoes';
   for (const l of linhas) {
-    if (l === '-') { if (atual.length) registros.push(atual); atual = []; }
-    else atual.push(l);
+    const low = l.toLowerCase();
+    if (low.includes('renda variável') || low.includes('renda variavel')) { secao = 'acoes'; continue; }
+    if (low.includes('fundos imobili') || low.includes('fundos listados')) { secao = 'fiis'; continue; }
+    if (ehNoise(l)) continue;
+    if (l === '-') {
+      if (atual.length) registros.push({ campos: atual, secao: secaoReg });
+      atual = [];
+      secaoReg = secao;
+    } else {
+      atual.push(l);
+    }
   }
-  if (atual.length) registros.push(atual);
+  if (atual.length) registros.push({ campos: atual, secao: secaoReg });
 
   const out = [];
   for (const r of registros) {
-    if (r.length < 7) continue;
-    const [ticker, qtd, , bruto, liquido, evento, data] = r;
+    if (r.campos.length < 7) continue;
+    const [ticker, qtd, , bruto, liquido, evento, data] = r.campos;
     const pay_date = parseData(data);
     if (!pay_date) continue;
     out.push({
@@ -47,6 +58,7 @@ function parseRico(raw) {
       amount_gross: parseValor(bruto),
       amount: parseValor(liquido),
       pay_date,
+      classe: r.secao,
     });
   }
   return out;
@@ -56,13 +68,15 @@ const kindLabel = { dividendo: 'Dividendo', jcp: 'JCP', rendimento: 'Rendimento'
 const fmt = (n) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtData = (iso) => iso.split('-').reverse().join('/');
 
-export default function FormDividendos({ totalAtual, qtdAtual }) {
+export default function FormDividendos({ totalAtual, qtdAtual, acoesAtual = 0, fiisAtual = 0 }) {
   const [texto, setTexto] = useState('');
   const [estado, setEstado] = useState(null);
   const [msg, setMsg] = useState('');
 
   const itens = texto.trim() ? parseRico(texto) : [];
   const total = itens.reduce((s, p) => s + p.amount, 0);
+  const totalFiis = itens.filter((p) => p.classe === 'fiis').reduce((s, p) => s + p.amount, 0);
+  const totalAcoes = total - totalFiis;
 
   async function confirmar() {
     setEstado('enviando');
@@ -89,7 +103,7 @@ export default function FormDividendos({ totalAtual, qtdAtual }) {
         <div>
           <div className="eyebrow" style={{ marginBottom: 3 }}>Hoje no sistema</div>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20 }}>{fmt(totalAtual)}</div>
-          <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{qtdAtual} proventos</div>
+          <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{qtdAtual} proventos · ações {fmt(acoesAtual)} · fiis {fmt(fiisAtual)}</div>
         </div>
       </div>
 
@@ -114,7 +128,7 @@ export default function FormDividendos({ totalAtual, qtdAtual }) {
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
               <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
-                Li <b>{itens.length}</b> proventos. Confira o total contra a Rico:
+                Li <b>{itens.length}</b> proventos · ações {fmt(totalAcoes)} · fiis {fmt(totalFiis)}
               </span>
               <b style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--up)' }}>{fmt(total)}</b>
             </div>
