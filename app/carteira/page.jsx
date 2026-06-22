@@ -25,10 +25,14 @@ export default async function Carteira() {
   const rentTotal = totalInvestido > 0 ? totalLucro / totalInvestido : 0;
   const aguardando = ativos.filter((p) => p.semCotacao).length;
 
-  // agrupa por classe
+  // na carteira, Ações BR + BDRs aparecem juntas (como na Rico), mas seguem
+  // como classes separadas para alvo/rebalanceamento em outras telas.
+  const grupoCarteira = (classe) => (classe === 'Ações BR' || classe === 'BDRS' ? 'Ações e BDRs' : classe);
+
+  // agrupa por classe (de exibição)
   const grupos = {};
   for (const p of ativos) {
-    (grupos[p.classe] ||= []).push(p);
+    (grupos[grupoCarteira(p.classe)] ||= []).push(p);
   }
   const classesOrdenadas = Object.entries(grupos)
     .map(([classe, lista]) => ({
