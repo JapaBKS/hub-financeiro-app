@@ -6,6 +6,7 @@ const links = [
   { href: '/', label: 'Visão geral' },
   { href: '/carteira', label: 'Carteira' },
   { href: '/recomendacoes', label: 'Recomendações' },
+  { href: '/alvos', label: 'Alvos' },
   { href: '/registrar', label: 'Registrar' },
   { href: '/cartoes', label: 'Cartões' },
   { href: '/faturas', label: 'Faturas' },
