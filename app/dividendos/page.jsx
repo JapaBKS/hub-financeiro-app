@@ -8,10 +8,12 @@ export default async function Dividendos() {
   const sb = supabaseServer();
   const { data: pend } = await sb
     .from('dividends_pending')
-    .select('ticker, pay_date, kind, amount')
+    .select('ticker, pay_date, kind, amount, classe')
     .order('pay_date');
 
   const totalAtual = (pend || []).reduce((s, p) => s + Number(p.amount), 0);
+  const fiisAtual = (pend || []).filter((p) => p.classe === 'fiis').reduce((s, p) => s + Number(p.amount), 0);
+  const acoesAtual = totalAtual - fiisAtual;
 
   return (
     <div className="wrap" style={{ maxWidth: 680 }}>
@@ -22,7 +24,7 @@ export default async function Dividendos() {
         </div>
         <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
-      <FormDividendos totalAtual={totalAtual} qtdAtual={(pend || []).length} />
+      <FormDividendos totalAtual={totalAtual} qtdAtual={(pend || []).length} acoesAtual={acoesAtual} fiisAtual={fiisAtual} />
     </div>
   );
 }
