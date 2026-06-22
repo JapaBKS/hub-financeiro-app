@@ -12,6 +12,7 @@ export async function POST(req) {
   const sb = supabaseServer();
   const tk = String(ticker).trim().toUpperCase();
 
+  // Acha o ativo; se não existir, cria (precisa da classe).
   let { data: asset } = await sb.from('assets').select('id').eq('ticker', tk).maybeSingle();
 
   if (!asset) {
@@ -36,5 +37,15 @@ export async function POST(req) {
   });
   if (e2) return NextResponse.json({ ok: false, erro: e2.message }, { status: 500 });
 
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(req) {
+  const { id } = await req.json().catch(() => ({}));
+  if (!id) return NextResponse.json({ ok: false, erro: 'id ausente' }, { status: 400 });
+
+  const sb = supabaseServer();
+  const { error } = await sb.from('trades').delete().eq('id', id);
+  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
