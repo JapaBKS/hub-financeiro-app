@@ -2,6 +2,7 @@ import { supabaseServer } from '../../lib/supabase';
 import FaturasView from './view-client';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Faturas() {
   const sb = supabaseServer();
