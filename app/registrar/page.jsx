@@ -3,6 +3,7 @@ import FormNegociacao from './form-client';
 import Recentes from './recentes-client';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Registrar() {
   const sb = supabaseServer();
