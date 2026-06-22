@@ -2,6 +2,7 @@ import { supabaseServer } from '../../lib/supabase';
 import { brl, pct } from '../../lib/format';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const fmtNum = (n, d = 2) => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
 
