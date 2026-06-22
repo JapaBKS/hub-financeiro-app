@@ -2,6 +2,7 @@ import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
