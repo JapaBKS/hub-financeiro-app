@@ -2,6 +2,7 @@ import { supabaseServer } from '../lib/supabase';
 import { brl, brlShort, pct } from '../lib/format';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function mesAtualISO() {
   const d = new Date();
