@@ -2,7 +2,6 @@ import { supabaseServer } from '../../lib/supabase';
 import { brl, pct } from '../../lib/format';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 const fmtNum = (n, d = 2) => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -24,7 +23,7 @@ export default async function Carteira() {
   const classesOrdenadas = Object.entries(grupos)
     .map(([classe, lista]) => ({
       classe,
-      lista: lista.sort((a, b) => Number(b.valor_carteira) - Number(a.valor_carteira)),
+      lista: lista.sort((a, b) => a.ticker.localeCompare(b.ticker)),
       total: lista.reduce((s, p) => s + Number(p.valor_carteira), 0),
     }))
     .sort((a, b) => b.total - a.total);
