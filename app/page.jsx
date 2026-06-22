@@ -2,6 +2,7 @@ import { supabaseServer } from '../lib/supabase';
 import { brl, brlShort, pct } from '../lib/format';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function mesAtualISO() {
   const d = new Date();
@@ -170,17 +171,8 @@ export default async function Home() {
 
         <div className="col">
           <section className="card" style={{ marginBottom: 16, padding: '16px 20px' }}>
-            <div className="eyebrow" style={{ marginBottom: 8 }}>Na Rico</div>
-            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>investido</div>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19 }}>{brl(investidoRico)}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>com a receber</div>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19, color: 'var(--forest-2)' }}>{brl(ricoComReceber)}</div>
-              </div>
-            </div>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Na Rico · com a receber</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 22, color: 'var(--forest-2)' }}>{brl(ricoComReceber)}</div>
           </section>
 
           <section className="card">
