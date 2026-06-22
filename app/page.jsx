@@ -18,7 +18,7 @@ export default async function Home() {
     sb.from('v_card_invoice').select('*'),
     sb.from('goal_config').select('*').single(),
     sb.from('v_positions').select('ticker, quantidade, preco_atual'),
-    sb.from('prices').select('ticker, previous_close'),
+    sb.from('prices').select('ticker, previous_close, updated_at'),
   ]);
 
   const classes = (alloc.data || []).filter((c) => Number(c.valor) > 0);
@@ -59,6 +59,23 @@ export default async function Home() {
   const progresso = Math.min(1, total / alvo);
   const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' }).replace('.', '');
 
+  // última atualização de cotações
+  let ultimaAtt = null;
+  for (const p of precos.data || []) {
+    const t = p.updated_at ? new Date(p.updated_at) : null;
+    if (t && (!ultimaAtt || t > ultimaAtt)) ultimaAtt = t;
+  }
+  function rotuloAtt(d) {
+    if (!d) return 'sem cotações ainda';
+    const min = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (min < 1) return 'agora mesmo';
+    if (min < 60) return `há ${min} min`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `há ${h}h`;
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+  const attLabel = rotuloAtt(ultimaAtt);
+
   return (
     <div className="wrap">
       <header className="topbar">
@@ -66,7 +83,7 @@ export default async function Home() {
           <div className="mark" />
           <div><b>Patrimônio</b><span>seu hub financeiro</span></div>
         </div>
-        <div className="clock">cotações ao vivo<br /><b>{hoje}</b></div>
+        <div className="clock">cotações · {attLabel}<br /><b>{hoje}</b></div>
       </header>
 
       <section className="card hero">
