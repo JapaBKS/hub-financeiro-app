@@ -4,7 +4,7 @@ import { brl, brlShort, pct } from '../../lib/format';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// tolerância: aceita comprar até X% acima do PM (preço "perto" do PM)
+// tolerância: aceita até X% do lado "errado" do PM antes de virar aviso
 const TOL = 0.03;
 
 export default async function Recomendacoes() {
@@ -36,39 +36,50 @@ export default async function Recomendacoes() {
     const pesoReal = held ? Number(p.valor_carteira) / total : 0;
     const gap = u.target - pesoReal; // >0 = abaixo do alvo
     const sugestaoRs = gap * total;
-    const desconto = held && Number(p.preco_medio) > 0
+    const d = held && Number(p.preco_medio) > 0
       ? (Number(p.preco_atual) - Number(p.preco_medio)) / Number(p.preco_medio)
       : null;
+    const dPct = d != null ? Math.round(Math.abs(d) * 100) : null;
 
-    let acao = 'manter', tom = 'hold', motivo = 'no alvo', forca = 0, nova = false;
+    let acao = 'manter', tom = 'hold', motivo = 'no alvo', forca = 0, nova = false, atencao = false;
 
     if (!held && u.target > 0) {
-      // nova posição: ainda não tem — sempre sugere, sem regra de PM
       acao = 'comprar'; tom = 'buy'; motivo = 'nova posição — você ainda não tem'; forca = 5; nova = true;
     } else if (held) {
       const abaixoAlvo = gap > 0.002;
       const acimaAlvo = gap < -0.005;
-      const pertoOuAbaixoPM = desconto != null && desconto <= TOL;   // no PM ou até 3% acima
-      const bemAbaixoPM = desconto != null && desconto < -0.005;     // claramente abaixo do PM
 
-      if (abaixoAlvo && pertoOuAbaixoPM) {
+      if (abaixoAlvo) {
         acao = 'comprar'; tom = 'buy';
-        if (bemAbaixoPM) { motivo = `abaixo do alvo · ${(desconto * 100).toFixed(0)}% abaixo do PM`; forca = 4; }
-        else { motivo = 'abaixo do alvo · preço perto do PM'; forca = 3; }
+        const precoOk = d != null && d <= TOL; // no PM ou até 3% acima
+        if (precoOk) {
+          if (d < -0.005) { motivo = `abaixo do alvo · ${dPct}% abaixo do PM`; forca = 4; }
+          else { motivo = 'abaixo do alvo · preço perto do PM'; forca = 3; }
+        } else {
+          atencao = true; forca = 1;
+          motivo = d != null ? `abaixo do alvo, mas ${dPct}% acima do PM` : 'abaixo do alvo · sem cotação';
+        }
       } else if (acimaAlvo) {
-        acao = 'reduzir'; tom = 'sell'; motivo = Number(p.lucro_rs) >= 0 ? 'acima do alvo — no lucro' : 'acima do alvo'; forca = 2;
-      } else if (abaixoAlvo) {
-        // está abaixo do alvo, mas o preço está acima do PM+tolerância → espera preço melhor
-        acao = 'manter'; tom = 'hold'; motivo = `abaixo do alvo, mas ${(desconto * 100).toFixed(0)}% acima do PM`; forca = 0;
+        acao = 'reduzir'; tom = 'sell';
+        const precoOk = d != null && d >= -TOL; // no PM ou até 3% abaixo (não vende no prejuízo)
+        if (precoOk) {
+          if (d > 0.005) { motivo = `acima do alvo · ${dPct}% acima do PM`; forca = 4; }
+          else { motivo = 'acima do alvo · preço perto do PM'; forca = 3; }
+        } else {
+          atencao = true; forca = 1;
+          motivo = d != null ? `acima do alvo, mas ${dPct}% abaixo do PM` : 'acima do alvo · sem cotação';
+        }
       }
     }
 
-    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto, acao, tom, motivo, forca, nova, p });
+    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto: d, acao, tom, motivo, forca, nova, atencao, p });
   }
 
-  // novas primeiro, depois alfabético
-  const comprar = itens.filter((i) => i.acao === 'comprar').sort((a, b) => (b.nova - a.nova) || a.ticker.localeCompare(b.ticker));
-  const reduzir = itens.filter((i) => i.acao === 'reduzir').sort((a, b) => a.ticker.localeCompare(b.ticker));
+  // novas primeiro, depois as "limpas", depois as de atenção; alfabético dentro de cada grupo
+  const comprar = itens.filter((i) => i.acao === 'comprar')
+    .sort((a, b) => (b.nova - a.nova) || (a.atencao - b.atencao) || a.ticker.localeCompare(b.ticker));
+  const reduzir = itens.filter((i) => i.acao === 'reduzir')
+    .sort((a, b) => (a.atencao - b.atencao) || a.ticker.localeCompare(b.ticker));
   const manter = itens.filter((i) => i.acao === 'manter');
   const novasN = comprar.filter((i) => i.nova).length;
 
@@ -76,7 +87,7 @@ export default async function Recomendacoes() {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px',
       borderBottom: '1px solid var(--line-soft)',
-      borderLeft: i.nova ? '3px solid var(--up)' : '3px solid transparent',
+      borderLeft: i.nova ? '3px solid var(--up)' : i.atencao ? '3px solid var(--amber)' : '3px solid transparent',
       background: i.nova ? 'var(--up-bg)' : 'transparent',
     }}>
       <div style={{
@@ -93,7 +104,9 @@ export default async function Recomendacoes() {
           )}
           <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{i.classe}</span>
         </div>
-        <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginTop: 2 }}>{i.motivo}</div>
+        <div style={{ fontSize: 12, marginTop: 2, color: i.atencao ? 'var(--amber)' : 'var(--ink-soft)' }}>
+          {i.atencao ? '⚠ ' : ''}{i.motivo}
+        </div>
       </div>
       <div style={{ textAlign: 'right' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: i.tom === 'buy' ? 'var(--up)' : 'var(--down)' }}>
@@ -123,7 +136,7 @@ export default async function Recomendacoes() {
         </div>
         <div style={{ marginTop: 6 }}>
           {comprar.map((i) => <Linha key={i.ticker} i={i} />)}
-          {comprar.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nada abaixo do alvo com preço no PM ou abaixo agora.</div>}
+          {comprar.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nada abaixo do alvo agora.</div>}
         </div>
       </section>
 
@@ -136,7 +149,7 @@ export default async function Recomendacoes() {
       </section>
 
       <p style={{ fontSize: 12, color: 'var(--ink-faint)', textAlign: 'center', margin: '4px 0 18px' }}>
-        {manter.length} ativos no alvo. Compra só aparece com preço no PM ou até {(TOL * 100).toFixed(0)}% acima — novas posições sempre aparecem.
+        {manter.length} ativos no alvo. ⚠ = fora da condição de preço (comprar acima do PM ou vender abaixo) — aparece como aviso. Tolerância {(TOL * 100).toFixed(0)}%.
       </p>
     </div>
   );
