@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
 
+const CATEGORIAS = ['Comida', 'Mercado', 'Lazer', 'Transporte', 'Saúde', 'Casa', 'Assinaturas', 'Roupas', 'Educação', 'Presentes', 'Outros'];
+
 const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const inp = {
   padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
@@ -28,6 +30,8 @@ export default function Recentes({ purchases, cards }) {
     setForm({
       card_id: String(p.card_id),
       description: p.description,
+      categoria: p.categoria || 'Outros',
+      pagador: p.pagador || 'eu',
       parcela: Number(p.installment_amount).toFixed(2),
       installments_count: p.installments_count,
       mes: (p.first_billed_month || '').slice(0, 7),
@@ -48,6 +52,7 @@ export default function Recentes({ purchases, cards }) {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id, card_id: form.card_id, description: form.description,
+        categoria: form.categoria, pagador: form.pagador,
         installment_amount: valorParcela,
         installments_count: nParc, first_billed_month: form.mes + '-01',
       }),
@@ -56,7 +61,8 @@ export default function Recentes({ purchases, cards }) {
       setLista((l) => l.map((p) => (p.id === id ? {
         ...p, card_id: Number(form.card_id),
         cartao: cards.find((c) => String(c.id) === form.card_id)?.name || p.cartao,
-        description: form.description, installments_count: nParc,
+        description: form.description, categoria: form.categoria, pagador: form.pagador,
+        installments_count: nParc,
         installment_amount: valorParcela, first_billed_month: form.mes + '-01',
       } : p)));
       setEditId(null);
@@ -80,6 +86,13 @@ export default function Recentes({ purchases, cards }) {
                     {cards.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                   <input style={inp} type="month" value={form.mes} onChange={(e) => setForm({ ...form, mes: e.target.value })} />
+                  <select style={inp} value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
+                    {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select style={inp} value={form.pagador} onChange={(e) => setForm({ ...form, pagador: e.target.value })}>
+                    <option value="eu">Eu pago</option>
+                    <option value="pai">Pai paga</option>
+                  </select>
                   <input style={inp} type="number" step="any" value={form.parcela} onChange={(e) => setForm({ ...form, parcela: e.target.value })} placeholder="Valor da parcela" />
                   <input style={inp} type="number" min="1" value={form.installments_count} onChange={(e) => setForm({ ...form, installments_count: e.target.value })} placeholder="Parcelas" />
                 </div>
@@ -114,7 +127,13 @@ export default function Recentes({ purchases, cards }) {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{p.cartao}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-faint)', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span>{p.cartao}</span>
+                  {p.categoria && <span>· {p.categoria}</span>}
+                  {p.pagador === 'pai' && (
+                    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }}>PAI</span>
+                  )}
+                </div>
               </div>
               <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{fmt(p.installment_amount)}</span>
               <button onClick={() => abrirEdicao(p)} title="Editar" style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 14, padding: '0 2px' }}>✎</button>
