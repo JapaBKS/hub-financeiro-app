@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
 
+const CATEGORIAS = ['Comida', 'Mercado', 'Lazer', 'Transporte', 'Saúde', 'Casa', 'Assinaturas', 'Roupas', 'Educação', 'Presentes', 'Outros'];
+
 const inputStyle = {
   width: '100%', padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
   fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', background: '#fff',
@@ -9,10 +11,12 @@ const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'va
 
 export default function FormCartao({ cards }) {
   const hoje = new Date().toISOString().slice(0, 10);
-  const mesAtual = hoje.slice(0, 7);
+  const mesAtual = hoje.slice(0, 7); // YYYY-MM
 
   const [cardId, setCardId] = useState(cards[0]?.id ? String(cards[0].id) : '');
   const [description, setDescription] = useState('');
+  const [categoria, setCategoria] = useState('Outros');
+  const [pagador, setPagador] = useState('eu');
   const [purchasedAt, setPurchasedAt] = useState(hoje);
   const [valorTotal, setValorTotal] = useState('');
   const [parcelas, setParcelas] = useState('1');
@@ -33,6 +37,8 @@ export default function FormCartao({ cards }) {
       body: JSON.stringify({
         card_id: cardId,
         description,
+        categoria,
+        pagador,
         purchased_at: purchasedAt,
         installment_amount: valorParcela,
         installments_count: nParc,
@@ -62,6 +68,22 @@ export default function FormCartao({ cards }) {
       <label style={labelStyle}>Descrição</label>
       <input style={inputStyle} value={description} onChange={(e) => setDescription(e.target.value)}
         placeholder="Ex.: Geladeira nova" required />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div>
+          <label style={labelStyle}>Categoria</label>
+          <select style={inputStyle} value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+            {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Quem paga</label>
+          <select style={inputStyle} value={pagador} onChange={(e) => setPagador(e.target.value)}>
+            <option value="eu">Eu</option>
+            <option value="pai">Pai</option>
+          </select>
+        </div>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div>
