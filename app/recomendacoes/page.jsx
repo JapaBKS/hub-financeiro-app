@@ -4,6 +4,9 @@ import { brl, brlShort, pct } from '../../lib/format';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// tolerância: aceita comprar até X% acima do PM (preço "perto" do PM)
+const TOL = 0.03;
+
 export default async function Recomendacoes() {
   const sb = supabaseServer();
   const [{ data: pos }, { data: alvoAssets }, { data: alloc }] = await Promise.all([
@@ -16,7 +19,6 @@ export default async function Recomendacoes() {
   const posMap = {};
   (pos || []).forEach((p) => { if (p.preco_atual != null) posMap[p.ticker] = p; });
 
-  // universo: ativos com alvo + ativos que possuo
   const universo = new Map();
   (alvoAssets || []).forEach((a) => universo.set(a.ticker, {
     ticker: a.ticker,
@@ -38,28 +40,45 @@ export default async function Recomendacoes() {
       ? (Number(p.preco_atual) - Number(p.preco_medio)) / Number(p.preco_medio)
       : null;
 
-    let acao = 'manter', tom = 'hold', motivo = 'no alvo', forca = 0;
+    let acao = 'manter', tom = 'hold', motivo = 'no alvo', forca = 0, nova = false;
+
     if (!held && u.target > 0) {
-      acao = 'comprar'; tom = 'buy'; motivo = 'nova posição — você ainda não tem'; forca = 3;
+      // nova posição: ainda não tem — sempre sugere, sem regra de PM
+      acao = 'comprar'; tom = 'buy'; motivo = 'nova posição — você ainda não tem'; forca = 5; nova = true;
     } else if (held) {
-      const abaixoPM = desconto != null && desconto < -0.005;
       const abaixoAlvo = gap > 0.002;
       const acimaAlvo = gap < -0.005;
-      if (abaixoAlvo && abaixoPM) { acao = 'comprar'; tom = 'buy'; motivo = `abaixo do alvo e ${(desconto * 100).toFixed(0)}% abaixo do PM`; forca = 4; }
-      else if (abaixoAlvo) { acao = 'comprar'; tom = 'buy'; motivo = 'abaixo do alvo de alocação'; forca = 2; }
-      else if (abaixoPM) { acao = 'comprar'; tom = 'buy'; motivo = `${(desconto * 100).toFixed(0)}% abaixo do PM`; forca = 2; }
-      else if (acimaAlvo) { acao = 'reduzir'; tom = 'sell'; motivo = Number(p.lucro_rs) >= 0 ? 'acima do alvo — no lucro' : 'acima do alvo'; forca = 2; }
+      const pertoOuAbaixoPM = desconto != null && desconto <= TOL;   // no PM ou até 3% acima
+      const bemAbaixoPM = desconto != null && desconto < -0.005;     // claramente abaixo do PM
+
+      if (abaixoAlvo && pertoOuAbaixoPM) {
+        acao = 'comprar'; tom = 'buy';
+        if (bemAbaixoPM) { motivo = `abaixo do alvo · ${(desconto * 100).toFixed(0)}% abaixo do PM`; forca = 4; }
+        else { motivo = 'abaixo do alvo · preço perto do PM'; forca = 3; }
+      } else if (acimaAlvo) {
+        acao = 'reduzir'; tom = 'sell'; motivo = Number(p.lucro_rs) >= 0 ? 'acima do alvo — no lucro' : 'acima do alvo'; forca = 2;
+      } else if (abaixoAlvo) {
+        // está abaixo do alvo, mas o preço está acima do PM+tolerância → espera preço melhor
+        acao = 'manter'; tom = 'hold'; motivo = `abaixo do alvo, mas ${(desconto * 100).toFixed(0)}% acima do PM`; forca = 0;
+      }
     }
 
-    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto, acao, tom, motivo, forca, p });
+    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto, acao, tom, motivo, forca, nova, p });
   }
 
-  const comprar = itens.filter((i) => i.acao === 'comprar').sort((a, b) => a.ticker.localeCompare(b.ticker));
+  // novas primeiro, depois alfabético
+  const comprar = itens.filter((i) => i.acao === 'comprar').sort((a, b) => (b.nova - a.nova) || a.ticker.localeCompare(b.ticker));
   const reduzir = itens.filter((i) => i.acao === 'reduzir').sort((a, b) => a.ticker.localeCompare(b.ticker));
   const manter = itens.filter((i) => i.acao === 'manter');
+  const novasN = comprar.filter((i) => i.nova).length;
 
   const Linha = ({ i }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--line-soft)' }}>
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px',
+      borderBottom: '1px solid var(--line-soft)',
+      borderLeft: i.nova ? '3px solid var(--up)' : '3px solid transparent',
+      background: i.nova ? 'var(--up-bg)' : 'transparent',
+    }}>
       <div style={{
         width: 30, height: 30, borderRadius: 8, flex: 'none', display: 'grid', placeItems: 'center',
         fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13,
@@ -69,6 +88,9 @@ export default async function Recomendacoes() {
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
           <b style={{ fontFamily: 'var(--font-display)', fontSize: 14 }}>{i.ticker}</b>
+          {i.nova && (
+            <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: '#fff', background: 'var(--up)', borderRadius: 4, padding: '1px 6px' }}>NOVA</span>
+          )}
           <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{i.classe}</span>
         </div>
         <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginTop: 2 }}>{i.motivo}</div>
@@ -95,10 +117,13 @@ export default async function Recomendacoes() {
       </header>
 
       <section className="card" style={{ marginBottom: 16 }}>
-        <div className="card-h"><h2>Comprar ({comprar.length})</h2></div>
+        <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <h2>Comprar ({comprar.length})</h2>
+          {novasN > 0 && <span style={{ fontSize: 12, color: 'var(--up)', fontWeight: 600 }}>{novasN} {novasN === 1 ? 'nova' : 'novas'}</span>}
+        </div>
         <div style={{ marginTop: 6 }}>
           {comprar.map((i) => <Linha key={i.ticker} i={i} />)}
-          {comprar.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nada abaixo do alvo ou do PM agora.</div>}
+          {comprar.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nada abaixo do alvo com preço no PM ou abaixo agora.</div>}
         </div>
       </section>
 
@@ -111,7 +136,7 @@ export default async function Recomendacoes() {
       </section>
 
       <p style={{ fontSize: 12, color: 'var(--ink-faint)', textAlign: 'center', margin: '4px 0 18px' }}>
-        {manter.length} ativos no alvo. Sugestões baseadas em preço médio + alvo de alocação — ajustáveis.
+        {manter.length} ativos no alvo. Compra só aparece com preço no PM ou até {(TOL * 100).toFixed(0)}% acima — novas posições sempre aparecem.
       </p>
     </div>
   );
