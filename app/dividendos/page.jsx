@@ -11,8 +11,10 @@ export default async function Dividendos() {
     .select('ticker, pay_date, kind, amount, classe')
     .order('pay_date');
 
-  const totalAtual = (pend || []).reduce((s, p) => s + Number(p.amount), 0);
-  const fiisAtual = (pend || []).filter((p) => p.classe === 'fiis').reduce((s, p) => s + Number(p.amount), 0);
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const futuros = (pend || []).filter((p) => (p.pay_date || '').slice(0, 10) >= hojeISO);
+  const totalAtual = futuros.reduce((s, p) => s + Number(p.amount), 0);
+  const fiisAtual = futuros.filter((p) => p.classe === 'fiis').reduce((s, p) => s + Number(p.amount), 0);
   const acoesAtual = totalAtual - fiisAtual;
 
   return (
