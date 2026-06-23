@@ -129,6 +129,9 @@ export default function FaturasView({ cards, invoices, items }) {
                   {it.pagador === 'pai' && (
                     <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }}>PAI</span>
                   )}
+                  {it.pagador === 'dividido' && (
+                    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }} title={`pai paga ${fmt(it.amount_pai || 0)}`}>PAI {Math.round(Number(it.pai_pct))}%</span>
+                  )}
                   <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
                     {fmt(it.amount)}
                   </b>
