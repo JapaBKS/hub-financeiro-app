@@ -13,6 +13,7 @@ const links = [
   { href: '/faturas', label: 'Faturas' },
   { href: '/dividendos', label: 'Proventos' },
   { href: '/saldos', label: 'Saldos' },
+  { href: '/meta', label: 'Meta' },
 ];
 
 export default function Nav() {
