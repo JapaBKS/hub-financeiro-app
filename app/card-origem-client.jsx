@@ -2,29 +2,37 @@
 import { useState } from 'react';
 import { brl } from '../lib/format';
 
-function Item({ it, nivel = 0 }) {
-  const [aberto, setAberto] = useState(false);
-  const temSub = it.sub && it.sub.length > 0;
+function Item({ it }) {
+  const [open, setOpen] = useState(false);
+  const temSub = Array.isArray(it.sub) && it.sub.length > 0;
   return (
-    <>
+    <div style={{ borderBottom: '1px solid var(--line-soft)' }}>
       <div
-        onClick={temSub ? () => setAberto((a) => !a) : undefined}
+        onClick={temSub ? () => setOpen((o) => !o) : undefined}
         style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '9px 20px', paddingLeft: 20 + nivel * 18, fontSize: 13,
-          borderBottom: '1px solid var(--line-soft)',
-          cursor: temSub ? 'pointer' : 'default',
-          background: nivel > 0 ? '#FAFBF9' : 'transparent',
+          padding: '9px 20px', fontSize: 13, cursor: temSub ? 'pointer' : 'default',
         }}
       >
-        <span style={{ color: nivel > 0 ? 'var(--ink-faint)' : 'var(--ink-soft)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {temSub && <span style={{ fontSize: 10, color: 'var(--ink-faint)', transform: aberto ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>}
+        <span style={{ color: 'var(--ink-soft)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {temSub && (
+            <span style={{ fontSize: 11, color: 'var(--ink-faint)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
+          )}
           {it.label}
         </span>
         <b style={{ fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{brl(it.valor)}</b>
       </div>
-      {temSub && aberto && it.sub.map((s, i) => <Item key={i} it={s} nivel={nivel + 1} />)}
-    </>
+      {temSub && open && (
+        <div style={{ background: '#FAFBF9' }}>
+          {it.sub.map((s, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 20px 7px 38px', fontSize: 12.5, borderTop: '1px solid var(--line-soft)' }}>
+              <span style={{ color: 'var(--ink-faint)' }}>{s.label}</span>
+              <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-soft)', fontVariantNumeric: 'tabular-nums' }}>{brl(s.valor)}</b>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
