@@ -56,7 +56,8 @@ function parseRico(raw) {
       quantity: Number(qtd) || null,
       kind: normKind(evento),
       amount_gross: parseValor(bruto),
-      amount: parseValor(liquido),
+      amount_net: parseValor(liquido),
+      amount: parseValor(bruto),
       pay_date,
       classe: r.secao,
     });
