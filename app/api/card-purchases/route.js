@@ -10,11 +10,14 @@ export async function POST(req) {
   }
 
   const sb = supabaseServer();
+  const paiPct = Math.min(100, Math.max(0, Number(b.pai_pct) || 0));
+  const pagador = paiPct <= 0 ? 'eu' : paiPct >= 100 ? 'pai' : 'dividido';
   const { error } = await sb.from('card_purchases').insert({
     card_id: Number(card_id),
     description: String(description).trim(),
     categoria: b.categoria || null,
-    pagador: b.pagador === 'pai' ? 'pai' : 'eu',
+    pagador,
+    pai_pct: paiPct,
     purchased_at,
     installment_amount: Number(installment_amount),
     installments_count: Number(installments_count),
@@ -46,7 +49,11 @@ export async function PATCH(req) {
   if (b.installments_count != null && b.installments_count !== '') patch.installments_count = Number(b.installments_count);
   if (b.first_billed_month) patch.first_billed_month = b.first_billed_month;
   if (b.categoria !== undefined) patch.categoria = b.categoria || null;
-  if (b.pagador) patch.pagador = b.pagador === 'pai' ? 'pai' : 'eu';
+  if (b.pai_pct !== undefined && b.pai_pct !== '') {
+    const paiPct = Math.min(100, Math.max(0, Number(b.pai_pct) || 0));
+    patch.pai_pct = paiPct;
+    patch.pagador = paiPct <= 0 ? 'eu' : paiPct >= 100 ? 'pai' : 'dividido';
+  }
 
   const sb = supabaseServer();
   const { error } = await sb.from('card_purchases').update(patch).eq('id', id);
