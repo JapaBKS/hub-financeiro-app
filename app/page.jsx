@@ -224,7 +224,12 @@ export default async function Home() {
                   <div className="nm">{f.cartao}</div>
                   <div className="due">vence dia {f.due_day}</div>
                 </div>
-                <div className="amt">{brl(Number(f.total))}</div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="amt">{brl(Number(f.total))}</div>
+                  {Number(f.total_pai) > 0 && (
+                    <div style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>seu {brl(Number(f.total_eu || 0))}</div>
+                  )}
+                </div>
               </div>
             ))}
           </section>
