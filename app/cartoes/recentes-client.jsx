@@ -32,6 +32,7 @@ export default function Recentes({ purchases, cards }) {
       description: p.description,
       categoria: p.categoria || 'Outros',
       pagador: p.pagador || 'eu',
+      paiPct: p.pai_pct != null ? String(p.pai_pct) : '50',
       parcela: Number(p.installment_amount).toFixed(2),
       installments_count: p.installments_count,
       mes: (p.first_billed_month || '').slice(0, 7),
@@ -48,20 +49,22 @@ export default function Recentes({ purchases, cards }) {
     setBusy(id);
     const nParc = Math.max(1, Number(form.installments_count) || 1);
     const valorParcela = Number(form.parcela) || 0;
+    const paiPctCalc = form.pagador === 'eu' ? 0 : form.pagador === 'pai' ? 100 : Math.min(100, Math.max(0, Number(form.paiPct) || 0));
     const res = await fetch('/api/card-purchases', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id, card_id: form.card_id, description: form.description,
-        categoria: form.categoria, pagador: form.pagador,
+        categoria: form.categoria, pai_pct: paiPctCalc,
         installment_amount: valorParcela,
         installments_count: nParc, first_billed_month: form.mes + '-01',
       }),
     });
     if (res.ok) {
+      const pagadorCalc = paiPctCalc <= 0 ? 'eu' : paiPctCalc >= 100 ? 'pai' : 'dividido';
       setLista((l) => l.map((p) => (p.id === id ? {
         ...p, card_id: Number(form.card_id),
         cartao: cards.find((c) => String(c.id) === form.card_id)?.name || p.cartao,
-        description: form.description, categoria: form.categoria, pagador: form.pagador,
+        description: form.description, categoria: form.categoria, pagador: pagadorCalc, pai_pct: paiPctCalc,
         installments_count: nParc,
         installment_amount: valorParcela, first_billed_month: form.mes + '-01',
       } : p)));
@@ -89,13 +92,22 @@ export default function Recentes({ purchases, cards }) {
                   <select style={inp} value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
                     {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
-                  <select style={inp} value={form.pagador} onChange={(e) => setForm({ ...form, pagador: e.target.value })}>
-                    <option value="eu">Eu pago</option>
-                    <option value="pai">Pai paga</option>
-                  </select>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {[['eu', 'Eu'], ['pai', 'Pai'], ['dividido', 'Div.']].map(([v, l]) => (
+                      <button type="button" key={v} onClick={() => setForm({ ...form, pagador: v })} style={{
+                        flex: 1, padding: '7px 2px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                        border: '1px solid ' + (form.pagador === v ? 'var(--forest)' : 'var(--line)'),
+                        background: form.pagador === v ? 'var(--forest)' : '#fff', color: form.pagador === v ? '#fff' : 'var(--ink-soft)',
+                      }}>{l}</button>
+                    ))}
+                  </div>
                   <input style={inp} type="number" step="any" value={form.parcela} onChange={(e) => setForm({ ...form, parcela: e.target.value })} placeholder="Valor da parcela" />
                   <input style={inp} type="number" min="1" value={form.installments_count} onChange={(e) => setForm({ ...form, installments_count: e.target.value })} placeholder="Parcelas" />
                 </div>
+                {form.pagador === 'dividido' && (
+                  <input style={{ ...inp, marginTop: 8 }} type="number" min="0" max="100" value={form.paiPct}
+                    onChange={(e) => setForm({ ...form, paiPct: e.target.value })} placeholder="% que o pai paga" />
+                )}
                 <button type="button" onClick={dividirTotal} style={{
                   marginTop: 6, border: 0, background: 'transparent', color: 'var(--forest-2)',
                   fontSize: 12, fontWeight: 500, cursor: 'pointer', padding: 0,
@@ -132,6 +144,9 @@ export default function Recentes({ purchases, cards }) {
                   {p.categoria && <span>· {p.categoria}</span>}
                   {p.pagador === 'pai' && (
                     <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }}>PAI</span>
+                  )}
+                  {p.pagador === 'dividido' && (
+                    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }}>PAI {Math.round(Number(p.pai_pct))}%</span>
                   )}
                 </div>
               </div>
