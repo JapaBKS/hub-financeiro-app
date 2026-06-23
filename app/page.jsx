@@ -63,10 +63,27 @@ export default async function Home() {
   const binanceTotal = classes.filter((c) => CLASSES_BINANCE.includes(c.classe)).reduce((s, c) => s + Number(c.valor), 0);
 
   const valorClasse = (nome) => Number((classes.find((c) => c.classe === nome) || {}).valor || 0);
+  const vAcoes = valorClasse('Ações BR');
+  const vBdrs = valorClasse('BDRS');
   const ricoItens = [
-    ...CLASSES_RICO.map((c) => ({ label: c, valor: valorClasse(c) })).filter((i) => i.valor > 0),
-    ...(aReceber > 0 ? [{ label: 'Proventos a receber', valor: aReceber }] : []),
-  ];
+    { label: 'FIIS', valor: valorClasse('FIIS') },
+    {
+      label: 'Renda Variável', valor: vAcoes + vBdrs,
+      sub: [
+        { label: 'Ações BR', valor: vAcoes },
+        { label: 'BDRS', valor: vBdrs },
+      ].filter((s) => s.valor > 0),
+    },
+    { label: 'Tesouro', valor: valorClasse('Tesouro') },
+    { label: 'Fundos de Investimentos', valor: valorClasse('Fundos de Investimentos') },
+    ...(aReceber > 0 ? [{
+      label: 'Proventos a receber', valor: aReceber,
+      sub: [
+        { label: 'Ações', valor: aReceberAcoes },
+        { label: 'FIIs', valor: aReceberFiis },
+      ].filter((s) => s.valor > 0),
+    }] : []),
+  ].filter((i) => i.valor > 0);
   const binanceItens = CLASSES_BINANCE.map((c) => ({ label: c, valor: valorClasse(c) })).filter((i) => i.valor > 0);
   const anos = Object.keys(porAno).map(Number).sort().slice(-5);
   const maxAno = Math.max(1, ...anos.map((a) => porAno[a]));
