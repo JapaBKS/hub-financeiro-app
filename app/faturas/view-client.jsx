@@ -48,6 +48,7 @@ export default function FaturasView({ cards, invoices, items }) {
 
   return (
     <div>
+      {/* abas de cartão */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
         {cards.map((c) => (
           <button key={c.id} onClick={() => trocarCartao(c.id)} style={{
@@ -67,6 +68,7 @@ export default function FaturasView({ cards, invoices, items }) {
 
       {meses.length > 0 && (
         <>
+          {/* faixa de meses */}
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 14 }}>
             {meses.map((m) => {
               const inv = invoices.find((i) => i.card_id === cardId && norm(i.bill_month) === m);
@@ -87,6 +89,7 @@ export default function FaturasView({ cards, invoices, items }) {
             })}
           </div>
 
+          {/* fatura selecionada */}
           <section className="card">
             <div style={{ padding: '18px 20px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <div>
@@ -94,6 +97,12 @@ export default function FaturasView({ cards, invoices, items }) {
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 28, letterSpacing: '-.02em', marginTop: 4 }}>
                   {fmt(faturaSel?.total || 0)}
                 </div>
+                {Number(faturaSel?.total_pai) > 0 && (
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 4 }}>
+                    seu <b style={{ color: 'var(--ink)' }}>{fmt(faturaSel?.total_eu || 0)}</b>
+                    {' · '}pai <b style={{ color: 'var(--brass)' }}>{fmt(faturaSel?.total_pai || 0)}</b>
+                  </div>
+                )}
               </div>
               <div style={{ fontSize: 11, color: 'var(--ink-faint)', textAlign: 'right' }}>
                 comprometido à frente<br />
@@ -108,11 +117,17 @@ export default function FaturasView({ cards, invoices, items }) {
                   borderBottom: '1px solid var(--line-soft)', fontSize: 13.5,
                 }}>
                   <span style={{ fontWeight: 500 }}>{it.description}</span>
+                  {it.categoria && (
+                    <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>{it.categoria}</span>
+                  )}
                   {it.parcela && !it.parcela.startsWith('1/1') && (
                     <span style={{
                       fontSize: 10, fontWeight: 600, color: 'var(--forest-2)', background: 'var(--up-bg)',
                       borderRadius: 5, padding: '1px 6px',
                     }}>{it.parcela}</span>
+                  )}
+                  {it.pagador === 'pai' && (
+                    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }}>PAI</span>
                   )}
                   <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
                     {fmt(it.amount)}
