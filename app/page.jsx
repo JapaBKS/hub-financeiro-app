@@ -16,7 +16,7 @@ export default async function Home() {
   const [alloc, divs, pend, faturas, goal, positions, precos] = await Promise.all([
     sb.from('v_class_allocation').select('*'),
     sb.from('dividends').select('paid_at, amount'),
-    sb.from('dividends_pending').select('amount, classe'),
+    sb.from('dividends_pending').select('amount, classe, pay_date'),
     sb.from('v_card_invoice').select('*'),
     sb.from('goal_config').select('*').single(),
     sb.from('v_positions').select('ticker, quantidade, preco_atual'),
@@ -29,17 +29,29 @@ export default async function Home() {
 
   // dividendos: ano, total, por ano
   const anoAtual = new Date().getFullYear();
+  const hojeISO = new Date().toISOString().slice(0, 10);
+
+  // provisionados já vencidos contam como recebidos; futuros, como a receber
+  const pendentes = pend.data || [];
+  const jaVencidos = pendentes.filter((p) => (p.pay_date || '').slice(0, 10) < hojeISO);
+  const aReceberLista = pendentes.filter((p) => (p.pay_date || '').slice(0, 10) >= hojeISO);
+
+  const recebidos = [
+    ...(divs.data || []),
+    ...jaVencidos.map((p) => ({ paid_at: p.pay_date, amount: p.amount })),
+  ];
+
   let divTotal = 0, divAno = 0;
   const porAno = {};
-  for (const d of divs.data || []) {
+  for (const d of recebidos) {
     const v = Number(d.amount);
     divTotal += v;
     const ano = Number((d.paid_at || '').slice(0, 4));
     if (ano >= 2000 && ano <= anoAtual) { porAno[ano] = (porAno[ano] || 0) + v; }
     if (ano === anoAtual) divAno += v;
   }
-  const aReceber = (pend.data || []).reduce((s, p) => s + Number(p.amount), 0);
-  const aReceberFiis = (pend.data || []).filter((p) => p.classe === 'fiis').reduce((s, p) => s + Number(p.amount), 0);
+  const aReceber = aReceberLista.reduce((s, p) => s + Number(p.amount), 0);
+  const aReceberFiis = aReceberLista.filter((p) => p.classe === 'fiis').reduce((s, p) => s + Number(p.amount), 0);
   const aReceberAcoes = aReceber - aReceberFiis;
 
   // total "na Rico" = classes que ficam na corretora
