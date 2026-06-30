@@ -117,6 +117,9 @@ export default function FaturasView({ cards, invoices, items }) {
                   borderBottom: '1px solid var(--line-soft)', fontSize: 13.5,
                 }}>
                   <span style={{ fontWeight: 500 }}>{it.description}</span>
+                  {it.purchased_at && (
+                    <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>{(it.purchased_at || '').slice(0, 10).split('-').reverse().join('/')}</span>
+                  )}
                   {it.categoria && (
                     <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>{it.categoria}</span>
                   )}
