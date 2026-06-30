@@ -8,6 +8,16 @@ const inpF = {
   padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
   fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: '#fff', width: '100%',
 };
+
+const CORES = ['#2E5E4E', '#B98A3C', '#6FA287', '#C9A24B', '#3E7C63', '#8C6BB1', '#D98C5F', '#5B8DB8', '#A8B545', '#9C5A5A', '#7A7A7A'];
+
+function arcPath(a0, a1, cx, cy, R, r) {
+  const p = (ang, rad) => [cx + rad * Math.cos(ang), cy + rad * Math.sin(ang)];
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  const [x0, y0] = p(a0, R), [x1, y1] = p(a1, R);
+  const [x2, y2] = p(a1, r), [x3, y3] = p(a0, r);
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} A ${r} ${r} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)} Z`;
+}
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 function rotuloMes(iso) {
   const [a, m] = iso.split('-');
@@ -158,6 +168,17 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
     return Object.entries(map).map(([cat, val]) => ({ cat, val })).sort((a, b) => b.val - a.val);
   })();
   const gastoMesSeu = gastosCategoria.reduce((s, c) => s + c.val, 0);
+
+  const fatias = (() => {
+    let ang = -Math.PI / 2;
+    return gastosCategoria.map((g, idx) => {
+      const frac = gastoMesSeu > 0 ? g.val / gastoMesSeu : 0;
+      const a0 = ang;
+      const a1 = ang + frac * 2 * Math.PI;
+      ang = a1;
+      return { ...g, frac, color: CORES[idx % CORES.length], a0, a1 };
+    });
+  })();
 
   return (
     <div>
@@ -352,21 +373,28 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
               <div style={{ padding: '6px 20px 4px', fontSize: 12, color: 'var(--ink-faint)' }}>
                 sua parte no mês: <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)' }}>{fmt(gastoMesSeu)}</b>
               </div>
-              <div style={{ padding: '8px 20px 16px' }}>
-                {gastosCategoria.map((g) => (
-                  <div key={g.cat} style={{ marginBottom: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+              <div style={{ padding: '10px 20px 18px', display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
+                <svg viewBox="0 0 150 150" width="150" height="150" style={{ flex: 'none' }}>
+                  {fatias.length === 1 ? (
+                    <circle cx="75" cy="75" r="56" fill="none" stroke={fatias[0].color} strokeWidth="28" />
+                  ) : (
+                    fatias.map((s) => <path key={s.cat} d={arcPath(s.a0, s.a1, 75, 75, 70, 42)} fill={s.color} />)
+                  )}
+                  <text x="75" y="71" textAnchor="middle" fontSize="9" fill="var(--ink-faint)">sua parte</text>
+                  <text x="75" y="86" textAnchor="middle" fontSize="12.5" fontWeight="600" fill="var(--ink)" style={{ fontFamily: 'var(--font-display)' }}>{fmt(gastoMesSeu)}</text>
+                </svg>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  {fatias.map((g) => (
+                    <div key={g.cat} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
+                      <span style={{ width: 11, height: 11, borderRadius: 3, background: g.color, flex: 'none' }} />
                       <span style={{ color: 'var(--ink-soft)' }}>{g.cat}</span>
-                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
                         {fmt(g.val)}
-                        <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontWeight: 400 }}> · {gastoMesSeu > 0 ? Math.round((g.val / gastoMesSeu) * 100) : 0}%</span>
+                        <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontWeight: 400 }}> · {Math.round(g.frac * 100)}%</span>
                       </span>
                     </div>
-                    <div style={{ height: 6, background: '#E8ECE4', borderRadius: 99, overflow: 'hidden' }}>
-                      <div style={{ width: `${gastoMesSeu > 0 ? (g.val / gastoMesSeu) * 100 : 0}%`, height: '100%', background: 'var(--forest)' }} />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </section>
           )}
