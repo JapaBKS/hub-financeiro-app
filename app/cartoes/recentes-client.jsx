@@ -14,6 +14,7 @@ export default function Recentes({ purchases, cards }) {
   const [busy, setBusy] = useState(null);
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({});
+  const [busca, setBusca] = useState('');
 
   async function apagar(id) {
     if (!confirm('Apagar esta compra? Some de todas as faturas (inclusive futuras).')) return;
@@ -75,11 +76,22 @@ export default function Recentes({ purchases, cards }) {
 
   if (!lista.length) return null;
 
+  const termo = busca.trim().toLowerCase();
+  const filtrada = termo
+    ? lista.filter((p) => (p.description || '').toLowerCase().includes(termo) || (p.cartao || '').toLowerCase().includes(termo) || (p.categoria || '').toLowerCase().includes(termo))
+    : lista;
+
   return (
     <section className="card" style={{ marginTop: 16 }}>
-      <div className="card-h"><h2>Últimas compras</h2></div>
+      <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <h2>Compras</h2>
+        <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{filtrada.length} de {lista.length}</span>
+      </div>
+      <div style={{ padding: '8px 20px 0' }}>
+        <input style={inp} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por descrição, cartão ou categoria" />
+      </div>
       <div style={{ marginTop: 6 }}>
-        {lista.map((p) => {
+        {filtrada.map((p) => {
           if (editId === p.id) {
             return (
               <div key={p.id} style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-soft)' }}>
@@ -157,6 +169,9 @@ export default function Recentes({ purchases, cards }) {
             </div>
           );
         })}
+        {filtrada.length === 0 && (
+          <div style={{ padding: '16px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nenhuma compra encontrada para “{busca}”.</div>
+        )}
       </div>
     </section>
   );
