@@ -1,6 +1,7 @@
 import { supabaseServer } from '../../lib/supabase';
 import FormDividendos from './form-client';
 import RecebidosMes from './recebidos-client';
+import ImportarB3 from './importar-b3-client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -44,6 +45,7 @@ export default async function Dividendos() {
         <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
       <FormDividendos totalAtual={totalAtual} qtdAtual={(pend || []).length} acoesAtual={acoesAtual} fiisAtual={fiisAtual} />
+      <ImportarB3 />
       <RecebidosMes meses={meses} />
     </div>
   );
