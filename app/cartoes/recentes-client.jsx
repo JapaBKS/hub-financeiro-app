@@ -141,6 +141,7 @@ export default function Recentes({ purchases, cards }) {
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--ink-faint)', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                   <span>{p.cartao}</span>
+                  {p.purchased_at && <span>· {(p.purchased_at || '').slice(0, 10).split('-').reverse().join('/')}</span>}
                   {p.categoria && <span>· {p.categoria}</span>}
                   {p.pagador === 'pai' && (
                     <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }}>PAI</span>
