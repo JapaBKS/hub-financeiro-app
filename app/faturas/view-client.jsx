@@ -12,9 +12,38 @@ function mesAtualISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
-export default function FaturasView({ cards, invoices, items }) {
+export default function FaturasView({ cards, invoices, items, payments = [] }) {
   const norm = (iso) => (iso || '').slice(0, 10);
   const mesHoje = mesAtualISO();
+
+  const payKey = (cid, m) => `${cid}|${norm(m)}`;
+  const [pagos, setPagos] = useState(() => {
+    const o = {};
+    payments.forEach((p) => { o[payKey(p.card_id, p.bill_month)] = norm(p.paid_at); });
+    return o;
+  });
+  const pagoDe = (cid, m) => pagos[payKey(cid, m)];
+  const fmtData = (iso) => norm(iso).split('-').reverse().join('/');
+
+  async function confirmar(cid, m) {
+    const res = await fetch('/api/invoice-payment', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card_id: cid, bill_month: m }),
+    });
+    if (res.ok) { const d = await res.json(); setPagos((p) => ({ ...p, [payKey(cid, m)]: d.paid_at })); }
+  }
+  async function desfazer(cid, m) {
+    const res = await fetch('/api/invoice-payment', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card_id: cid, bill_month: m }),
+    });
+    if (res.ok) setPagos((p) => { const n = { ...p }; delete n[payKey(cid, m)]; return n; });
+  }
+
+  // resumo: faturas vencidas/deste mês ainda não pagas
+  const aPagar = invoices.filter((i) => norm(i.bill_month) <= mesHoje && !pagoDe(i.card_id, i.bill_month));
+  const aPagarTotal = aPagar.reduce((s, i) => s + Number(i.total), 0);
+  const aPagarSeu = aPagar.reduce((s, i) => s + Number(i.total_eu || i.total), 0);
 
   function mesesDoCartao(cardId) {
     return invoices
@@ -48,6 +77,21 @@ export default function FaturasView({ cards, invoices, items }) {
 
   return (
     <div>
+      {aPagar.length > 0 && (
+        <div className="card" style={{ padding: '14px 18px', marginBottom: 14, borderLeft: '3px solid var(--amber)' }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--amber)', letterSpacing: '.02em' }}>A PAGAR (vencidas ou deste mês)</div>
+          <div style={{ marginTop: 4, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20 }}>
+            {fmt(aPagarTotal)}
+            {aPagarSeu !== aPagarTotal && (
+              <span style={{ fontSize: 12.5, color: 'var(--ink-faint)', fontWeight: 500 }}> · seu {fmt(aPagarSeu)}</span>
+            )}
+          </div>
+          <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 2 }}>
+            {aPagar.length} {aPagar.length === 1 ? 'fatura pendente' : 'faturas pendentes'} — confirme abaixo ao pagar
+          </div>
+        </div>
+      )}
+
       {/* abas de cartão */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
         {cards.map((c) => (
@@ -84,6 +128,9 @@ export default function FaturasView({ cards, invoices, items }) {
                   <div style={{ fontSize: 12, fontFamily: 'var(--font-display)', fontWeight: 600, marginTop: 2 }}>
                     {fmt(inv?.total || 0).replace('R$', '').trim()}
                   </div>
+                  {pagoDe(cardId, m) && (
+                    <div style={{ fontSize: 9, fontWeight: 700, marginTop: 1, color: ativo ? '#fff' : 'var(--up)' }}>✓ paga</div>
+                  )}
                 </button>
               );
             })}
@@ -108,6 +155,22 @@ export default function FaturasView({ cards, invoices, items }) {
                 comprometido à frente<br />
                 <b style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--ink)' }}>{fmt(totalFuturo)}</b>
               </div>
+            </div>
+
+            <div style={{ padding: '0 20px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              {pagoDe(cardId, mes) ? (
+                <>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--up)', background: 'var(--up-bg)', borderRadius: 8, padding: '6px 12px' }}>
+                    ✓ paga em {fmtData(pagoDe(cardId, mes))}
+                  </span>
+                  <button onClick={() => desfazer(cardId, mes)} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 12.5, textDecoration: 'underline' }}>desfazer</button>
+                </>
+              ) : (
+                <button onClick={() => confirmar(cardId, mes)} disabled={!faturaSel} style={{
+                  padding: '10px 18px', borderRadius: 9, border: 0, cursor: 'pointer',
+                  background: 'var(--forest)', color: '#fff', fontSize: 13.5, fontWeight: 600,
+                }}>Confirmar pagamento</button>
+              )}
             </div>
 
             <div style={{ borderTop: '1px solid var(--line-soft)' }}>
