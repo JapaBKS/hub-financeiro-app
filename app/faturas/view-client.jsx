@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import FormCartao from '../cartoes/form-client';
 
 const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const CATEGORIAS = ['Comida', 'Mercado', 'Lazer', 'Transporte', 'Saúde', 'Casa', 'Assinaturas', 'Roupas', 'Educação', 'Presentes', 'Outros'];
@@ -127,6 +128,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
 
   const [cardId, setCardId] = useState(cards[0]?.id ?? null);
   const [mes, setMes] = useState(cards[0]?.id ? mesPadrao(cards[0].id) : mesHoje);
+  const [mostrarForm, setMostrarForm] = useState(false);
 
   function trocarCartao(id) {
     setCardId(id);
@@ -146,6 +148,20 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
 
   return (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button onClick={() => setMostrarForm((v) => !v)} style={{
+          padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+          border: '1px solid var(--forest)', background: mostrarForm ? '#fff' : 'var(--forest)',
+          color: mostrarForm ? 'var(--forest-2)' : '#fff',
+        }}>{mostrarForm ? 'Fechar' : '+ lançar compra'}</button>
+      </div>
+
+      {mostrarForm && (
+        <div style={{ marginBottom: 16 }}>
+          <FormCartao cards={cards} defaultCardId={cardId} defaultMes={mes.slice(0, 7)} onSaved={() => setTimeout(() => window.location.reload(), 700)} />
+        </div>
+      )}
+
       {aPagar.length > 0 && (
         <div className="card" style={{ padding: '14px 18px', marginBottom: 14, borderLeft: '3px solid var(--amber)' }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--amber)', letterSpacing: '.02em' }}>A PAGAR (vencidas ou deste mês)</div>
