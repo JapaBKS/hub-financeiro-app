@@ -107,6 +107,21 @@ export default async function Recomendacoes() {
         <div style={{ fontSize: 12, marginTop: 2, color: i.atencao ? 'var(--amber)' : 'var(--ink-soft)' }}>
           {i.atencao ? '⚠ ' : ''}{i.motivo}
         </div>
+        {i.held && i.p && (
+          <div style={{ fontSize: 11.5, marginTop: 3, color: 'var(--ink-faint)', fontFamily: 'var(--font-display)' }}>
+            PM {brl(Number(i.p.preco_medio))}
+            {i.p.preco_atual != null && (
+              <>
+                {' · agora '}{brl(Number(i.p.preco_atual))}
+                {i.desconto != null && (
+                  <b style={{ color: i.desconto <= 0 ? 'var(--up)' : 'var(--down)', marginLeft: 4 }}>
+                    ({i.desconto > 0 ? '+' : ''}{pct(i.desconto)})
+                  </b>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
       <div style={{ textAlign: 'right' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: i.tom === 'buy' ? 'var(--up)' : 'var(--down)' }}>
