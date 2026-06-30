@@ -146,6 +146,19 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
     .filter((i) => i.card_id === cardId && norm(i.bill_month) > mesHoje)
     .reduce((s, i) => s + totaisDe(i.card_id, i.bill_month).total, 0);
 
+  // gastos por categoria do mês selecionado (todos os cartões, só a sua parte)
+  const gastosCategoria = (() => {
+    const arr = itensState.filter((i) => norm(i.bill_month) === mes);
+    const map = {};
+    arr.forEach((i) => {
+      const cat = i.categoria || 'Sem categoria';
+      const seu = Number(i.amount) - Number(i.amount_pai || 0);
+      map[cat] = (map[cat] || 0) + seu;
+    });
+    return Object.entries(map).map(([cat, val]) => ({ cat, val })).sort((a, b) => b.val - a.val);
+  })();
+  const gastoMesSeu = gastosCategoria.reduce((s, c) => s + c.val, 0);
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
@@ -329,6 +342,34 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
               )}
             </div>
           </section>
+
+          {gastosCategoria.length > 0 && (
+            <section className="card" style={{ marginTop: 16 }}>
+              <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <h2>Gastos por categoria</h2>
+                <span style={{ fontSize: 12, color: 'var(--ink-faint)', textTransform: 'capitalize' }}>{rotuloMes(mes)} · todos os cartões</span>
+              </div>
+              <div style={{ padding: '6px 20px 4px', fontSize: 12, color: 'var(--ink-faint)' }}>
+                sua parte no mês: <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)' }}>{fmt(gastoMesSeu)}</b>
+              </div>
+              <div style={{ padding: '8px 20px 16px' }}>
+                {gastosCategoria.map((g) => (
+                  <div key={g.cat} style={{ marginBottom: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                      <span style={{ color: 'var(--ink-soft)' }}>{g.cat}</span>
+                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {fmt(g.val)}
+                        <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontWeight: 400 }}> · {gastoMesSeu > 0 ? Math.round((g.val / gastoMesSeu) * 100) : 0}%</span>
+                      </span>
+                    </div>
+                    <div style={{ height: 6, background: '#E8ECE4', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ width: `${gastoMesSeu > 0 ? (g.val / gastoMesSeu) * 100 : 0}%`, height: '100%', background: 'var(--forest)' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </>
       )}
     </div>
