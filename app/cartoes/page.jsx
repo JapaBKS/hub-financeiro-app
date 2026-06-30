@@ -12,8 +12,7 @@ export default async function Cartoes() {
     sb.from('card_purchases')
       .select('id, description, categoria, pagador, pai_pct, purchased_at, installment_amount, installments_count, first_billed_month, card_id, cards(name)')
       .order('first_billed_month', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(20),
+      .order('id', { ascending: false }),
   ]);
 
   const recentesFlat = (recentes || []).map((p) => ({
