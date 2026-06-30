@@ -7,7 +7,26 @@ const rotulo = (ym) => { const [a, m] = ym.split('-'); return `${MESES[Number(m)
 const KIND = { dividendo: 'Dividendo', jcp: 'JCP', rendimento: 'Rendimento' };
 
 export default function RecebidosMes({ meses }) {
-  const [aberto, setAberto] = useState(null);
+  // agrupa por ano (meses já vêm em ordem decrescente)
+  const anos = [];
+  const porAno = {};
+  meses.forEach((m) => {
+    const ano = m.mes.slice(0, 4);
+    if (!porAno[ano]) { porAno[ano] = { ano, meses: [], total: 0, acoes: 0, fiis: 0 }; anos.push(porAno[ano]); }
+    porAno[ano].meses.push(m);
+    porAno[ano].total += m.total;
+    porAno[ano].acoes += m.acoes;
+    porAno[ano].fiis += m.fiis;
+  });
+
+  const [anosAbertos, setAnosAbertos] = useState(() => new Set(anos.length ? [anos[0].ano] : []));
+  const [mesAberto, setMesAberto] = useState(null);
+
+  const toggleAno = (ano) => setAnosAbertos((s) => {
+    const n = new Set(s);
+    n.has(ano) ? n.delete(ano) : n.add(ano);
+    return n;
+  });
 
   if (!meses.length) {
     return (
@@ -17,48 +36,54 @@ export default function RecebidosMes({ meses }) {
     );
   }
 
-  // total geral por ano (cabeçalho ao trocar de ano)
-  let anoAnterior = null;
-
   return (
     <section className="card" style={{ marginTop: 16 }}>
       <div className="card-h"><h2>Recebidos por mês</h2></div>
       <div style={{ marginTop: 4 }}>
-        {meses.map((m) => {
-          const ano = m.mes.slice(0, 4);
-          const novoAno = ano !== anoAnterior;
-          anoAnterior = ano;
-          const aberta = aberto === m.mes;
+        {anos.map((y) => {
+          const anoAberto = anosAbertos.has(y.ano);
           return (
-            <div key={m.mes}>
-              {novoAno && (
-                <div style={{ padding: '8px 20px 4px', fontSize: 11, fontWeight: 700, letterSpacing: '.05em', color: 'var(--ink-faint)' }}>{ano}</div>
-              )}
-              <button onClick={() => setAberto(aberta ? null : m.mes)} style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 20px',
-                borderBottom: '1px solid var(--line-soft)', background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left',
+            <div key={y.ano}>
+              <button onClick={() => toggleAno(y.ano)} style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px',
+                borderBottom: '1px solid var(--line-soft)', background: '#F6F8F4', border: 0, cursor: 'pointer', textAlign: 'left',
               }}>
-                <span style={{ fontSize: 11, color: 'var(--ink-faint)', transform: aberta ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>▸</span>
-                <span style={{ fontSize: 13.5, fontWeight: 600, textTransform: 'capitalize' }}>{rotulo(m.mes)}</span>
-                <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
-                  ações {fmt(m.acoes)} · fiis {fmt(m.fiis)}
-                </span>
-                <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: 'var(--up)' }}>{fmt(m.total)}</b>
+                <span style={{ fontSize: 11, color: 'var(--ink-faint)', transform: anoAberto ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>▸</span>
+                <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.02em' }}>{y.ano}</span>
+                <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>ações {fmt(y.acoes)} · fiis {fmt(y.fiis)}</span>
+                <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: 'var(--up)' }}>{fmt(y.total)}</b>
               </button>
 
-              {aberta && (
-                <div style={{ background: '#FAFBF9', borderBottom: '1px solid var(--line-soft)' }}>
-                  {m.itens.map((it, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 20px 7px 38px', fontSize: 12.5 }}>
-                      <b style={{ fontFamily: 'var(--font-display)' }}>{it.ticker}</b>
-                      <span style={{ fontSize: 9.5, fontWeight: 700, color: it.fii ? 'var(--brass)' : 'var(--forest-2)', background: it.fii ? 'var(--brass-bg, #F3ECD9)' : 'var(--up-bg)', borderRadius: 4, padding: '1px 6px' }}>{it.fii ? 'FII' : 'AÇÃO'}</span>
-                      <span style={{ color: 'var(--ink-faint)' }}>{KIND[it.kind] || it.kind}</span>
-                      <span style={{ color: 'var(--ink-faint)', fontSize: 11 }}>{(it.paid_at || '').split('-').reverse().join('/')}</span>
-                      <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{fmt(it.amount)}</b>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {anoAberto && y.meses.map((m) => {
+                const aberta = mesAberto === m.mes;
+                return (
+                  <div key={m.mes}>
+                    <button onClick={() => setMesAberto(aberta ? null : m.mes)} style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px 10px 30px',
+                      borderBottom: '1px solid var(--line-soft)', background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left',
+                    }}>
+                      <span style={{ fontSize: 10, color: 'var(--ink-faint)', transform: aberta ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>▸</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'capitalize' }}>{rotulo(m.mes)}</span>
+                      <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>ações {fmt(m.acoes)} · fiis {fmt(m.fiis)}</span>
+                      <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: 'var(--up)' }}>{fmt(m.total)}</b>
+                    </button>
+
+                    {aberta && (
+                      <div style={{ background: '#FAFBF9', borderBottom: '1px solid var(--line-soft)' }}>
+                        {m.itens.map((it, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 20px 7px 48px', fontSize: 12.5 }}>
+                            <b style={{ fontFamily: 'var(--font-display)' }}>{it.ticker}</b>
+                            <span style={{ fontSize: 9.5, fontWeight: 700, color: it.fii ? 'var(--brass)' : 'var(--forest-2)', background: it.fii ? 'var(--brass-bg, #F3ECD9)' : 'var(--up-bg)', borderRadius: 4, padding: '1px 6px' }}>{it.fii ? 'FII' : 'AÇÃO'}</span>
+                            <span style={{ color: 'var(--ink-faint)' }}>{KIND[it.kind] || it.kind}</span>
+                            <span style={{ color: 'var(--ink-faint)', fontSize: 11 }}>{(it.paid_at || '').split('-').reverse().join('/')}</span>
+                            <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{fmt(it.amount)}</b>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           );
         })}
