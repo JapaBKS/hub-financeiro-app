@@ -19,7 +19,8 @@ export default function RecebidosMes({ meses }) {
     porAno[ano].fiis += m.fiis;
   });
 
-  const [anosAbertos, setAnosAbertos] = useState(() => new Set(anos.length ? [anos[0].ano] : []));
+  const anoAtual = String(new Date().getFullYear());
+  const [anosAbertos, setAnosAbertos] = useState(() => new Set([anoAtual]));
   const [mesAberto, setMesAberto] = useState(null);
 
   const toggleAno = (ano) => setAnosAbertos((s) => {
