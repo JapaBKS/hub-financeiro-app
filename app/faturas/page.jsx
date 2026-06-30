@@ -9,7 +9,7 @@ export default async function Faturas() {
   const [{ data: cards }, { data: invoices }, { data: items }, { data: payments }] = await Promise.all([
     sb.from('cards').select('id, name, due_day').order('name'),
     sb.from('v_card_invoice').select('*'),
-    sb.from('v_card_invoice_items').select('card_id, bill_month, description, categoria, pagador, pai_pct, purchased_at, parcela, amount, amount_pai'),
+    sb.from('v_card_invoice_items').select('purchase_id, parcela_idx, card_id, bill_month, description, categoria, pagador, pai_pct, purchased_at, parcela, amount, amount_pai'),
     sb.from('invoice_payments').select('card_id, bill_month, paid_at'),
   ]);
 
