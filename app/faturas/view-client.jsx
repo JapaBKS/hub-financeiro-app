@@ -27,10 +27,18 @@ function mesAtualISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
+function mesAlvoISO() {
+  const d = new Date();
+  let y = d.getFullYear();
+  let m = d.getMonth(); // 0-based
+  if (d.getDate() >= 25) { m += 1; if (m > 11) { m = 0; y += 1; } }
+  return `${y}-${String(m + 1).padStart(2, '0')}-01`;
+}
 
 export default function FaturasView({ cards, invoices, items, payments = [] }) {
   const norm = (iso) => (iso || '').slice(0, 10);
   const mesHoje = mesAtualISO();
+  const mesAlvo = mesAlvoISO();
 
   const payKey = (cid, m) => `${cid}|${norm(m)}`;
   const [pagos, setPagos] = useState(() => {
@@ -132,8 +140,8 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
   }
   function mesPadrao(cardId) {
     const meses = mesesDoCartao(cardId);
-    if (meses.includes(mesHoje)) return mesHoje;
-    return meses.find((m) => m >= mesHoje) || meses[meses.length - 1] || mesHoje;
+    if (meses.includes(mesAlvo)) return mesAlvo;
+    return meses.find((m) => m >= mesAlvo) || meses[meses.length - 1] || mesAlvo;
   }
 
   const [cardId, setCardId] = useState(cards[0]?.id ?? null);
