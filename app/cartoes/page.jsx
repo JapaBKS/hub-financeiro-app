@@ -10,7 +10,7 @@ export default async function Cartoes() {
   const [{ data: cards }, { data: recentes }] = await Promise.all([
     sb.from('cards').select('id, name, due_day').order('name'),
     sb.from('card_purchases')
-      .select('id, description, categoria, pagador, pai_pct, installment_amount, installments_count, first_billed_month, card_id, cards(name)')
+      .select('id, description, categoria, pagador, pai_pct, purchased_at, installment_amount, installments_count, first_billed_month, card_id, cards(name)')
       .order('first_billed_month', { ascending: false })
       .order('id', { ascending: false })
       .limit(20),
@@ -24,6 +24,7 @@ export default async function Cartoes() {
     categoria: p.categoria,
     pagador: p.pagador,
     pai_pct: p.pai_pct,
+    purchased_at: p.purchased_at,
     installment_amount: p.installment_amount,
     installments_count: p.installments_count,
     first_billed_month: p.first_billed_month,
