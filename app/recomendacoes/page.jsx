@@ -9,11 +9,17 @@ const TOL = 0.03;
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: alvoAssets }, { data: alloc }] = await Promise.all([
+  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('assets').select('ticker, target_pct, asset_classes(name, target_pct)').gt('target_pct', 0),
     sb.from('v_class_allocation').select('valor'),
+    sb.from('asset_classes').select('name, target_pct'),
   ]);
+
+  // classes com pesos por ativo (têm vários ativos dentro)
+  const GRUPOS = ['Ações BR', 'BDRS', 'FIIS'];
+  const metaClasse = {};
+  (classes || []).forEach((c) => { metaClasse[c.name] = Number(c.target_pct) || 0; });
 
   const total = (alloc || []).reduce((s, c) => s + Number(c.valor), 0) || 1;
   const posMap = {};
@@ -26,7 +32,12 @@ export default async function Recomendacoes() {
     classe: a.asset_classes?.name,
   }));
   Object.values(posMap).forEach((p) => {
-    if (!universo.has(p.ticker)) universo.set(p.ticker, { ticker: p.ticker, target: 0, classe: p.classe });
+    if (!universo.has(p.ticker)) {
+      // classe de ativo único (ex.: BTC): o ativo é 100% da classe -> alvo = meta da classe.
+      // classe com grupo (Ações/BDRs/FIIs) sem peso cadastrado -> fora da lista (alvo 0).
+      const target = GRUPOS.includes(p.classe) ? 0 : (metaClasse[p.classe] || 0);
+      universo.set(p.ticker, { ticker: p.ticker, target, classe: p.classe });
+    }
   });
 
   const itens = [];
