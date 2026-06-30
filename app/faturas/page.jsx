@@ -6,10 +6,11 @@ export const revalidate = 0;
 
 export default async function Faturas() {
   const sb = supabaseServer();
-  const [{ data: cards }, { data: invoices }, { data: items }] = await Promise.all([
+  const [{ data: cards }, { data: invoices }, { data: items }, { data: payments }] = await Promise.all([
     sb.from('cards').select('id, name, due_day').order('name'),
     sb.from('v_card_invoice').select('*'),
     sb.from('v_card_invoice_items').select('card_id, bill_month, description, categoria, pagador, pai_pct, purchased_at, parcela, amount, amount_pai'),
+    sb.from('invoice_payments').select('card_id, bill_month, paid_at'),
   ]);
 
   return (
@@ -21,7 +22,7 @@ export default async function Faturas() {
         </div>
         <a href="/cartoes" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>+ nova compra</a>
       </header>
-      <FaturasView cards={cards || []} invoices={invoices || []} items={items || []} />
+      <FaturasView cards={cards || []} invoices={invoices || []} items={items || []} payments={payments || []} />
     </div>
   );
 }
