@@ -40,10 +40,39 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
     if (res.ok) setPagos((p) => { const n = { ...p }; delete n[payKey(cid, m)]; return n; });
   }
 
+  // itens com estado (pra edição refletir na hora) + totais calculados a partir deles
+  const [itensState, setItens] = useState(items);
+  const totaisDe = (cid, m) => {
+    const arr = itensState.filter((i) => i.card_id === cid && norm(i.bill_month) === norm(m));
+    const total = arr.reduce((s, i) => s + Number(i.amount), 0);
+    const pai = arr.reduce((s, i) => s + Number(i.amount_pai || 0), 0);
+    return { total, pai, eu: total - pai };
+  };
+
+  // edição de uma parcela específica
+  const [editKey, setEditKey] = useState(null);
+  const [editVal, setEditVal] = useState('');
+  const itKey = (it) => `${it.purchase_id}|${it.parcela_idx}`;
+  function abrirEdit(it) { setEditKey(itKey(it)); setEditVal(Number(it.amount).toFixed(2)); }
+  async function salvarParcela(it) {
+    const novo = Number(editVal);
+    if (!(novo >= 0)) return;
+    const res = await fetch('/api/installment', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ purchase_id: it.purchase_id, n: it.parcela_idx, amount: novo }),
+    });
+    if (res.ok) {
+      setItens((arr) => arr.map((x) => (itKey(x) === itKey(it)
+        ? { ...x, amount: novo, amount_pai: Math.round(novo * Number(x.pai_pct || 0)) / 100 }
+        : x)));
+      setEditKey(null);
+    }
+  }
+
   // resumo: faturas vencidas/deste mês ainda não pagas
   const aPagar = invoices.filter((i) => norm(i.bill_month) <= mesHoje && !pagoDe(i.card_id, i.bill_month));
-  const aPagarTotal = aPagar.reduce((s, i) => s + Number(i.total), 0);
-  const aPagarSeu = aPagar.reduce((s, i) => s + Number(i.total_eu || i.total), 0);
+  const aPagarTotal = aPagar.reduce((s, i) => s + totaisDe(i.card_id, i.bill_month).total, 0);
+  const aPagarSeu = aPagar.reduce((s, i) => s + totaisDe(i.card_id, i.bill_month).eu, 0);
 
   function mesesDoCartao(cardId) {
     return invoices
@@ -68,12 +97,13 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
   const cartao = cards.find((c) => c.id === cardId);
   const meses = mesesDoCartao(cardId);
   const faturaSel = invoices.find((i) => i.card_id === cardId && norm(i.bill_month) === mes);
-  const itensSel = items
+  const itensSel = itensState
     .filter((i) => i.card_id === cardId && norm(i.bill_month) === mes)
     .sort((a, b) => b.amount - a.amount);
+  const tSel = totaisDe(cardId, mes);
   const totalFuturo = invoices
     .filter((i) => i.card_id === cardId && norm(i.bill_month) > mesHoje)
-    .reduce((s, i) => s + Number(i.total), 0);
+    .reduce((s, i) => s + totaisDe(i.card_id, i.bill_month).total, 0);
 
   return (
     <div>
@@ -115,7 +145,6 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
           {/* faixa de meses */}
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 14 }}>
             {meses.map((m) => {
-              const inv = invoices.find((i) => i.card_id === cardId && norm(i.bill_month) === m);
               const ativo = m === mes;
               return (
                 <button key={m} onClick={() => setMes(m)} style={{
@@ -126,7 +155,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                 }}>
                   <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize' }}>{rotuloMes(m)}</div>
                   <div style={{ fontSize: 12, fontFamily: 'var(--font-display)', fontWeight: 600, marginTop: 2 }}>
-                    {fmt(inv?.total || 0).replace('R$', '').trim()}
+                    {fmt(totaisDe(cardId, m).total).replace('R$', '').trim()}
                   </div>
                   {pagoDe(cardId, m) && (
                     <div style={{ fontSize: 9, fontWeight: 700, marginTop: 1, color: ativo ? '#fff' : 'var(--up)' }}>✓ paga</div>
@@ -142,12 +171,12 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
               <div>
                 <div className="eyebrow">{cartao?.name} · vence dia {cartao?.due_day}</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 28, letterSpacing: '-.02em', marginTop: 4 }}>
-                  {fmt(faturaSel?.total || 0)}
+                  {fmt(tSel.total)}
                 </div>
-                {Number(faturaSel?.total_pai) > 0 && (
+                {tSel.pai > 0 && (
                   <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 4 }}>
-                    seu <b style={{ color: 'var(--ink)' }}>{fmt(faturaSel?.total_eu || 0)}</b>
-                    {' · '}pai <b style={{ color: 'var(--brass)' }}>{fmt(faturaSel?.total_pai || 0)}</b>
+                    seu <b style={{ color: 'var(--ink)' }}>{fmt(tSel.eu)}</b>
+                    {' · '}pai <b style={{ color: 'var(--brass)' }}>{fmt(tSel.pai)}</b>
                   </div>
                 )}
               </div>
@@ -174,35 +203,48 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
             </div>
 
             <div style={{ borderTop: '1px solid var(--line-soft)' }}>
-              {itensSel.map((it, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '11px 20px',
-                  borderBottom: '1px solid var(--line-soft)', fontSize: 13.5,
-                }}>
-                  <span style={{ fontWeight: 500 }}>{it.description}</span>
-                  {it.purchased_at && (
-                    <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>{(it.purchased_at || '').slice(0, 10).split('-').reverse().join('/')}</span>
-                  )}
-                  {it.categoria && (
-                    <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>{it.categoria}</span>
-                  )}
-                  {it.parcela && !it.parcela.startsWith('1/1') && (
-                    <span style={{
-                      fontSize: 10, fontWeight: 600, color: 'var(--forest-2)', background: 'var(--up-bg)',
-                      borderRadius: 5, padding: '1px 6px',
-                    }}>{it.parcela}</span>
-                  )}
-                  {it.pagador === 'pai' && (
-                    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }}>PAI</span>
-                  )}
-                  {it.pagador === 'dividido' && (
-                    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }} title={`pai paga ${fmt(it.amount_pai || 0)}`}>PAI {Math.round(Number(it.pai_pct))}%</span>
-                  )}
-                  <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
-                    {fmt(it.amount)}
-                  </b>
-                </div>
-              ))}
+              {itensSel.map((it, i) => {
+                const editando = editKey === itKey(it);
+                return (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '11px 20px',
+                    borderBottom: '1px solid var(--line-soft)', fontSize: 13.5,
+                  }}>
+                    <span style={{ fontWeight: 500 }}>{it.description}</span>
+                    {it.purchased_at && (
+                      <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>{(it.purchased_at || '').slice(0, 10).split('-').reverse().join('/')}</span>
+                    )}
+                    {it.categoria && (
+                      <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>{it.categoria}</span>
+                    )}
+                    {it.parcela && !it.parcela.startsWith('1/1') && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 600, color: 'var(--forest-2)', background: 'var(--up-bg)',
+                        borderRadius: 5, padding: '1px 6px',
+                      }}>{it.parcela}</span>
+                    )}
+                    {it.pagador === 'pai' && (
+                      <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }}>PAI</span>
+                    )}
+                    {it.pagador === 'dividido' && (
+                      <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }} title={`pai paga ${fmt(it.amount_pai || 0)}`}>PAI {Math.round(Number(it.pai_pct))}%</span>
+                    )}
+                    {editando ? (
+                      <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input autoFocus type="number" step="any" value={editVal} onChange={(e) => setEditVal(e.target.value)}
+                          style={{ width: 92, padding: '5px 8px', borderRadius: 7, border: '1px solid var(--line)', fontSize: 13, textAlign: 'right', fontFamily: 'var(--font-body)' }} />
+                        <button onClick={() => salvarParcela(it)} title="salvar" style={{ border: 0, background: 'var(--forest)', color: '#fff', cursor: 'pointer', borderRadius: 6, width: 26, height: 26, fontSize: 13 }}>✓</button>
+                        <button onClick={() => setEditKey(null)} title="cancelar" style={{ border: '1px solid var(--line)', background: '#fff', color: 'var(--ink-faint)', cursor: 'pointer', borderRadius: 6, width: 26, height: 26, fontSize: 13 }}>✕</button>
+                      </span>
+                    ) : (
+                      <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <b style={{ fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{fmt(it.amount)}</b>
+                        <button onClick={() => abrirEdit(it)} title="editar valor desta parcela" style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 13, padding: 0 }}>✎</button>
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
               {itensSel.length === 0 && (
                 <div style={{ padding: '16px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Sem itens neste mês.</div>
               )}
