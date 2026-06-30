@@ -9,11 +9,11 @@ const inputStyle = {
 };
 const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '14px 0 6px' };
 
-export default function FormCartao({ cards }) {
+export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }) {
   const hoje = new Date().toISOString().slice(0, 10);
   const mesAtual = hoje.slice(0, 7); // YYYY-MM
 
-  const [cardId, setCardId] = useState(cards[0]?.id ? String(cards[0].id) : '');
+  const [cardId, setCardId] = useState(defaultCardId != null ? String(defaultCardId) : (cards[0]?.id ? String(cards[0].id) : ''));
   const [description, setDescription] = useState('');
   const [categoria, setCategoria] = useState('Outros');
   const [pagador, setPagador] = useState('eu'); // 'eu' | 'pai' | 'dividido'
@@ -21,7 +21,7 @@ export default function FormCartao({ cards }) {
   const [purchasedAt, setPurchasedAt] = useState(hoje);
   const [valorTotal, setValorTotal] = useState('');
   const [parcelas, setParcelas] = useState('1');
-  const [mesInicio, setMesInicio] = useState(mesAtual);
+  const [mesInicio, setMesInicio] = useState(defaultMes || mesAtual);
   const [estado, setEstado] = useState(null);
   const [msg, setMsg] = useState('');
 
@@ -52,6 +52,7 @@ export default function FormCartao({ cards }) {
       setEstado('ok');
       setMsg(`"${description}" lançada em ${nParc}x!`);
       setDescription(''); setValorTotal(''); setParcelas('1');
+      if (onSaved) onSaved();
     } else {
       setEstado('erro');
       setMsg(data.erro || 'Não foi possível salvar.');
