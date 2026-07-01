@@ -8,13 +8,18 @@ export const revalidate = 0;
 const ymIndex = (s) => { const [y, m] = s.slice(0, 7).split('-').map(Number); return y * 12 + (m - 1); };
 const idxLabel = (i) => `${String((i % 12) + 1).padStart(2, '0')}/${Math.floor(i / 12)}`;
 const idxYear = (i) => Math.floor(i / 12);
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const mesLabel = (i) => `${MESES[i % 12]}/${Math.floor(i / 12)}`;
+const ORDEM = ['Ações BR', 'BDRS', 'FIIS', 'BTC', 'PENDLE', 'SOLANA', 'Tesouro', 'Fundos de Investimentos', 'Reserva', 'Proventos'];
+const CURTO = { 'Ações BR': 'Ações BR', 'BDRS': 'BDRs', 'FIIS': 'FIIs', 'BTC': 'BTC', 'PENDLE': 'PENDLE', 'SOLANA': 'SOLANA', 'Tesouro': 'Tesouro', 'Fundos de Investimentos': 'Fundos', 'Reserva': 'Reserva', 'Proventos': 'Prov.' };
+const inteiro = (v) => (v ? Math.round(v).toLocaleString('pt-BR') : '—');
 
 export default async function Meta() {
   const sb = supabaseServer();
   const [{ data: goal }, { data: snaps }, { data: alloc }] = await Promise.all([
     sb.from('goal_config').select('*').eq('id', 1).maybeSingle(),
-    sb.from('portfolio_snapshots').select('snapshot_month, value'),
-    sb.from('v_class_allocation').select('valor'),
+    sb.from('portfolio_snapshots').select('snapshot_month, value, asset_classes(name)'),
+    sb.from('v_class_allocation').select('classe, valor'),
   ]);
 
   const realNow = (alloc || []).reduce((s, c) => s + Number(c.valor), 0);
@@ -61,6 +66,34 @@ export default async function Meta() {
   (snaps || []).forEach((s) => { const k = ymIndex(s.snapshot_month); realMap[k] = (realMap[k] || 0) + Number(s.value); });
   realMap[todayIdx] = realNow;
   const realPts = Object.entries(realMap).map(([k, val]) => ({ idx: Number(k), value: val })).sort((a, b) => a.idx - b.idx);
+
+  // histórico mês a mês (mais recente primeiro) com variação vs mês anterior disponível
+  const historico = realPts.map((p, n) => {
+    const prev = n > 0 ? realPts[n - 1].value : null;
+    return {
+      idx: p.idx, value: p.value,
+      deltaVal: prev != null ? p.value - prev : null,
+      deltaPct: prev ? p.value / prev - 1 : null,
+    };
+  }).reverse();
+
+  // composição por classe de cada mês (matriz mês × classe)
+  const porMesClasse = {};
+  (snaps || []).forEach((s) => {
+    const k = ymIndex(s.snapshot_month);
+    const nome = s.asset_classes?.name || '—';
+    if (!porMesClasse[k]) porMesClasse[k] = {};
+    porMesClasse[k][nome] = (porMesClasse[k][nome] || 0) + Number(s.value);
+  });
+  // mês atual ao vivo (composição real de agora)
+  const allocClasse = {};
+  (alloc || []).forEach((a) => { allocClasse[a.classe] = (allocClasse[a.classe] || 0) + Number(a.valor); });
+  porMesClasse[todayIdx] = allocClasse;
+
+  const presentes = new Set();
+  Object.values(porMesClasse).forEach((o) => Object.keys(o).forEach((n) => { if ((o[n] || 0) > 0) presentes.add(n); }));
+  const colunas = ORDEM.filter((n) => presentes.has(n));
+  const mesesComp = Object.keys(porMesClasse).map(Number).sort((a, b) => b - a);
 
   // previsão realista a partir do valor de hoje
   let vr = realNow, j = todayIdx, g2 = 0;
@@ -169,6 +202,80 @@ export default async function Meta() {
           })}
         </svg>
       </section>
+
+      {/* histórico mensal */}
+      <section className="card" style={{ marginBottom: 16 }}>
+        <div className="card-h"><h2>Histórico mensal</h2></div>
+        {historico.length <= 1 ? (
+          <p style={{ padding: '4px 20px 16px', fontSize: 12.5, color: 'var(--ink-faint)' }}>
+            O histórico começa a se preencher conforme os meses passam (uma foto por mês). Por enquanto só há o mês atual — volte no fim do mês que vem.
+          </p>
+        ) : (
+          <div style={{ padding: '4px 0 8px' }}>
+            {historico.map((h, n) => {
+              const sobe = h.deltaVal != null && h.deltaVal >= 0;
+              const atual = n === 0;
+              return (
+                <div key={h.idx} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px',
+                  borderBottom: '1px solid var(--line-soft)',
+                  background: atual ? 'var(--up-bg)' : 'transparent',
+                  borderLeft: atual ? '3px solid var(--forest)' : '3px solid transparent',
+                }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'capitalize', minWidth: 74 }}>{mesLabel(h.idx)}</span>
+                  {atual && <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', background: 'var(--forest)', borderRadius: 4, padding: '1px 6px' }}>ATUAL</span>}
+                  <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', fontSize: 14 }}>{brl(h.value)}</b>
+                  <span style={{ minWidth: 120, textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: h.deltaVal == null ? 'var(--ink-faint)' : sobe ? 'var(--up)' : 'var(--down)' }}>
+                    {h.deltaVal == null ? '—' : `${sobe ? '▲' : '▼'} ${brl(Math.abs(h.deltaVal))} (${sobe ? '+' : '−'}${pct(Math.abs(h.deltaPct))})`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* composição por mês (tabela larga) */}
+      {colunas.length > 0 && (
+        <section className="card" style={{ marginBottom: 16 }}>
+          <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <h2>Composição por mês</h2>
+            <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>arraste ↔ para ver tudo</span>
+          </div>
+          <div style={{ overflowX: 'auto', padding: '4px 0 8px' }}>
+            <table style={{ borderCollapse: 'collapse', fontSize: 12, whiteSpace: 'nowrap', minWidth: '100%' }}>
+              <thead>
+                <tr>
+                  <th style={{ position: 'sticky', left: 0, background: 'var(--surface, #fff)', textAlign: 'left', padding: '8px 14px', color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>Mês</th>
+                  {colunas.map((c) => (
+                    <th key={c} style={{ textAlign: 'right', padding: '8px 12px', color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>{CURTO[c] || c}</th>
+                  ))}
+                  <th style={{ textAlign: 'right', padding: '8px 14px 8px 12px', color: 'var(--forest-2)', fontWeight: 700, borderBottom: '1px solid var(--line)' }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mesesComp.map((m, n) => {
+                  const linha = porMesClasse[m] || {};
+                  const total = colunas.reduce((s, c) => s + (linha[c] || 0), 0);
+                  const atual = m === todayIdx;
+                  return (
+                    <tr key={m} style={{ background: atual ? 'var(--up-bg)' : n % 2 ? '#FAFBF9' : 'transparent' }}>
+                      <td style={{ position: 'sticky', left: 0, background: atual ? 'var(--up-bg)' : n % 2 ? '#FAFBF9' : '#fff', textAlign: 'left', padding: '7px 14px', fontWeight: 600, textTransform: 'capitalize', borderBottom: '1px solid var(--line-soft)' }}>
+                        {mesLabel(m)}{atual ? ' •' : ''}
+                      </td>
+                      {colunas.map((c) => (
+                        <td key={c} style={{ textAlign: 'right', padding: '7px 12px', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: linha[c] ? 'var(--ink)' : 'var(--ink-faint)', borderBottom: '1px solid var(--line-soft)' }}>{inteiro(linha[c])}</td>
+                      ))}
+                      <td style={{ textAlign: 'right', padding: '7px 14px 7px 12px', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: 'var(--forest-2)', borderBottom: '1px solid var(--line-soft)' }}>{inteiro(total)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>Valores em R$, arredondados. O mês atual (•) é o valor ao vivo de hoje.</p>
+        </section>
+      )}
 
       <MetaForm goal={goal} />
     </div>
