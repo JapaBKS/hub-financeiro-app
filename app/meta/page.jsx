@@ -12,7 +12,7 @@ const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'o
 const mesLabel = (i) => `${MESES[i % 12]}/${Math.floor(i / 12)}`;
 const ORDEM = ['Ações BR', 'BDRS', 'FIIS', 'BTC', 'PENDLE', 'SOLANA', 'Tesouro', 'Fundos de Investimentos', 'Reserva', 'Proventos'];
 const CURTO = { 'Ações BR': 'Ações BR', 'BDRS': 'BDRs', 'FIIS': 'FIIs', 'BTC': 'BTC', 'PENDLE': 'PENDLE', 'SOLANA': 'SOLANA', 'Tesouro': 'Tesouro', 'Fundos de Investimentos': 'Fundos', 'Reserva': 'Reserva', 'Proventos': 'Prov.' };
-const inteiro = (v) => (v ? Math.round(v).toLocaleString('pt-BR') : '—');
+const valor = (v) => (v ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—');
 
 export default async function Meta() {
   const sb = supabaseServer();
@@ -81,6 +81,35 @@ export default async function Meta() {
     return proj[proj.length - 1].value;
   };
   const plannedNow = projAt(todayIdx);
+
+  // roda a mesma fórmula a partir de um ponto qualquer até alcançar um alvo -> retorna o idx
+  const alcancaIdx = (startVal, startIdx, alvo) => {
+    if (startVal >= alvo) return startIdx;
+    let saldo = startVal, div = saldo * DIV_PCT, idx = startIdx, g = 0;
+    while (saldo < alvo && g < 1200) {
+      idx++; g++;
+      saldo = saldo * (1 + CRESC_MES) + aporteDoAno(idx) + div;
+      div = saldo * DIV_PCT;
+    }
+    return idx;
+  };
+  const projAlcancaIdx = (alvo) => {
+    const p = proj.find((x) => x.value >= alvo);
+    return p ? p.idx : proj[proj.length - 1].idx;
+  };
+
+  // marcos: no seu ritmo (partindo de hoje) vs pela projeção pura
+  const MARCOS = [100000, 500000, 1000000];
+  const marcos = MARCOS.map((alvo) => ({
+    alvo,
+    atingido: realNow >= alvo,
+    seuRitmo: alcancaIdx(realNow, todayIdx, alvo),
+    pelaProj: projAlcancaIdx(alvo),
+  }));
+
+  // quantos meses à frente da projeção: onde a projeção alcançaria o seu valor de hoje
+  const idxProjIgualHoje = projAlcancaIdx(realNow);
+  const mesesAdiante = idxProjIgualHoje - todayIdx;
 
   // real (snapshots somados por mês) + ponto de hoje ao vivo
   const realMap = {};
@@ -196,10 +225,43 @@ export default async function Meta() {
           <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 3 }}>
             Plano previa {brl(plannedNow)} para hoje · você tem {brl(realNow)} ({adiante ? '+' : ''}{brl(ritmoDiff)}, {adiante ? '+' : ''}{pct(ritmoPct)})
           </div>
+          {mesesAdiante !== 0 && (
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: mesesAdiante > 0 ? 'var(--up)' : 'var(--amber)', marginTop: 2 }}>
+              {mesesAdiante > 0
+                ? `Você está ${mesesAdiante} ${mesesAdiante === 1 ? 'mês' : 'meses'} à frente da projeção`
+                : `Você está ${-mesesAdiante} ${-mesesAdiante === 1 ? 'mês' : 'meses'} atrás da projeção`}
+            </div>
+          )}
           <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 2 }}>
             Pela projeção, R$ 1 mi em <b>{mesLabel(forecastIdx)}</b> (~{Math.floor(mesesFalta / 12)}a {mesesFalta % 12}m)
           </div>
         </div>
+      </section>
+
+      {/* marcos */}
+      <section className="card" style={{ marginBottom: 16 }}>
+        <div className="card-h"><h2>Marcos</h2></div>
+        <div style={{ padding: '4px 0 8px' }}>
+          <div style={{ display: 'flex', padding: '6px 20px', fontSize: 11, color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>
+            <span style={{ flex: 1 }}>Marco</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>No seu ritmo</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>Pela projeção</span>
+          </div>
+          {marcos.map((m) => (
+            <div key={m.alvo} style={{ display: 'flex', alignItems: 'center', padding: '9px 20px', fontSize: 13, borderBottom: '1px solid var(--line-soft)' }}>
+              <span style={{ flex: 1, fontWeight: 600 }}>{brl(m.alvo)}</span>
+              <span style={{ flex: 1, textAlign: 'right', fontWeight: 600, color: m.atingido ? 'var(--up)' : 'var(--forest-2)', textTransform: 'capitalize' }}>
+                {m.atingido ? '✓ atingido' : mesLabel(m.seuRitmo)}
+              </span>
+              <span style={{ flex: 1, textAlign: 'right', color: 'var(--brass)', textTransform: 'capitalize' }}>
+                {mesLabel(m.pelaProj)}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>
+          "No seu ritmo" parte do seu valor de hoje seguindo a mesma fórmula. "Pela projeção" é o plano puro desde jul/2024.
+        </p>
       </section>
 
       {/* gráfico */}
@@ -251,10 +313,10 @@ export default async function Meta() {
                 background: atual ? 'var(--up-bg)' : n % 2 ? '#FAFBF9' : 'transparent',
               }}>
                 <span style={{ minWidth: 74, fontWeight: 600, textTransform: 'capitalize' }}>{mesLabel(c.idx)}{atual ? ' •' : ''}</span>
-                <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: 'var(--brass)' }}>{c.proj != null ? inteiro(c.proj) : '—'}</span>
-                <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{c.real != null ? inteiro(c.real) : '—'}</span>
+                <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: 'var(--brass)' }}>{c.proj != null ? valor(c.proj) : '—'}</span>
+                <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{c.real != null ? valor(c.real) : '—'}</span>
                 <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: diff == null ? 'var(--ink-faint)' : diff >= 0 ? 'var(--up)' : 'var(--down)' }}>
-                  {diff == null ? '—' : `${diff >= 0 ? '+' : '−'}${inteiro(Math.abs(diff))}`}
+                  {diff == null ? '—' : `${diff >= 0 ? '+' : '−'}${valor(Math.abs(diff))}`}
                 </span>
               </div>
             );
@@ -324,9 +386,9 @@ export default async function Meta() {
                         {mesLabel(m)}{atual ? ' •' : ''}
                       </td>
                       {colunas.map((c) => (
-                        <td key={c} style={{ textAlign: 'right', padding: '7px 12px', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: linha[c] ? 'var(--ink)' : 'var(--ink-faint)', borderBottom: '1px solid var(--line-soft)' }}>{inteiro(linha[c])}</td>
+                        <td key={c} style={{ textAlign: 'right', padding: '7px 12px', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: linha[c] ? 'var(--ink)' : 'var(--ink-faint)', borderBottom: '1px solid var(--line-soft)' }}>{valor(linha[c])}</td>
                       ))}
-                      <td style={{ textAlign: 'right', padding: '7px 14px 7px 12px', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: 'var(--forest-2)', borderBottom: '1px solid var(--line-soft)' }}>{inteiro(total)}</td>
+                      <td style={{ textAlign: 'right', padding: '7px 14px 7px 12px', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: 'var(--forest-2)', borderBottom: '1px solid var(--line-soft)' }}>{valor(total)}</td>
                     </tr>
                   );
                 })}
