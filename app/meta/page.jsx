@@ -39,25 +39,46 @@ export default async function Meta() {
     );
   }
 
-  const target = Number(goal.target_value);
-  const monthly = Number(goal.monthly_contribution);
-  const annual = Number(goal.assumed_annual_return);
-  const r = Math.pow(1 + annual, 1 / 12) - 1;
-  const startIdx = ymIndex(goal.started_at);
-  const startVal = Number(goal.starting_value);
-
   const hoje = new Date();
   const todayIdx = hoje.getUTCFullYear() * 12 + hoje.getUTCMonth();
 
-  // projeção (plano) a partir do início
-  const proj = [{ idx: startIdx, value: startVal }];
-  let v = startVal, i = startIdx, g = 0;
-  while (v < target && g < 720) { v = v * (1 + r) + monthly; i++; g++; proj.push({ idx: i, value: v }); }
-  const targetIdx = i;
+  // ---- projeção personalizada ----
+  // Começa jul/2024 com 8.200. Cada mês: saldo = saldo_ant × 1,01 + aporte(ano) + dividendos_mês_anterior.
+  // dividendos = 0,5% do saldo do mês. Aporte: 1.000 em 2024, +10% a cada virada de ano. Vai até 1 milhão.
+  const META = 1000000;
+  const PROJ_INICIO = ymIndex('2024-07-01');
+  const PROJ_SALDO0 = 8200;
+  const CRESC_MES = 0.01;
+  const DIV_PCT = 0.005;
+  const APORTE_BASE = 1000;
+  const APORTE_ANO0 = 2024;
+  const APORTE_CRESC = 0.10;
+  const aporteDoAno = (idx) => APORTE_BASE * Math.pow(1 + APORTE_CRESC, Math.floor(idx / 12) - APORTE_ANO0);
+
+  const target = META;
+
+  const proj = [];
+  {
+    let saldo = PROJ_SALDO0;
+    let div = saldo * DIV_PCT;
+    let idx = PROJ_INICIO;
+    proj.push({ idx, value: saldo, aporte: 0, div });
+    let g = 0;
+    while (saldo < META && g < 1200) {
+      idx++; g++;
+      const ap = aporteDoAno(idx);
+      saldo = saldo * (1 + CRESC_MES) + ap + div;
+      div = saldo * DIV_PCT;
+      proj.push({ idx, value: saldo, aporte: ap, div });
+    }
+  }
+  const targetIdx = proj[proj.length - 1].idx;
+  const projByIdx = {};
+  proj.forEach((p) => { projByIdx[p.idx] = p.value; });
   const projAt = (idx) => {
     if (idx <= proj[0].idx) return proj[0].value;
-    const p = proj.find((p) => p.idx === idx);
-    return p ? p.value : proj[proj.length - 1].value;
+    if (projByIdx[idx] != null) return projByIdx[idx];
+    return proj[proj.length - 1].value;
   };
   const plannedNow = projAt(todayIdx);
 
@@ -95,11 +116,18 @@ export default async function Meta() {
   const colunas = ORDEM.filter((n) => presentes.has(n));
   const mesesComp = Object.keys(porMesClasse).map(Number).sort((a, b) => b - a);
 
-  // previsão realista a partir do valor de hoje
-  let vr = realNow, j = todayIdx, g2 = 0;
-  while (vr < target && g2 < 720) { vr = vr * (1 + r) + monthly; j++; g2++; }
-  const forecastIdx = j;
+  // projeção atinge a meta (1mi)
+  const forecastIdx = targetIdx;
   const mesesFalta = Math.max(0, forecastIdx - todayIdx);
+
+  // tabela projetado vs real (do início da projeção até o mês atual)
+  const compara = [];
+  for (let k = PROJ_INICIO; k <= todayIdx; k++) {
+    const projV = projByIdx[k];
+    const realV = realMap[k];
+    compara.push({ idx: k, proj: projV != null ? projV : null, real: realV != null ? realV : null });
+  }
+  compara.reverse();
 
   const falta = Math.max(0, target - realNow);
   const progresso = target > 0 ? realNow / target : 0;
@@ -109,7 +137,7 @@ export default async function Meta() {
 
   // ---- gráfico SVG ----
   const W = 700, H = 300, padL = 6, padR = 14, padT = 16, padB = 26;
-  const minIdx = Math.min(startIdx, realPts[0]?.idx ?? startIdx);
+  const minIdx = Math.min(PROJ_INICIO, realPts[0]?.idx ?? PROJ_INICIO);
   const maxIdx = Math.max(todayIdx, targetIdx);
   const maxY = Math.max(target, ...realPts.map((p) => p.value), ...proj.map((p) => p.value)) * 1.05;
   const px = (idx) => padL + ((idx - minIdx) / (maxIdx - minIdx || 1)) * (W - padL - padR);
@@ -169,7 +197,7 @@ export default async function Meta() {
             Plano previa {brl(plannedNow)} para hoje · você tem {brl(realNow)} ({adiante ? '+' : ''}{brl(ritmoDiff)}, {adiante ? '+' : ''}{pct(ritmoPct)})
           </div>
           <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 2 }}>
-            No ritmo atual, meta em <b>{idxLabel(forecastIdx)}</b> (~{Math.floor(mesesFalta / 12)}a {mesesFalta % 12}m)
+            Pela projeção, R$ 1 mi em <b>{mesLabel(forecastIdx)}</b> (~{Math.floor(mesesFalta / 12)}a {mesesFalta % 12}m)
           </div>
         </div>
       </section>
@@ -201,6 +229,38 @@ export default async function Meta() {
             return <text key={a} x={x} y={H - 8} fontSize="10" fill="var(--ink-faint)" textAnchor="middle">{a}</text>;
           })}
         </svg>
+      </section>
+
+      {/* projetado vs real */}
+      <section className="card" style={{ marginBottom: 16 }}>
+        <div className="card-h"><h2>Projetado vs real</h2></div>
+        <div style={{ padding: '4px 0 8px' }}>
+          <div style={{ display: 'flex', padding: '6px 20px', fontSize: 11, color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>
+            <span style={{ minWidth: 74 }}>Mês</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>Projetado</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>Real</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>Diferença</span>
+          </div>
+          {compara.map((c, n) => {
+            const diff = c.real != null && c.proj != null ? c.real - c.proj : null;
+            const atual = c.idx === todayIdx;
+            return (
+              <div key={c.idx} style={{
+                display: 'flex', alignItems: 'center', padding: '7px 20px', fontSize: 12.5,
+                borderBottom: '1px solid var(--line-soft)',
+                background: atual ? 'var(--up-bg)' : n % 2 ? '#FAFBF9' : 'transparent',
+              }}>
+                <span style={{ minWidth: 74, fontWeight: 600, textTransform: 'capitalize' }}>{mesLabel(c.idx)}{atual ? ' •' : ''}</span>
+                <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: 'var(--brass)' }}>{c.proj != null ? inteiro(c.proj) : '—'}</span>
+                <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{c.real != null ? inteiro(c.real) : '—'}</span>
+                <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: diff == null ? 'var(--ink-faint)' : diff >= 0 ? 'var(--up)' : 'var(--down)' }}>
+                  {diff == null ? '—' : `${diff >= 0 ? '+' : '−'}${inteiro(Math.abs(diff))}`}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>Valores em R$, arredondados. Diferença = real − projetado (verde = acima do plano).</p>
       </section>
 
       {/* histórico mensal */}
