@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -15,6 +15,9 @@ export default function CaixaView({ resumo, categorias }) {
   const mesesDisponiveis = resumo.map((r) => r.mes);
   const inicial = mesesDisponiveis.includes(mesAtual) ? mesAtual : (mesesDisponiveis[mesesDisponiveis.length - 1] || mesAtual);
   const [mes, setMes] = useState(inicial);
+
+  const activeRef = useRef(null);
+  useEffect(() => { activeRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' }); }, [mes]);
 
   const atual = resumo.find((r) => r.mes === mes) || { mes, itens: [], saldoInicial: 0, entradasPagas: 0, saidasPagas: 0, entradasPend: 0, saidasPend: 0, saldoDisponivel: 0, aumentoMensal: 0, aumentoTotal: 0 };
 
@@ -41,7 +44,7 @@ export default function CaixaView({ resumo, categorias }) {
     window.location.reload();
   }
 
-  const itens = [...atual.itens].sort((a, b) => (b.entry_date || '').localeCompare(a.entry_date || ''));
+  const itens = [...atual.itens].sort((a, b) => (a.entry_date || '').localeCompare(b.entry_date || '') || (a.id - b.id));
 
   return (
     <div>
@@ -49,7 +52,7 @@ export default function CaixaView({ resumo, categorias }) {
       {mesesDisponiveis.length > 0 && (
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 10, marginBottom: 8 }}>
           {mesesDisponiveis.map((m) => (
-            <button key={m} onClick={() => setMes(m)} style={{
+            <button key={m} ref={m === mes ? activeRef : null} onClick={() => setMes(m)} style={{
               padding: '7px 12px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', whiteSpace: 'nowrap',
               fontSize: 12.5, fontWeight: 600, textTransform: 'capitalize',
               background: m === mes ? 'var(--forest)' : '#fff', color: m === mes ? '#fff' : 'var(--ink-soft)',
