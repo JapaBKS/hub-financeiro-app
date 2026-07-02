@@ -1,6 +1,7 @@
 import { supabaseServer } from '../../lib/supabase';
 import CaixaView from './view-client';
 import ImportarCaixa from './importar-client';
+import AlertaContas from '../alerta-contas';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -63,6 +64,7 @@ export default async function Caixa() {
         </div>
         <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
+      <AlertaContas dias={3} />
       <CaixaView resumo={resumo} categorias={categorias} bills={bills || []} />
       <ImportarCaixa />
     </div>
