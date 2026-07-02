@@ -11,6 +11,7 @@ function normalize(b) {
     day_of_month: kind === 'dia_mes' ? Math.min(31, Math.max(1, Number(b.day_of_month) || 1)) : null,
     weekday: kind === 'semanal' ? Math.min(6, Math.max(0, Number(b.weekday) || 0)) : null,
     is_variable: !!b.is_variable,
+    card_id: b.card_id ? Number(b.card_id) : null,
     active: b.active !== false,
   };
 }
