@@ -6,9 +6,10 @@ export const revalidate = 0;
 
 export default async function Fixas() {
   const sb = supabaseServer();
-  const [{ data: bills }, { data: cats }] = await Promise.all([
+  const [{ data: bills }, { data: cats }, { data: cards }] = await Promise.all([
     sb.from('recurring_bills').select('*').order('name'),
     sb.from('cashbook').select('category'),
+    sb.from('cards').select('id, name').order('name'),
   ]);
   const categorias = [...new Set((cats || []).map((c) => c.category).filter(Boolean))].sort();
 
@@ -21,7 +22,7 @@ export default async function Fixas() {
         </div>
         <a href="/caixa" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← caixa</a>
       </header>
-      <FixasClient bills={bills || []} categorias={categorias} />
+      <FixasClient bills={bills || []} categorias={categorias} cards={cards || []} />
     </div>
   );
 }
