@@ -77,6 +77,9 @@ export default function CaixaView({ resumo, categorias }) {
   return (
     <div>
       {/* navegação de meses agrupada por ano */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+        <a href="/caixa/fixas" style={{ fontSize: 12.5, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 600 }}>contas fixas →</a>
+      </div>
       {anos.length > 0 && (
         <div style={{ marginBottom: 10 }}>
           {anos.map((a) => {
