@@ -8,23 +8,35 @@ export async function POST(req) {
   if (!/^\d{4}-\d{2}$/.test(month)) return NextResponse.json({ ok: false, erro: 'Mês inválido.' }, { status: 400 });
 
   const sb = supabaseServer();
-  const [{ data: bills }, { data: existentes }] = await Promise.all([
+  const [{ data: bills }, { data: existentes }, { data: itensFatura }] = await Promise.all([
     sb.from('recurring_bills').select('*').eq('active', true),
     sb.from('cashbook').select('details, entry_date, kind').gte('entry_date', `${month}-01`).lte('entry_date', `${month}-31`),
+    sb.from('v_card_invoice_items').select('card_id, amount_pai').eq('bill_month', `${month}-01`),
   ]);
+
+  // parte do pai por cartão naquele mês (soma de amount_pai)
+  const paiPorCartao = {};
+  (itensFatura || []).forEach((it) => {
+    paiPorCartao[it.card_id] = (paiPorCartao[it.card_id] || 0) + Number(it.amount_pai || 0);
+  });
 
   const chave = (nome, data) => `${(nome || '').trim().toLowerCase()}|${(data || '').slice(0, 10)}`;
   const jaTem = new Set((existentes || []).filter((e) => e.kind === 'saida').map((e) => chave(e.details, e.entry_date)));
 
   const novos = [];
   (bills || []).forEach((bill) => {
+    // valor sugerido: se ligada a um cartão e a fatura tem parte do pai, usa ela; senão o valor padrão
+    let valor = Math.abs(Number(bill.amount) || 0);
+    if (bill.card_id != null && paiPorCartao[bill.card_id] > 0) {
+      valor = paiPorCartao[bill.card_id];
+    }
     ocorrenciasNoMes(bill, month).forEach((data) => {
       if (jaTem.has(chave(bill.name, data))) return;
       novos.push({
         entry_date: data,
         details: bill.name,
         category: bill.category || 'Outros',
-        amount: Math.abs(Number(bill.amount) || 0),
+        amount: valor,
         kind: 'saida',
         paid: false,
         needs_review: !!bill.is_variable,
