@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { ocorrenciasNoMes } from '../../lib/recurring';
 
 const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -10,7 +11,7 @@ const brDate = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
 
 const inp = { padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5, fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: '#fff', width: '100%' };
 
-export default function CaixaView({ resumo, categorias }) {
+export default function CaixaView({ resumo, categorias, bills = [] }) {
   const mesAtual = mesDe(hojeISO());
   const mesesDisponiveis = resumo.map((r) => r.mes);
   const inicial = mesesDisponiveis.includes(mesAtual) ? mesAtual : (mesesDisponiveis[mesesDisponiveis.length - 1] || mesAtual);
@@ -60,6 +61,42 @@ export default function CaixaView({ resumo, categorias }) {
       setF({ entry_date: `${proxMes}-01`, details: '', category: '', amount: '', kind: 'saida', paid: true });
       setShowForm(true);
     }
+  }
+
+  // --- contas do mês (recorrentes) ---
+  const [showContas, setShowContas] = useState(false);
+  const [linhas, setLinhas] = useState([]);
+  const [lancando, setLancando] = useState(false);
+
+  function jaLancado(nome, data) {
+    return atual.itens.some((it) => it.kind === 'saida' && (it.details || '').trim().toLowerCase() === nome.trim().toLowerCase() && (it.entry_date || '').slice(0, 10) === data);
+  }
+
+  function abrirContas() {
+    const novas = [];
+    bills.forEach((b) => {
+      ocorrenciasNoMes(b, mes).forEach((data) => {
+        if (jaLancado(b.name, data)) return;
+        novas.push({ key: `${b.id}-${data}`, name: b.name, category: b.category, date: data, amount: String(b.amount), confirmed: false, skipped: false });
+      });
+    });
+    novas.sort((a, b) => a.date.localeCompare(b.date));
+    setLinhas(novas);
+    setShowContas(true);
+  }
+
+  const visiveis = linhas.filter((l) => !l.skipped);
+  const todasConfirmadas = visiveis.length > 0 && visiveis.every((l) => l.confirmed);
+
+  async function lancarContas() {
+    const itens = visiveis.filter((l) => l.confirmed).map((l) => ({
+      entry_date: l.date, details: l.name, category: l.category, amount: Number(l.amount) || 0, kind: 'saida', paid: false,
+    }));
+    if (!itens.length) return;
+    setLancando(true);
+    const res = await fetch('/api/cashbook-import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itens }) });
+    setLancando(false);
+    if (res.ok) window.location.reload();
   }
 
   async function togglePago(it) {
@@ -164,12 +201,70 @@ export default function CaixaView({ resumo, categorias }) {
       )}
 
       {/* botão lançar */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 10 }}>
+        {bills.length > 0 && (
+          <button onClick={() => (showContas ? setShowContas(false) : abrirContas())} style={{
+            padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            border: '1px solid var(--forest)', background: showContas ? '#fff' : 'var(--brass-bg, #F3ECD9)', color: 'var(--forest-2)',
+          }}>{showContas ? 'Fechar' : '↻ contas do mês'}</button>
+        )}
         <button onClick={() => setShowForm((v) => !v)} style={{
           padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 600,
           border: '1px solid var(--forest)', background: showForm ? '#fff' : 'var(--forest)', color: showForm ? 'var(--forest-2)' : '#fff',
         }}>{showForm ? 'Fechar' : '+ lançar'}</button>
       </div>
+
+      {/* painel: contas recorrentes do mês */}
+      {showContas && (
+        <section className="card" style={{ padding: 16, marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+            <h2 style={{ margin: 0, fontSize: 15 }}>Contas de <span style={{ textTransform: 'capitalize' }}>{rotulo(mes)}</span></h2>
+            <a href="/caixa/fixas" style={{ fontSize: 11.5, color: 'var(--forest-2)', textDecoration: 'none' }}>gerenciar fixas →</a>
+          </div>
+          {visiveis.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--ink-faint)', margin: '8px 0 0' }}>
+              {linhas.length === 0 ? 'Nenhuma conta fixa pendente para este mês (ou todas já foram lançadas).' : 'Todas as contas deste mês foram puladas.'}
+            </p>
+          ) : (
+            <>
+              <p style={{ fontSize: 11.5, color: 'var(--amber)', margin: '6px 0 10px' }}>
+                Confirme o valor de cada conta (marque o ✓). O botão só libera quando todas estiverem confirmadas ou puladas.
+              </p>
+              {linhas.map((l, idx) => l.skipped ? (
+                <div key={l.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', opacity: 0.5, fontSize: 12.5 }}>
+                  <span style={{ flex: 1, textDecoration: 'line-through' }}>{l.name}</span>
+                  <button onClick={() => setLinhas((a) => a.map((x, i) => i === idx ? { ...x, skipped: false } : x))} style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--forest-2)' }}>reincluir</button>
+                </div>
+              ) : (
+                <div key={l.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid var(--line-soft)' }}>
+                  <button onClick={() => setLinhas((a) => a.map((x, i) => i === idx ? { ...x, confirmed: !x.confirmed } : x))} title="confirmar valor" style={{
+                    width: 26, height: 26, flex: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                    border: `1px solid ${l.confirmed ? 'var(--up)' : 'var(--line)'}`, background: l.confirmed ? 'var(--up)' : '#fff', color: l.confirmed ? '#fff' : 'var(--ink-faint)',
+                  }}>{l.confirmed ? '✓' : ''}</button>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{l.category} · {l.date.split('-').reverse().join('/')}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>R$</span>
+                    <input type="number" step="0.01" value={l.amount}
+                      onChange={(e) => setLinhas((a) => a.map((x, i) => i === idx ? { ...x, amount: e.target.value, confirmed: false } : x))}
+                      style={{ width: 92, padding: '7px 8px', borderRadius: 7, border: `1px solid ${l.confirmed ? 'var(--up)' : 'var(--line)'}`, fontSize: 13, textAlign: 'right', fontFamily: 'var(--font-display)', background: '#fff' }} />
+                  </div>
+                  <button onClick={() => setLinhas((a) => a.map((x, i) => i === idx ? { ...x, skipped: true, confirmed: false } : x))} title="pular esta" style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--ink-faint)' }}>pular</button>
+                </div>
+              ))}
+              <button onClick={lancarContas} disabled={!todasConfirmadas || lancando} style={{
+                width: '100%', marginTop: 12, padding: 11, borderRadius: 9, border: 0,
+                cursor: todasConfirmadas ? 'pointer' : 'not-allowed',
+                background: todasConfirmadas ? 'var(--forest)' : 'var(--line)', color: '#fff', fontSize: 14, fontWeight: 600,
+              }}>
+                {lancando ? 'Lançando…' : todasConfirmadas ? `Lançar ${visiveis.filter((l) => l.confirmed).length} contas (como pendentes)` : `Confirme todas (${visiveis.filter((l) => !l.confirmed).length} faltando)`}
+              </button>
+            </>
+          )}
+        </section>
+      )}
 
       {/* form de lançamento */}
       {showForm && (
