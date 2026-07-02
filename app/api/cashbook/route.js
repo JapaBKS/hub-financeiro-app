@@ -28,6 +28,7 @@ export async function PATCH(req) {
   if (b.amount != null) patch.amount = Math.abs(Number(b.amount) || 0);
   if (b.kind != null) patch.kind = b.kind === 'entrada' ? 'entrada' : 'saida';
   if (b.paid != null) patch.paid = !!b.paid;
+  if (b.needs_review != null) patch.needs_review = !!b.needs_review;
   const sb = supabaseServer();
   const { error } = await sb.from('cashbook').update(patch).eq('id', b.id);
   if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
