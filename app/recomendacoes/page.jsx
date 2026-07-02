@@ -19,6 +19,8 @@ export default async function Recomendacoes() {
 
   const precoDe = {};
   (precos || []).forEach((p) => { precoDe[p.ticker] = Number(p.price); });
+  const pmDe = {};
+  (pos || []).forEach((p) => { if (Number(p.preco_medio) > 0) pmDe[p.ticker] = Number(p.preco_medio); });
 
   // classes com pesos por ativo (têm vários ativos dentro)
   const GRUPOS = ['Ações BR', 'BDRS', 'FIIS'];
@@ -87,10 +89,10 @@ export default async function Recomendacoes() {
       }
     }
 
-    // preço unitário: cotação atual, senão do mapa de preços, senão PM
+    // preço unitário: cotação atual, senão do mapa de preços, senão PM (de qualquer posição)
     const precoUnit = (held && p.preco_atual != null ? Number(p.preco_atual) : null)
-      ?? precoDe[u.ticker]
-      ?? (held && Number(p.preco_medio) > 0 ? Number(p.preco_medio) : null);
+      ?? (precoDe[u.ticker] > 0 ? precoDe[u.ticker] : null)
+      ?? (pmDe[u.ticker] > 0 ? pmDe[u.ticker] : null);
     const inteiro = GRUPOS.includes(u.classe); // ações/BDRs/FIIs = cotas inteiras
     const rs = Math.abs(sugestaoRs);
     let qtd = null, umaCotaPassa = false;
@@ -159,14 +161,18 @@ export default async function Recomendacoes() {
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: i.tom === 'buy' ? 'var(--up)' : 'var(--down)' }}>
           {i.sugestaoRs >= 0 ? 'comprar ' : 'reduzir '}{brl(Math.abs(i.sugestaoRs))}
         </div>
-        {(i.acao === 'comprar' || i.acao === 'reduzir') && i.precoUnit > 0 && (
-          <div style={{ fontSize: 11, marginTop: 2, color: i.umaCotaPassa ? 'var(--amber)' : 'var(--ink-faint)' }}>
-            {i.umaCotaPassa
-              ? `1 cota = ${brl(i.precoUnit)} (acima do ajuste)`
-              : i.inteiro
-                ? `≈ ${i.qtd} cota${i.qtd === 1 ? '' : 's'} a ${brl(i.precoUnit)}`
-                : `≈ ${i.qtd.toLocaleString('pt-BR', { maximumFractionDigits: 6 })} un.`}
-          </div>
+        {(i.acao === 'comprar' || i.acao === 'reduzir') && (
+          i.precoUnit > 0 ? (
+            <div style={{ fontSize: 11, marginTop: 2, color: i.umaCotaPassa ? 'var(--amber)' : 'var(--ink-faint)' }}>
+              {i.umaCotaPassa
+                ? `1 cota = ${brl(i.precoUnit)} (acima do ajuste)`
+                : i.inteiro
+                  ? `≈ ${i.qtd} cota${i.qtd === 1 ? '' : 's'} a ${brl(i.precoUnit)}`
+                  : `≈ ${i.qtd.toLocaleString('pt-BR', { maximumFractionDigits: 6 })} un.`}
+            </div>
+          ) : (
+            <div style={{ fontSize: 11, marginTop: 2, color: 'var(--ink-faint)' }}>sem cotação p/ calcular cotas</div>
+          )
         )}
         <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>
           {pct(i.pesoReal)} de {pct(i.target)}
