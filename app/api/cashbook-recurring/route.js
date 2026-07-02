@@ -40,6 +40,7 @@ export async function POST(req) {
         kind: 'saida',
         paid: false,
         needs_review: !!bill.is_variable,
+        card_id: bill.card_id != null ? bill.card_id : null,
       });
     });
   });
