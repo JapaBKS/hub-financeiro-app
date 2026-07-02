@@ -92,6 +92,17 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
 
   // valores em conferência (edição inline das contas de valor variável)
   const [revVals, setRevVals] = useState({});
+  const [puxando, setPuxando] = useState(null);
+
+  async function puxarFatura(it) {
+    if (!it.card_id) return;
+    setPuxando(it.id);
+    const res = await fetch(`/api/fatura-pai?card_id=${it.card_id}&month=${mes}`);
+    const data = await res.json().catch(() => ({}));
+    setPuxando(null);
+    if (res.ok && data.ok) setRevVals((v) => ({ ...v, [it.id]: String(data.total_pai.toFixed(2)) }));
+  }
+
   async function confirmarValor(it) {
     const novo = revVals[it.id] != null ? Number(revVals[it.id]) : Number(it.amount);
     await fetch('/api/cashbook', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: it.id, amount: novo, needs_review: false }) });
@@ -250,9 +261,12 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
                     <div style={{ fontSize: 10.5, color: 'var(--amber)', fontWeight: 700 }}>valor a conferir</div>
                   </div>
                   <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>R$</span>
-                  <input type="number" step="0.01" defaultValue={it.amount}
+                  <input type="number" step="0.01" value={revVals[it.id] ?? String(it.amount)}
                     onChange={(e) => setRevVals((v) => ({ ...v, [it.id]: e.target.value }))}
-                    style={{ width: 90, padding: '7px 8px', borderRadius: 7, border: '1px solid var(--amber)', fontSize: 13, textAlign: 'right', fontFamily: 'var(--font-display)', background: '#fff' }} />
+                    style={{ width: 84, padding: '7px 8px', borderRadius: 7, border: '1px solid var(--amber)', fontSize: 13, textAlign: 'right', fontFamily: 'var(--font-display)', background: '#fff' }} />
+                  {it.card_id && (
+                    <button onClick={() => puxarFatura(it)} disabled={puxando === it.id} title="puxar valor da fatura" style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', fontSize: 12, color: 'var(--forest-2)' }}>{puxando === it.id ? '…' : '↻'}</button>
+                  )}
                   <button onClick={() => confirmarValor(it)} title="confirmar valor" style={{ border: 0, background: 'var(--forest)', color: '#fff', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>ok</button>
                   <button onClick={() => apagar(it)} title="apagar" style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--down)' }}>✕</button>
                 </div>
