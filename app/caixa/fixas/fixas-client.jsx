@@ -5,14 +5,14 @@ const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', c
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 const inp = { padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5, fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: '#fff', width: '100%' };
 
-const vazio = { name: '', category: '', amount: '', schedule_kind: 'dia_mes', day_of_month: '10', weekday: '5', is_variable: false };
+const vazio = { name: '', category: '', amount: '', schedule_kind: 'dia_mes', day_of_month: '10', weekday: '5', is_variable: false, card_id: '' };
 
 function agendaLabel(b) {
   if (b.schedule_kind === 'semanal') return `toda ${DIAS[b.weekday]}`;
   return `dia ${b.day_of_month} (útil)`;
 }
 
-export default function FixasClient({ bills, categorias }) {
+export default function FixasClient({ bills, categorias, cards = [] }) {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(null); // null = fechado; objeto = criando/editando
   const [salvando, setSalvando] = useState(false);
@@ -36,6 +36,7 @@ export default function FixasClient({ bills, categorias }) {
       day_of_month: String(b.day_of_month || '10'),
       weekday: String(b.weekday ?? '5'),
       is_variable: !!b.is_variable,
+      card_id: b.card_id != null ? String(b.card_id) : '',
     });
   }
 
@@ -48,6 +49,7 @@ export default function FixasClient({ bills, categorias }) {
       schedule_kind: form.schedule_kind,
       day_of_month: form.day_of_month, weekday: form.weekday,
       is_variable: form.is_variable,
+      card_id: form.card_id || null,
     };
     const res = await fetch('/api/recurring', { method: editId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     setSalvando(false);
@@ -103,6 +105,16 @@ export default function FixasClient({ bills, categorias }) {
             Valor variável (pede conferência ao lançar no mês)
           </label>
 
+          {cards.length > 0 && (
+            <label style={{ display: 'block', fontSize: 12.5, color: 'var(--ink-soft)', marginBottom: 12 }}>
+              É um cartão do Hub? (puxa a parte do pai da fatura como valor sugerido)
+              <select style={{ ...inp, marginTop: 4 }} value={form.card_id} onChange={(e) => setForm({ ...form, card_id: e.target.value, is_variable: e.target.value ? true : form.is_variable })}>
+                <option value="">Não é cartão</option>
+                {cards.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </label>
+          )}
+
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={salvar} disabled={salvando || !form.name.trim()} style={{ flex: 1, padding: 11, borderRadius: 9, border: 0, cursor: 'pointer', background: 'var(--forest)', color: '#fff', fontSize: 14, fontWeight: 600 }}>{salvando ? 'Salvando…' : editId ? 'Salvar alterações' : 'Criar conta fixa'}</button>
             <button onClick={() => setForm(null)} style={{ padding: '11px 16px', borderRadius: 9, border: '1px solid var(--line)', background: '#fff', cursor: 'pointer', fontSize: 14, color: 'var(--ink-soft)' }}>Cancelar</button>
@@ -118,7 +130,7 @@ export default function FixasClient({ bills, categorias }) {
             <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 20px', borderBottom: '1px solid var(--line-soft)', opacity: b.active ? 1 : 0.5 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{b.name}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{b.category} · {agendaLabel(b)}{b.is_variable ? ' · valor variável' : ''}{!b.active && ' · inativa'}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{b.category} · {agendaLabel(b)}{b.card_id ? ' · 💳 fatura' : b.is_variable ? ' · valor variável' : ''}{!b.active && ' · inativa'}</div>
               </div>
               <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--down)' }}>{fmt(b.amount)}</div>
               <button onClick={() => toggleAtivo(b)} title={b.active ? 'desativar' : 'ativar'} style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--ink-soft)' }}>{b.active ? '⏸' : '▶'}</button>
