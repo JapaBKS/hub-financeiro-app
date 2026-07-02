@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
@@ -16,6 +16,16 @@ export default function FixasClient({ bills, categorias }) {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(null); // null = fechado; objeto = criando/editando
   const [salvando, setSalvando] = useState(false);
+  const formRef = useRef(null);
+
+  useEffect(() => {
+    if (form) {
+      const t = setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40);
+      return () => clearTimeout(t);
+    }
+    // só quando abrir/trocar de item, não a cada tecla
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId, form == null]);
 
   function abrirNovo() { setEditId(null); setForm({ ...vazio }); }
   function abrirEdit(b) {
@@ -61,7 +71,7 @@ export default function FixasClient({ bills, categorias }) {
       </div>
 
       {form && (
-        <section className="card" style={{ padding: 16, marginBottom: 14 }}>
+        <section ref={formRef} className="card" style={{ padding: 16, marginBottom: 14 }}>
           <input style={{ ...inp, marginBottom: 8 }} placeholder="Nome (ex.: PUC, Vivo+Copel)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
             <input style={inp} placeholder="Categoria" list="cats-fixas" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
