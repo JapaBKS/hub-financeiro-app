@@ -16,10 +16,29 @@ export default function CaixaView({ resumo, categorias }) {
   const inicial = mesesDisponiveis.includes(mesAtual) ? mesAtual : (mesesDisponiveis[mesesDisponiveis.length - 1] || mesAtual);
   const [mes, setMes] = useState(inicial);
 
+  // agrupa meses por ano (asc), com anos anteriores recolhidos
+  const anoAtual = String(new Date().getFullYear());
+  const porAno = {};
+  mesesDisponiveis.forEach((m) => { const a = m.slice(0, 4); (porAno[a] = porAno[a] || []).push(m); });
+  const anos = Object.keys(porAno).sort();
+  const [anosAbertos, setAnosAbertos] = useState(() => new Set([mes.slice(0, 4), anoAtual]));
+  const toggleAno = (a) => setAnosAbertos((s) => { const n = new Set(s); n.has(a) ? n.delete(a) : n.add(a); return n; });
+
   const activeRef = useRef(null);
   useEffect(() => { activeRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' }); }, [mes]);
 
   const atual = resumo.find((r) => r.mes === mes) || { mes, itens: [], saldoInicial: 0, entradasPagas: 0, saidasPagas: 0, entradasPend: 0, saidasPend: 0, saldoDisponivel: 0, aumentoMensal: 0, aumentoTotal: 0 };
+
+  const temPendente = atual.saidasPend > 0 || atual.entradasPend > 0;
+  const temItens = atual.itens.length > 0;
+
+  // próximo mês (YYYY-MM) e se ele ainda não existe
+  const proxMes = (() => {
+    const [a, m] = mes.split('-').map(Number);
+    const d = new Date(a, m, 1); // m já é 1-based -> avança 1
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  })();
+  const proxExiste = mesesDisponiveis.includes(proxMes);
 
   // form de lançamento
   const [showForm, setShowForm] = useState(false);
@@ -32,6 +51,15 @@ export default function CaixaView({ resumo, categorias }) {
     const res = await fetch('/api/cashbook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f) });
     setSalvando(false);
     if (res.ok) window.location.reload();
+  }
+
+  function abrirProximoMes() {
+    // navega pro próximo mês; se não existir ainda, abre o form já com a data dele
+    setMes(proxMes);
+    if (!proxExiste) {
+      setF({ entry_date: `${proxMes}-01`, details: '', category: '', amount: '', kind: 'saida', paid: true });
+      setShowForm(true);
+    }
   }
 
   async function togglePago(it) {
@@ -48,16 +76,33 @@ export default function CaixaView({ resumo, categorias }) {
 
   return (
     <div>
-      {/* navegação de meses */}
-      {mesesDisponiveis.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 10, marginBottom: 8 }}>
-          {mesesDisponiveis.map((m) => (
-            <button key={m} ref={m === mes ? activeRef : null} onClick={() => setMes(m)} style={{
-              padding: '7px 12px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', whiteSpace: 'nowrap',
-              fontSize: 12.5, fontWeight: 600, textTransform: 'capitalize',
-              background: m === mes ? 'var(--forest)' : '#fff', color: m === mes ? '#fff' : 'var(--ink-soft)',
-            }}>{rotulo(m)}</button>
-          ))}
+      {/* navegação de meses agrupada por ano */}
+      {anos.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          {anos.map((a) => {
+            const aberto = anosAbertos.has(a);
+            return (
+              <div key={a} style={{ marginBottom: 4 }}>
+                <button onClick={() => toggleAno(a)} style={{
+                  display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 0, cursor: 'pointer',
+                  fontSize: 11.5, fontWeight: 700, color: 'var(--ink-faint)', letterSpacing: '.03em', padding: '2px 2px 4px',
+                }}>
+                  <span style={{ transform: aberto ? 'rotate(90deg)' : 'none', transition: 'transform .2s', fontSize: 9 }}>▸</span>{a}
+                </button>
+                {aberto && (
+                  <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6 }}>
+                    {porAno[a].map((m) => (
+                      <button key={m} ref={m === mes ? activeRef : null} onClick={() => setMes(m)} style={{
+                        padding: '7px 12px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', whiteSpace: 'nowrap',
+                        fontSize: 12.5, fontWeight: 600, textTransform: 'capitalize',
+                        background: m === mes ? 'var(--forest)' : '#fff', color: m === mes ? '#fff' : 'var(--ink-soft)',
+                      }}>{MESES[Number(m.slice(5, 7)) - 1]}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -80,7 +125,24 @@ export default function CaixaView({ resumo, categorias }) {
         </div>
       </section>
 
-      {/* pendentes */}
+      {/* status do mês: tudo pago vs pendente */}
+      {temItens && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, padding: '10px 14px', borderRadius: 10,
+          background: temPendente ? 'var(--amber-bg)' : 'var(--up-bg)',
+          border: `1px solid ${temPendente ? 'var(--amber)' : 'var(--up)'}22`,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: temPendente ? 'var(--amber)' : 'var(--up)' }}>
+            {temPendente ? '⚠ Tem lançamento pendente' : '✓ Tudo quitado neste mês'}
+          </span>
+          {!temPendente && (
+            <button onClick={abrirProximoMes} style={{
+              marginLeft: 'auto', padding: '7px 12px', borderRadius: 8, border: 0, cursor: 'pointer',
+              fontSize: 12.5, fontWeight: 600, background: 'var(--forest)', color: '#fff',
+            }}>{proxExiste ? `ir para ${rotulo(proxMes)} →` : `abrir ${rotulo(proxMes)} →`}</button>
+          )}
+        </div>
+      )}
       {(atual.saidasPend > 0 || atual.entradasPend > 0) && (
         <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
           {atual.saidasPend > 0 && (
