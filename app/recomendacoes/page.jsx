@@ -9,12 +9,16 @@ const TOL = 0.03;
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }] = await Promise.all([
+  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }, { data: precos }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('assets').select('ticker, target_pct, asset_classes(name, target_pct)').gt('target_pct', 0),
     sb.from('v_class_allocation').select('valor'),
     sb.from('asset_classes').select('name, target_pct'),
+    sb.from('prices').select('ticker, price'),
   ]);
+
+  const precoDe = {};
+  (precos || []).forEach((p) => { precoDe[p.ticker] = Number(p.price); });
 
   // classes com pesos por ativo (têm vários ativos dentro)
   const GRUPOS = ['Ações BR', 'BDRS', 'FIIS'];
@@ -83,7 +87,23 @@ export default async function Recomendacoes() {
       }
     }
 
-    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto: d, acao, tom, motivo, forca, nova, atencao, p });
+    // preço unitário: cotação atual, senão do mapa de preços, senão PM
+    const precoUnit = (held && p.preco_atual != null ? Number(p.preco_atual) : null)
+      ?? precoDe[u.ticker]
+      ?? (held && Number(p.preco_medio) > 0 ? Number(p.preco_medio) : null);
+    const inteiro = GRUPOS.includes(u.classe); // ações/BDRs/FIIs = cotas inteiras
+    const rs = Math.abs(sugestaoRs);
+    let qtd = null, umaCotaPassa = false;
+    if (precoUnit > 0 && (acao === 'comprar' || acao === 'reduzir')) {
+      if (inteiro) {
+        qtd = Math.floor(rs / precoUnit);
+        umaCotaPassa = qtd < 1 && precoUnit > rs;
+      } else {
+        qtd = rs / precoUnit; // cripto: fracionário
+      }
+    }
+
+    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto: d, acao, tom, motivo, forca, nova, atencao, p, precoUnit, qtd, inteiro, umaCotaPassa });
   }
 
   // novas primeiro, depois as "limpas", depois as de atenção; alfabético dentro de cada grupo
@@ -136,8 +156,17 @@ export default async function Recomendacoes() {
       </div>
       <div style={{ textAlign: 'right' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: i.tom === 'buy' ? 'var(--up)' : 'var(--down)' }}>
-          {i.sugestaoRs >= 0 ? 'comprar ' : 'reduzir '}{brlShort(Math.abs(i.sugestaoRs))}
+          {i.sugestaoRs >= 0 ? 'comprar ' : 'reduzir '}{brl(Math.abs(i.sugestaoRs))}
         </div>
+        {(i.acao === 'comprar' || i.acao === 'reduzir') && i.precoUnit > 0 && (
+          <div style={{ fontSize: 11, marginTop: 2, color: i.umaCotaPassa ? 'var(--amber)' : 'var(--ink-faint)' }}>
+            {i.umaCotaPassa
+              ? `1 cota = ${brl(i.precoUnit)} (acima do ajuste)`
+              : i.inteiro
+                ? `≈ ${i.qtd} cota${i.qtd === 1 ? '' : 's'} a ${brl(i.precoUnit)}`
+                : `≈ ${i.qtd.toLocaleString('pt-BR', { maximumFractionDigits: 6 })} un.`}
+          </div>
+        )}
         <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>
           {pct(i.pesoReal)} de {pct(i.target)}
         </div>
