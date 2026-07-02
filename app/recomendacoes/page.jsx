@@ -107,7 +107,8 @@ export default async function Recomendacoes() {
   }
 
   // novas primeiro, depois as "limpas", depois as de atenção; alfabético dentro de cada grupo
-  const comprar = itens.filter((i) => i.acao === 'comprar')
+  // se nem 1 cota cabe no ajuste, não conta como compra
+  const comprar = itens.filter((i) => i.acao === 'comprar' && !i.umaCotaPassa)
     .sort((a, b) => (b.nova - a.nova) || (a.atencao - b.atencao) || a.ticker.localeCompare(b.ticker));
   const reduzir = itens.filter((i) => i.acao === 'reduzir')
     .sort((a, b) => (a.atencao - b.atencao) || a.ticker.localeCompare(b.ticker));
