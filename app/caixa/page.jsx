@@ -7,7 +7,10 @@ export const revalidate = 0;
 
 export default async function Caixa() {
   const sb = supabaseServer();
-  const { data: rows } = await sb.from('cashbook').select('*').order('entry_date', { ascending: true });
+  const [{ data: rows }, { data: bills }] = await Promise.all([
+    sb.from('cashbook').select('*').order('entry_date', { ascending: true }),
+    sb.from('recurring_bills').select('*').eq('active', true).order('name'),
+  ]);
 
   // agrupa por mês (YYYY-MM) e calcula saldo acumulado (só pagos entram no saldo)
   const porMes = {};
@@ -60,7 +63,7 @@ export default async function Caixa() {
         </div>
         <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
-      <CaixaView resumo={resumo} categorias={categorias} />
+      <CaixaView resumo={resumo} categorias={categorias} bills={bills || []} />
       <ImportarCaixa />
     </div>
   );
