@@ -10,6 +10,7 @@ function normalize(b) {
     schedule_kind: kind,
     day_of_month: kind === 'dia_mes' ? Math.min(31, Math.max(1, Number(b.day_of_month) || 1)) : null,
     weekday: kind === 'semanal' ? Math.min(6, Math.max(0, Number(b.weekday) || 0)) : null,
+    is_variable: !!b.is_variable,
     active: b.active !== false,
   };
 }
