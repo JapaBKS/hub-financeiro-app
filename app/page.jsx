@@ -1,6 +1,7 @@
 import { supabaseServer } from '../lib/supabase';
 import { brl, brlShort, pct } from '../lib/format';
 import CardOrigem from './card-origem-client';
+import AlertaContas from './alerta-contas';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -133,6 +134,8 @@ export default async function Home() {
         </div>
         <div className="clock">cotações · {attLabel}<br /><b>{hoje}</b></div>
       </header>
+
+      <AlertaContas dias={3} compact />
 
       <section className="card hero">
         <div className="hero-top">
