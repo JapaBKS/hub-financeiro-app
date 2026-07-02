@@ -156,7 +156,7 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
       </section>
 
       {/* GRID: lançamentos | lateral */}
-      <div className="grid">
+      <div className="grid-wide">
         {/* coluna principal: ações + lista */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 10 }}>
