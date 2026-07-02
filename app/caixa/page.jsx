@@ -56,7 +56,7 @@ export default async function Caixa() {
   const categorias = [...new Set((rows || []).map((r) => r.category).filter(Boolean))].sort();
 
   return (
-    <div className="wrap" style={{ maxWidth: 720 }}>
+    <div className="wrap">
       <header className="topbar">
         <div className="brand">
           <div className="mark" />
