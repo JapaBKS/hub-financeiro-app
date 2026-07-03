@@ -45,7 +45,7 @@ function parse(raw) {
   return out;
 }
 
-const ta = { width: '100%', minHeight: 120, padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)', fontSize: 12.5, fontFamily: 'monospace', boxSizing: 'border-box', background: '#fff', resize: 'vertical' };
+const ta = { width: '100%', minHeight: 120, padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)', fontSize: 12.5, fontFamily: 'monospace', boxSizing: 'border-box', background: 'var(--surface)', resize: 'vertical' };
 
 export default function ImportarCaixa() {
   const [texto, setTexto] = useState('');
