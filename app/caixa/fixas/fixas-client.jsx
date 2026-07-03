@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 
 const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
-const inp = { padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5, fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: '#fff', width: '100%' };
+const inp = { padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5, fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%' };
 
 const vazio = { name: '', category: '', amount: '', schedule_kind: 'dia_mes', day_of_month: '10', weekday: '5', is_variable: false, card_id: '' };
 
@@ -82,8 +82,8 @@ export default function FixasClient({ bills, categorias, cards = [] }) {
           <datalist id="cats-fixas">{categorias.map((c) => <option key={c} value={c} />)}</datalist>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <button onClick={() => setForm({ ...form, schedule_kind: 'dia_mes' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12.5, border: '1px solid var(--line)', background: form.schedule_kind === 'dia_mes' ? 'var(--brass-bg, #F3ECD9)' : '#fff', color: form.schedule_kind === 'dia_mes' ? 'var(--brass)' : 'var(--ink-soft)' }}>Dia do mês</button>
-            <button onClick={() => setForm({ ...form, schedule_kind: 'semanal' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12.5, border: '1px solid var(--line)', background: form.schedule_kind === 'semanal' ? 'var(--brass-bg, #F3ECD9)' : '#fff', color: form.schedule_kind === 'semanal' ? 'var(--brass)' : 'var(--ink-soft)' }}>Toda semana</button>
+            <button onClick={() => setForm({ ...form, schedule_kind: 'dia_mes' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12.5, border: '1px solid var(--line)', background: form.schedule_kind === 'dia_mes' ? 'var(--brass-bg, #F3ECD9)' : 'var(--surface)', color: form.schedule_kind === 'dia_mes' ? 'var(--brass)' : 'var(--ink-soft)' }}>Dia do mês</button>
+            <button onClick={() => setForm({ ...form, schedule_kind: 'semanal' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12.5, border: '1px solid var(--line)', background: form.schedule_kind === 'semanal' ? 'var(--brass-bg, #F3ECD9)' : 'var(--surface)', color: form.schedule_kind === 'semanal' ? 'var(--brass)' : 'var(--ink-soft)' }}>Toda semana</button>
           </div>
 
           {form.schedule_kind === 'dia_mes' ? (
@@ -117,7 +117,7 @@ export default function FixasClient({ bills, categorias, cards = [] }) {
 
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={salvar} disabled={salvando || !form.name.trim()} style={{ flex: 1, padding: 11, borderRadius: 9, border: 0, cursor: 'pointer', background: 'var(--forest)', color: '#fff', fontSize: 14, fontWeight: 600 }}>{salvando ? 'Salvando…' : editId ? 'Salvar alterações' : 'Criar conta fixa'}</button>
-            <button onClick={() => setForm(null)} style={{ padding: '11px 16px', borderRadius: 9, border: '1px solid var(--line)', background: '#fff', cursor: 'pointer', fontSize: 14, color: 'var(--ink-soft)' }}>Cancelar</button>
+            <button onClick={() => setForm(null)} style={{ padding: '11px 16px', borderRadius: 9, border: '1px solid var(--line)', background: 'var(--surface)', cursor: 'pointer', fontSize: 14, color: 'var(--ink-soft)' }}>Cancelar</button>
           </div>
         </section>
       )}
@@ -133,9 +133,9 @@ export default function FixasClient({ bills, categorias, cards = [] }) {
                 <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{b.category} · {agendaLabel(b)}{b.card_id ? ' · 💳 fatura' : b.is_variable ? ' · valor variável' : ''}{!b.active && ' · inativa'}</div>
               </div>
               <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--down)' }}>{fmt(b.amount)}</div>
-              <button onClick={() => toggleAtivo(b)} title={b.active ? 'desativar' : 'ativar'} style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--ink-soft)' }}>{b.active ? '⏸' : '▶'}</button>
-              <button onClick={() => abrirEdit(b)} style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--forest-2)' }}>editar</button>
-              <button onClick={() => apagar(b)} style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--down)' }}>✕</button>
+              <button onClick={() => toggleAtivo(b)} title={b.active ? 'desativar' : 'ativar'} style={{ border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--ink-soft)' }}>{b.active ? '⏸' : '▶'}</button>
+              <button onClick={() => abrirEdit(b)} style={{ border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--forest-2)' }}>editar</button>
+              <button onClick={() => apagar(b)} style={{ border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--down)' }}>✕</button>
             </div>
           ))}
         </div>
