@@ -8,7 +8,7 @@ const hojeISO = () => new Date().toISOString().slice(0, 10);
 const mesDe = (iso) => (iso || '').slice(0, 7);
 const brDate = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
 
-const inp = { padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5, fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: '#fff', width: '100%' };
+const inp = { padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5, fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%' };
 
 export default function CaixaView({ resumo, categorias, bills = [] }) {
   const mesAtual = mesDe(hojeISO());
@@ -168,15 +168,15 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
             )}
             <button onClick={() => setShowForm((v) => !v)} style={{
               padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 600,
-              border: '1px solid var(--forest)', background: showForm ? '#fff' : 'var(--forest)', color: showForm ? 'var(--forest-2)' : '#fff',
+              border: '1px solid var(--forest)', background: showForm ? 'var(--surface)' : 'var(--forest)', color: showForm ? 'var(--forest-2)' : '#fff',
             }}>{showForm ? 'Fechar' : '+ lançar'}</button>
           </div>
 
           {showForm && (
             <section className="card" style={{ padding: 16, marginBottom: 12 }}>
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                <button onClick={() => setF({ ...f, kind: 'entrada' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, border: '1px solid var(--line)', background: f.kind === 'entrada' ? 'var(--up-bg)' : '#fff', color: f.kind === 'entrada' ? 'var(--up)' : 'var(--ink-soft)' }}>Entrada</button>
-                <button onClick={() => setF({ ...f, kind: 'saida' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, border: '1px solid var(--line)', background: f.kind === 'saida' ? 'var(--down-bg)' : '#fff', color: f.kind === 'saida' ? 'var(--down)' : 'var(--ink-soft)' }}>Saída</button>
+                <button onClick={() => setF({ ...f, kind: 'entrada' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, border: '1px solid var(--line)', background: f.kind === 'entrada' ? 'var(--up-bg)' : 'var(--surface)', color: f.kind === 'entrada' ? 'var(--up)' : 'var(--ink-soft)' }}>Entrada</button>
+                <button onClick={() => setF({ ...f, kind: 'saida' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, border: '1px solid var(--line)', background: f.kind === 'saida' ? 'var(--down-bg)' : 'var(--surface)', color: f.kind === 'saida' ? 'var(--down)' : 'var(--ink-soft)' }}>Saída</button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                 <input style={inp} type="date" value={f.entry_date} onChange={(e) => setF({ ...f, entry_date: e.target.value })} />
@@ -209,12 +209,12 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
                       <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>R$</span>
                       <input type="number" step="0.01" value={revVals[it.id] ?? String(it.amount)}
                         onChange={(e) => setRevVals((v) => ({ ...v, [it.id]: e.target.value }))}
-                        style={{ width: 84, padding: '7px 8px', borderRadius: 7, border: '1px solid var(--amber)', fontSize: 13, textAlign: 'right', fontFamily: 'var(--font-display)', background: '#fff' }} />
+                        style={{ width: 84, padding: '7px 8px', borderRadius: 7, border: '1px solid var(--amber)', fontSize: 13, textAlign: 'right', fontFamily: 'var(--font-display)', background: 'var(--surface)' }} />
                       {it.card_id && (
-                        <button onClick={() => puxarFatura(it)} disabled={puxando === it.id} title="puxar valor da fatura" style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', fontSize: 12, color: 'var(--forest-2)' }}>{puxando === it.id ? '…' : '↻'}</button>
+                        <button onClick={() => puxarFatura(it)} disabled={puxando === it.id} title="puxar valor da fatura" style={{ border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', fontSize: 12, color: 'var(--forest-2)' }}>{puxando === it.id ? '…' : '↻'}</button>
                       )}
                       <button onClick={() => confirmarValor(it)} title="confirmar valor" style={{ border: 0, background: 'var(--forest)', color: '#fff', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>ok</button>
-                      <button onClick={() => apagar(it)} title="apagar" style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--down)' }}>✕</button>
+                      <button onClick={() => apagar(it)} title="apagar" style={{ border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--down)' }}>✕</button>
                     </div>
                   );
                 }
@@ -226,8 +226,8 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
                       <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{it.category}{!it.paid && <span style={{ color: 'var(--amber)', fontWeight: 600 }}> · pendente</span>}</div>
                     </div>
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: entrada ? 'var(--up)' : 'var(--down)' }}>{entrada ? '+' : '−'}{fmt(it.amount)}</div>
-                    <button onClick={() => togglePago(it)} title={it.paid ? 'marcar pendente' : 'marcar pago'} style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--ink-soft)' }}>{it.paid ? '✓' : '○'}</button>
-                    <button onClick={() => apagar(it)} title="apagar" style={{ border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--down)' }}>✕</button>
+                    <button onClick={() => togglePago(it)} title={it.paid ? 'marcar pendente' : 'marcar pago'} style={{ border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--ink-soft)' }}>{it.paid ? '✓' : '○'}</button>
+                    <button onClick={() => apagar(it)} title="apagar" style={{ border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--down)' }}>✕</button>
                   </div>
                 );
               })}
@@ -255,7 +255,7 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
                         <button key={m} ref={m === mes ? activeRef : null} onClick={() => setMes(m)} style={{
                           padding: '6px 10px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', whiteSpace: 'nowrap',
                           fontSize: 12, fontWeight: 600, textTransform: 'capitalize',
-                          background: m === mes ? 'var(--forest)' : '#fff', color: m === mes ? '#fff' : 'var(--ink-soft)',
+                          background: m === mes ? 'var(--forest)' : 'var(--surface)', color: m === mes ? '#fff' : 'var(--ink-soft)',
                         }}>{MESES[Number(m.slice(5, 7)) - 1]}</button>
                       ))}
                     </div>
