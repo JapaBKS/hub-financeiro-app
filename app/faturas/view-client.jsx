@@ -6,7 +6,7 @@ const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', curren
 const CATEGORIAS = ['Comida', 'Mercado', 'Lazer', 'Transporte', 'Saúde', 'Casa', 'Assinaturas', 'Roupas', 'Educação', 'Presentes', 'Outros'];
 const inpF = {
   padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: '#fff', width: '100%',
+  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%',
 };
 
 const CORES = ['#2E5E4E', '#B98A3C', '#6FA287', '#C9A24B', '#3E7C63', '#8C6BB1', '#D98C5F', '#5B8DB8', '#A8B545', '#9C5A5A', '#7A7A7A'];
@@ -193,7 +193,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
         <button onClick={() => setMostrarForm((v) => !v)} style={{
           padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 600,
-          border: '1px solid var(--forest)', background: mostrarForm ? '#fff' : 'var(--forest)',
+          border: '1px solid var(--forest)', background: mostrarForm ? 'var(--surface)' : 'var(--forest)',
           color: mostrarForm ? 'var(--forest-2)' : '#fff',
         }}>{mostrarForm ? 'Fechar' : '+ lançar compra'}</button>
       </div>
@@ -225,7 +225,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
           <button key={c.id} onClick={() => trocarCartao(c.id)} style={{
             padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600,
             border: '1px solid ' + (c.id === cardId ? 'var(--forest)' : 'var(--line)'),
-            background: c.id === cardId ? 'var(--forest)' : '#fff',
+            background: c.id === cardId ? 'var(--forest)' : 'var(--surface)',
             color: c.id === cardId ? '#fff' : 'var(--ink-soft)',
           }}>{c.name}</button>
         ))}
@@ -247,7 +247,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                 <button key={m} onClick={() => setMes(m)} style={{
                   flex: 'none', padding: '8px 12px', borderRadius: 9, cursor: 'pointer', textAlign: 'center',
                   border: '1px solid ' + (ativo ? 'var(--forest)' : 'var(--line)'),
-                  background: ativo ? 'var(--forest)' : '#fff', color: ativo ? '#fff' : 'var(--ink-soft)',
+                  background: ativo ? 'var(--forest)' : 'var(--surface)', color: ativo ? '#fff' : 'var(--ink-soft)',
                   minWidth: 76,
                 }}>
                   <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize' }}>{rotuloMes(m)}</div>
@@ -304,7 +304,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                 const editando = editKey === itKey(it);
                 if (editando) {
                   return (
-                    <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-soft)', background: '#FAFBF9' }}>
+                    <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-soft)', background: 'var(--surface-2)' }}>
                       <input style={{ ...inpF, marginBottom: 8 }} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="Descrição" />
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                         <select style={inpF} value={editForm.categoria} onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}>
@@ -315,7 +315,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                             <button type="button" key={v} onClick={() => setEditForm({ ...editForm, pagador: v })} style={{
                               flex: 1, padding: '7px 2px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
                               border: '1px solid ' + (editForm.pagador === v ? 'var(--forest)' : 'var(--line)'),
-                              background: editForm.pagador === v ? 'var(--forest)' : '#fff', color: editForm.pagador === v ? '#fff' : 'var(--ink-soft)',
+                              background: editForm.pagador === v ? 'var(--forest)' : 'var(--surface)', color: editForm.pagador === v ? '#fff' : 'var(--ink-soft)',
                             }}>{l}</button>
                           ))}
                         </div>
@@ -329,8 +329,8 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                       </div>
                       <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
                         <button onClick={() => salvarItem(it)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: 0, cursor: 'pointer', background: 'var(--forest)', color: '#fff', fontSize: 13, fontWeight: 600 }}>Salvar</button>
-                        <button onClick={() => setEditKey(null)} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', background: '#fff', color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600 }}>Cancelar</button>
-                        <button onClick={() => apagarCompra(it)} title="apagar compra inteira" style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', background: '#fff', color: 'var(--down)', fontSize: 13, fontWeight: 600 }}>Apagar</button>
+                        <button onClick={() => setEditKey(null)} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', background: 'var(--surface)', color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600 }}>Cancelar</button>
+                        <button onClick={() => apagarCompra(it)} title="apagar compra inteira" style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', background: 'var(--surface)', color: 'var(--down)', fontSize: 13, fontWeight: 600 }}>Apagar</button>
                       </div>
                     </div>
                   );
