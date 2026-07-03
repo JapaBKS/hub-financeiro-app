@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import ThemeToggle from './theme-toggle';
 
 const links = [
   { href: '/', label: 'Visão geral' },
@@ -22,7 +23,7 @@ export default function Nav() {
   if (path === '/login') return null;
 
   return (
-    <nav style={{ maxWidth: 1160, margin: '0 auto 4px', padding: '0 4px 14px', display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+    <nav style={{ maxWidth: 1160, margin: '0 auto 4px', padding: '0 4px 14px', display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
       {links.map((l) => {
         const ativo = l.href === '/' ? path === '/' : path.startsWith(l.href);
         return (
@@ -43,6 +44,7 @@ export default function Nav() {
           </Link>
         );
       })}
+      <div style={{ marginLeft: 'auto' }}><ThemeToggle /></div>
     </nav>
   );
 }
