@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 const inputStyle = {
   width: '100%', padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
-  fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', background: '#fff',
+  fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', background: 'var(--surface)',
 };
 const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '14px 0 6px' };
 
@@ -78,7 +78,7 @@ export default function FormNegociacao({ assets, classes }) {
           <button type="button" key={s} onClick={() => setSide(s)} style={{
             flex: 1, padding: '10px', borderRadius: 9, cursor: 'pointer', fontSize: 14, fontWeight: 600,
             border: '1px solid ' + (side === s ? 'var(--forest)' : 'var(--line)'),
-            background: side === s ? 'var(--forest)' : '#fff',
+            background: side === s ? 'var(--forest)' : 'var(--surface)',
             color: side === s ? '#fff' : 'var(--ink-soft)',
           }}>{s === 'compra' ? 'Compra' : 'Venda'}</button>
         ))}
