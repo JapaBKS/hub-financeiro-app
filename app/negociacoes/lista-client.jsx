@@ -5,7 +5,7 @@ const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', curren
 const fmtData = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
 const inp = {
   padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: '#fff', width: '100%',
+  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%',
 };
 
 export default function ListaNegociacoes({ trades }) {
@@ -75,7 +75,7 @@ export default function ListaNegociacoes({ trades }) {
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => salvar(t.id)} disabled={busy === t.id} style={{ flex: 1, padding: '8px', borderRadius: 8, border: 0, cursor: 'pointer', background: 'var(--forest)', color: '#fff', fontSize: 13, fontWeight: 600 }}>{busy === t.id ? 'Salvando…' : 'Salvar'}</button>
-                  <button onClick={() => setEditId(null)} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', background: '#fff', color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600 }}>Cancelar</button>
+                  <button onClick={() => setEditId(null)} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', background: 'var(--surface)', color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600 }}>Cancelar</button>
                 </div>
               </div>
             );
