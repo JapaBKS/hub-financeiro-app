@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 const inp = {
   width: 78, padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 14,
-  fontFamily: 'var(--font-display)', boxSizing: 'border-box', background: '#fff', textAlign: 'right',
+  fontFamily: 'var(--font-display)', boxSizing: 'border-box', background: 'var(--surface)', textAlign: 'right',
 };
 
 export default function MetasClasse({ classes }) {
