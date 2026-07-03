@@ -26,7 +26,7 @@ export default function Login() {
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#EBEEE8' }}>
       <form onSubmit={entrar} style={{
-        background: '#fff', padding: '32px', borderRadius: 16, width: 320,
+        background: 'var(--surface)', padding: '32px', borderRadius: 16, width: 320,
         boxShadow: '0 8px 24px -12px rgba(21,37,29,.2)', fontFamily: 'system-ui',
       }}>
         <h1 style={{ fontSize: 18, margin: '0 0 4px', color: '#15251D' }}>Hub Financeiro</h1>
