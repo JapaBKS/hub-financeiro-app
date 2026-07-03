@@ -5,7 +5,7 @@ const CATEGORIAS = ['Comida', 'Mercado', 'Lazer', 'Transporte', 'Saúde', 'Casa'
 
 const inputStyle = {
   width: '100%', padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
-  fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', background: '#fff',
+  fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', background: 'var(--surface)',
 };
 const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '14px 0 6px' };
 
@@ -86,7 +86,7 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
               <button type="button" key={v} onClick={() => setPagador(v)} style={{
                 flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
                 border: '1px solid ' + (pagador === v ? 'var(--forest)' : 'var(--line)'),
-                background: pagador === v ? 'var(--forest)' : '#fff', color: pagador === v ? '#fff' : 'var(--ink-soft)',
+                background: pagador === v ? 'var(--forest)' : 'var(--surface)', color: pagador === v ? '#fff' : 'var(--ink-soft)',
               }}>{l}</button>
             ))}
           </div>
