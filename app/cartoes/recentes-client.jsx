@@ -6,7 +6,7 @@ const CATEGORIAS = ['Comida', 'Mercado', 'Lazer', 'Transporte', 'Saúde', 'Casa'
 const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const inp = {
   padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: '#fff', width: '100%',
+  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%',
 };
 
 export default function Recentes({ purchases, cards }) {
@@ -109,7 +109,7 @@ export default function Recentes({ purchases, cards }) {
                       <button type="button" key={v} onClick={() => setForm({ ...form, pagador: v })} style={{
                         flex: 1, padding: '7px 2px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
                         border: '1px solid ' + (form.pagador === v ? 'var(--forest)' : 'var(--line)'),
-                        background: form.pagador === v ? 'var(--forest)' : '#fff', color: form.pagador === v ? '#fff' : 'var(--ink-soft)',
+                        background: form.pagador === v ? 'var(--forest)' : 'var(--surface)', color: form.pagador === v ? '#fff' : 'var(--ink-soft)',
                       }}>{l}</button>
                     ))}
                   </div>
@@ -131,7 +131,7 @@ export default function Recentes({ purchases, cards }) {
                   }}>{busy === p.id ? 'Salvando…' : 'Salvar'}</button>
                   <button onClick={() => setEditId(null)} style={{
                     padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer',
-                    background: '#fff', color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600,
+                    background: 'var(--surface)', color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600,
                   }}>Cancelar</button>
                 </div>
               </div>
