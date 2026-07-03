@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 const inp = {
   padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 14,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: '#fff',
+  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)',
 };
 
 export default function AlvosClient({ grupos: gruposIniciais }) {
@@ -58,7 +58,7 @@ export default function AlvosClient({ grupos: gruposIniciais }) {
           <button key={x.class_id} onClick={() => { setAba(i); setMsg(''); }} style={{
             padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600,
             border: '1px solid ' + (i === aba ? 'var(--forest)' : 'var(--line)'),
-            background: i === aba ? 'var(--forest)' : '#fff', color: i === aba ? '#fff' : 'var(--ink-soft)',
+            background: i === aba ? 'var(--forest)' : 'var(--surface)', color: i === aba ? '#fff' : 'var(--ink-soft)',
           }}>{x.name}</button>
         ))}
       </div>
@@ -80,7 +80,7 @@ export default function AlvosClient({ grupos: gruposIniciais }) {
         ))}
         {g.itens.length === 0 && <div style={{ padding: 16, fontSize: 13, color: 'var(--ink-faint)' }}>Nenhum ativo neste grupo. Adicione abaixo.</div>}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#FAFBF9' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: 'var(--surface-2)' }}>
           <input style={{ ...inp, flex: 1 }} value={novoTicker} onChange={(e) => setNovoTicker(e.target.value)} placeholder="Ticker (ex.: PETR4)" />
           <input style={{ ...inp, width: 90, textAlign: 'right' }} type="number" step="any" value={novoPct} onChange={(e) => setNovoPct(e.target.value)} placeholder="%" />
           <button onClick={adicionar} style={{ padding: '8px 12px', borderRadius: 8, border: 0, background: 'var(--forest-2)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+</button>
