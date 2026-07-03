@@ -4,7 +4,7 @@ import { useState } from 'react';
 const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const inp = {
   padding: '9px 11px', borderRadius: 9, border: '1px solid var(--line)', fontSize: 14,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: '#fff', width: '100%',
+  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%',
 };
 
 export default function SaldosClient({ holdings, classes }) {
@@ -77,7 +77,7 @@ export default function SaldosClient({ holdings, classes }) {
               />
               <button onClick={() => salvar(h.id)} disabled={!mudou || busy === h.id} style={{
                 padding: '9px 13px', borderRadius: 9, border: 0, cursor: mudou ? 'pointer' : 'default',
-                background: mudou ? 'var(--forest)' : '#E7EAE4', color: mudou ? '#fff' : 'var(--ink-faint)',
+                background: mudou ? 'var(--forest)' : 'var(--track)', color: mudou ? '#fff' : 'var(--ink-faint)',
                 fontSize: 13, fontWeight: 600,
               }}>{busy === h.id ? '…' : 'Salvar'}</button>
               <button onClick={() => apagar(h.id)} disabled={busy === h.id} title="Remover" style={{
