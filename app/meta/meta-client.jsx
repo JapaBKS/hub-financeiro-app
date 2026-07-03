@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 const inp = {
   width: '100%', padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
-  fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', background: '#fff',
+  fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', background: 'var(--surface)',
 };
 const lab = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '12px 0 6px' };
 
@@ -63,7 +63,7 @@ export default function MetaForm({ goal }) {
       <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--line-soft)' }}>
         <button type="button" onClick={salvarFoto} style={{
           padding: '9px 14px', borderRadius: 9, border: '1px solid var(--line)', cursor: 'pointer',
-          background: '#fff', color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600,
+          background: 'var(--surface)', color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600,
         }}>Salvar foto de hoje</button>
         <span style={{ fontSize: 12, color: 'var(--ink-faint)', marginLeft: 10 }}>
           {snapMsg || 'grava o patrimônio do mês atual manualmente'}
