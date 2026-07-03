@@ -208,7 +208,7 @@ export default async function Meta() {
         </div>
 
         {/* barra de progresso */}
-        <div style={{ marginTop: 16, height: 8, background: '#E8ECE4', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{ marginTop: 16, height: 8, background: 'var(--track)', borderRadius: 99, overflow: 'hidden' }}>
           <div style={{ width: `${Math.min(100, progresso * 100)}%`, height: '100%', background: 'var(--forest)' }} />
         </div>
         <div style={{ fontSize: 12, color: 'var(--ink-faint)', marginTop: 6 }}>{pct(progresso)} da meta</div>
@@ -310,7 +310,7 @@ export default async function Meta() {
               <div key={c.idx} style={{
                 display: 'flex', alignItems: 'center', padding: '7px 20px', fontSize: 12.5,
                 borderBottom: '1px solid var(--line-soft)',
-                background: atual ? 'var(--up-bg)' : n % 2 ? '#FAFBF9' : 'transparent',
+                background: atual ? 'var(--up-bg)' : n % 2 ? 'var(--surface-2)' : 'transparent',
               }}>
                 <span style={{ minWidth: 74, fontWeight: 600, textTransform: 'capitalize' }}>{mesLabel(c.idx)}{atual ? ' •' : ''}</span>
                 <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: 'var(--brass)' }}>{c.proj != null ? valor(c.proj) : '—'}</span>
@@ -381,8 +381,8 @@ export default async function Meta() {
                   const total = colunas.reduce((s, c) => s + (linha[c] || 0), 0);
                   const atual = m === todayIdx;
                   return (
-                    <tr key={m} style={{ background: atual ? 'var(--up-bg)' : n % 2 ? '#FAFBF9' : 'transparent' }}>
-                      <td style={{ position: 'sticky', left: 0, background: atual ? 'var(--up-bg)' : n % 2 ? '#FAFBF9' : '#fff', textAlign: 'left', padding: '7px 14px', fontWeight: 600, textTransform: 'capitalize', borderBottom: '1px solid var(--line-soft)' }}>
+                    <tr key={m} style={{ background: atual ? 'var(--up-bg)' : n % 2 ? 'var(--surface-2)' : 'transparent' }}>
+                      <td style={{ position: 'sticky', left: 0, background: atual ? 'var(--up-bg)' : n % 2 ? 'var(--surface-2)' : 'var(--surface)', textAlign: 'left', padding: '7px 14px', fontWeight: 600, textTransform: 'capitalize', borderBottom: '1px solid var(--line-soft)' }}>
                         {mesLabel(m)}{atual ? ' •' : ''}
                       </td>
                       {colunas.map((c) => (
