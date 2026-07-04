@@ -75,7 +75,7 @@ export default function FixasClient({ bills, categorias, cards = [] }) {
       {form && (
         <section ref={formRef} className="card" style={{ padding: 16, marginBottom: 14 }}>
           <input style={{ ...inp, marginBottom: 8 }} placeholder="Nome (ex.: PUC, Vivo+Copel)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+          <div className="grid2" style={{ marginBottom: 8 }}>
             <input style={inp} placeholder="Categoria" list="cats-fixas" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
             <input style={inp} type="number" step="0.01" placeholder="Valor sugerido" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
           </div>
