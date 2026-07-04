@@ -25,6 +25,9 @@
 html{transition:background .2s}
 body,.card,input,select,textarea,button{transition:background .2s,border-color .2s,color .2s}
 input,select,textarea{color:var(--ink);min-width:0;max-width:100%;box-sizing:border-box}
+input[type="date"],input[type="month"]{-webkit-appearance:none;appearance:none}
+.acoes-row{display:flex;gap:8px;justify-content:flex-end}
+@media(max-width:560px){.acoes-row{justify-content:stretch}.acoes-row>button{flex:1}}
 input::placeholder,textarea::placeholder{color:var(--ink-faint)}
 option{background:var(--surface);color:var(--ink)}
 *{box-sizing:border-box}
