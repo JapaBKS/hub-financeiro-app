@@ -23,7 +23,7 @@ function Item({ it }) {
         <b style={{ fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{brl(it.valor)}</b>
       </div>
       {temSub && open && (
-        <div style={{ background: '#FAFBF9' }}>
+        <div style={{ background: 'var(--surface-2)' }}>
           {it.sub.map((s, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 20px 7px 38px', fontSize: 12.5, borderTop: '1px solid var(--line-soft)' }}>
               <span style={{ color: 'var(--ink-faint)' }}>{s.label}</span>
