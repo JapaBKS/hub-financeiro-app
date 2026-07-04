@@ -62,6 +62,13 @@ body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webk
 .grid-wide{display:grid;grid-template-columns:2.4fr 1fr;gap:18px}
 @media(max-width:900px){.grid{grid-template-columns:1fr}}
 @media(max-width:900px){.grid-wide{grid-template-columns:1fr}}
+.nav-inline{display:flex;gap:4px;flex-wrap:wrap;align-items:center;width:100%}
+.nav-mobile{display:none}
+@media(max-width:720px){
+  .nav-inline{display:none}
+  .nav-mobile{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px}
+  body{padding:12px}
+}
 .col{display:flex;flex-direction:column;gap:18px}
 
 .alloc-row{display:grid;grid-template-columns:130px 1fr 130px;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--line-soft)}
