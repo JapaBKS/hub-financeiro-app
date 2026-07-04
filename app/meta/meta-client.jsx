@@ -46,7 +46,7 @@ export default function MetaForm({ goal }) {
     <form onSubmit={salvar} className="card" style={{ padding: '20px 22px' }}>
       <div className="card-h" style={{ marginBottom: 4 }}><h2>Ajustar meta</h2></div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div className="grid2">
         <div><label style={lab}>Valor-alvo (R$)</label><input style={inp} type="number" step="any" value={target} onChange={(e) => setTarget(e.target.value)} /></div>
         <div><label style={lab}>Aporte mensal (R$)</label><input style={inp} type="number" step="any" value={monthly} onChange={(e) => setMonthly(e.target.value)} /></div>
         <div><label style={lab}>Retorno anual (%)</label><input style={inp} type="number" step="any" value={ret} onChange={(e) => setRet(e.target.value)} /></div>
