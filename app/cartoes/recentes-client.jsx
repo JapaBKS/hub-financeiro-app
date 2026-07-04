@@ -96,7 +96,7 @@ export default function Recentes({ purchases, cards }) {
             return (
               <div key={p.id} style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-soft)' }}>
                 <input style={{ ...inp, marginBottom: 8 }} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição" />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div className="grid2">
                   <select style={inp} value={form.card_id} onChange={(e) => setForm({ ...form, card_id: e.target.value })}>
                     {cards.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
