@@ -15,8 +15,10 @@ export default function Login() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ senha }),
     });
-    if (res.ok) {
-      window.location.href = '/';
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      // pai vai direto pro Caixa; dono pro painel
+      window.location.href = data.role === 'pai' ? '/caixa' : '/';
     } else {
       setErro(true);
       setCarregando(false);
@@ -24,25 +26,25 @@ export default function Login() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#EBEEE8' }}>
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--paper)' }}>
       <form onSubmit={entrar} style={{
-        background: 'var(--surface)', padding: '32px', borderRadius: 16, width: 320,
-        boxShadow: '0 8px 24px -12px rgba(21,37,29,.2)', fontFamily: 'system-ui',
+        background: 'var(--card)', padding: '32px', borderRadius: 16, width: 320,
+        boxShadow: 'var(--shadow)', fontFamily: 'var(--font-body)',
       }}>
-        <h1 style={{ fontSize: 18, margin: '0 0 4px', color: '#15251D' }}>Hub Financeiro</h1>
-        <p style={{ fontSize: 13, color: '#8B978F', margin: '0 0 20px' }}>Digite a senha para entrar.</p>
+        <h1 style={{ fontSize: 18, margin: '0 0 4px', color: 'var(--ink)' }}>Hub Financeiro</h1>
+        <p style={{ fontSize: 13, color: 'var(--ink-faint)', margin: '0 0 20px' }}>Digite a senha para entrar.</p>
         <input
           type="password" value={senha} onChange={(e) => setSenha(e.target.value)}
           placeholder="Senha" autoFocus
           style={{
-            width: '100%', padding: '11px 13px', borderRadius: 9, border: '1px solid #E1E5DD',
-            fontSize: 14, boxSizing: 'border-box', marginBottom: 12,
+            width: '100%', padding: '11px 13px', borderRadius: 9, border: '1px solid var(--line)',
+            fontSize: 14, boxSizing: 'border-box', marginBottom: 12, background: 'var(--surface)', color: 'var(--ink)',
           }}
         />
-        {erro && <p style={{ color: '#BB4A3B', fontSize: 12, margin: '0 0 12px' }}>Senha incorreta.</p>}
+        {erro && <p style={{ color: 'var(--down)', fontSize: 12, margin: '0 0 12px' }}>Senha incorreta.</p>}
         <button type="submit" disabled={carregando} style={{
           width: '100%', padding: '11px', borderRadius: 9, border: 0, cursor: 'pointer',
-          background: '#163D30', color: '#fff', fontSize: 14, fontWeight: 600,
+          background: 'var(--forest)', color: '#fff', fontSize: 14, fontWeight: 600,
         }}>{carregando ? 'Entrando…' : 'Entrar'}</button>
       </form>
     </div>
