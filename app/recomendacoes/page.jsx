@@ -127,7 +127,7 @@ export default async function Recomendacoes() {
       <div style={{
         width: 30, height: 30, borderRadius: 8, flex: 'none', display: 'grid', placeItems: 'center',
         fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13,
-        background: i.tom === 'buy' ? 'var(--up-bg)' : i.tom === 'sell' ? 'var(--down-bg)' : '#EFF1EC',
+        background: i.tom === 'buy' ? 'var(--up-bg)' : i.tom === 'sell' ? 'var(--down-bg)' : 'var(--surface-2)',
         color: i.tom === 'buy' ? 'var(--up)' : i.tom === 'sell' ? 'var(--down)' : 'var(--ink-faint)',
       }}>{i.tom === 'buy' ? 'C' : i.tom === 'sell' ? 'V' : '–'}</div>
       <div style={{ minWidth: 0, flex: 1 }}>
