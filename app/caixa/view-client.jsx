@@ -178,7 +178,7 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
                 <button onClick={() => setF({ ...f, kind: 'entrada' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, border: '1px solid var(--line)', background: f.kind === 'entrada' ? 'var(--up-bg)' : 'var(--surface)', color: f.kind === 'entrada' ? 'var(--up)' : 'var(--ink-soft)' }}>Entrada</button>
                 <button onClick={() => setF({ ...f, kind: 'saida' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, border: '1px solid var(--line)', background: f.kind === 'saida' ? 'var(--down-bg)' : 'var(--surface)', color: f.kind === 'saida' ? 'var(--down)' : 'var(--ink-soft)' }}>Saída</button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+              <div className="grid2" style={{ marginBottom: 8 }}>
                 <input style={inp} type="date" value={f.entry_date} onChange={(e) => setF({ ...f, entry_date: e.target.value })} />
                 <input style={inp} type="number" step="0.01" placeholder="Valor" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} />
               </div>
