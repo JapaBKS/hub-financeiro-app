@@ -306,7 +306,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                   return (
                     <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-soft)', background: 'var(--surface-2)' }}>
                       <input style={{ ...inpF, marginBottom: 8 }} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="Descrição" />
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <div className="grid2">
                         <select style={inpF} value={editForm.categoria} onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}>
                           {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
