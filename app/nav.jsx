@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import ThemeToggle from './theme-toggle';
 
 const links = [
@@ -20,11 +21,18 @@ const links = [
 
 export default function Nav() {
   const path = usePathname();
+  const [role, setRole] = useState('dono');
+  useEffect(() => {
+    const m = document.cookie.match(/(?:^|; )app_role=([^;]+)/);
+    setRole(m ? decodeURIComponent(m[1]) : 'dono');
+  }, []);
   if (path === '/login') return null;
+
+  const visiveis = role === 'pai' ? links.filter((l) => l.href === '/caixa') : links;
 
   return (
     <nav style={{ maxWidth: 1160, margin: '0 auto 4px', padding: '0 4px 14px', display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
-      {links.map((l) => {
+      {visiveis.map((l) => {
         const ativo = l.href === '/' ? path === '/' : path.startsWith(l.href);
         return (
           <Link
