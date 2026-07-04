@@ -1,6 +1,7 @@
 import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
 import MetaForm from './meta-client';
+import MetaChart from './meta-chart';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -265,33 +266,7 @@ export default async function Meta() {
       </section>
 
       {/* gráfico */}
-      <section className="card" style={{ padding: '16px 14px 10px', marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 8px 8px' }}>
-          <span style={{ fontSize: 12, color: 'var(--forest-2)', fontWeight: 600 }}>● real</span>
-          <span style={{ fontSize: 12, color: 'var(--brass)', fontWeight: 600 }}>● projeção</span>
-        </div>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-          {grades.map((gv, k) => (
-            <g key={k}>
-              <line x1={padL} y1={py(gv)} x2={W - padR} y2={py(gv)} stroke="var(--line-soft)" strokeWidth="1" />
-              <text x={padL + 2} y={py(gv) - 3} fontSize="10" fill="var(--ink-faint)">{brlShort(gv)}</text>
-            </g>
-          ))}
-          {/* linha da meta */}
-          <line x1={padL} y1={py(target)} x2={W - padR} y2={py(target)} stroke="var(--brass)" strokeWidth="1" strokeDasharray="2 3" opacity="0.5" />
-          {/* projeção */}
-          <polyline points={projLine} fill="none" stroke="var(--brass)" strokeWidth="2" strokeDasharray="5 4" />
-          {/* real */}
-          {realLine && <polyline points={realLine} fill="none" stroke="var(--forest-2)" strokeWidth="2.5" />}
-          {/* ponto de hoje */}
-          <circle cx={px(todayIdx)} cy={py(realNow)} r="3.5" fill="var(--forest)" />
-          {/* eixo X anos */}
-          {anos.map((a) => {
-            const x = px(a * 12);
-            return <text key={a} x={x} y={H - 8} fontSize="10" fill="var(--ink-faint)" textAnchor="middle">{a}</text>;
-          })}
-        </svg>
-      </section>
+      <MetaChart proj={proj} realPts={realPts} target={target} todayIdx={todayIdx} realNow={realNow} />
 
       {/* projetado vs real */}
       <section className="card" style={{ marginBottom: 16 }}>
