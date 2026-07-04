@@ -1,4 +1,5 @@
 :root{
+  color-scheme:light;
   --ink:#15251D;--ink-soft:#4C5C53;--ink-faint:#8B978F;
   --paper:#EBEEE8;--card:#FFFFFF;--line:#E1E5DD;--line-soft:#EDEFEA;
   --surface:#FFFFFF;--surface-2:#FAFBF9;--track:#E8ECE4;
@@ -12,6 +13,7 @@
   --shadow:0 1px 2px rgba(21,37,29,.04),0 8px 24px -12px rgba(21,37,29,.10);
 }
 [data-theme="dark"]{
+  color-scheme:dark;
   --ink:#E4EAE5;--ink-soft:#AEBAB2;--ink-faint:#7E8B83;
   --paper:#0F1713;--card:#17211B;--line:#28342D;--line-soft:#1E2822;
   --surface:#1C2620;--surface-2:#151E19;--track:#243029;
@@ -22,6 +24,9 @@
 }
 html{transition:background .2s}
 body,.card,input,select,textarea,button{transition:background .2s,border-color .2s,color .2s}
+input,select,textarea{color:var(--ink)}
+input::placeholder,textarea::placeholder{color:var(--ink-faint)}
+option{background:var(--surface);color:var(--ink)}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.45;padding:18px}
