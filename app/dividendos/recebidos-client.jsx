@@ -20,6 +20,7 @@ export default function RecebidosMes({ meses }) {
   });
 
   const anoAtual = String(new Date().getFullYear());
+  const mesAtualKey = `${anoAtual}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
   const [anosAbertos, setAnosAbertos] = useState(() => new Set([anoAtual]));
   const [mesAberto, setMesAberto] = useState(null);
 
