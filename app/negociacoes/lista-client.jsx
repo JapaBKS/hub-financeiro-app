@@ -64,7 +64,7 @@ export default function ListaNegociacoes({ trades }) {
             return (
               <div key={t.id} style={{ padding: '12px 18px', borderBottom: '1px solid var(--line-soft)' }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: 8 }}>{t.ticker}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div className="grid2">
                   <input style={inp} type="date" value={form.traded_at} onChange={(e) => setForm({ ...form, traded_at: e.target.value })} />
                   <select style={inp} value={form.side} onChange={(e) => setForm({ ...form, side: e.target.value })}>
                     <option value="compra">Compra</option>
