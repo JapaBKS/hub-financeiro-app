@@ -159,7 +159,7 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
       <div className="grid-wide">
         {/* coluna principal: ações + lista */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 10 }}>
+          <div className="acoes-row" style={{ marginBottom: 10 }}>
             {bills.length > 0 && (
               <button onClick={lancarFixasDesteMes} disabled={lancandoFixas} style={{
                 padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 600,
