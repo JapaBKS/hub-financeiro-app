@@ -56,7 +56,7 @@ export default function FormNegociacao({ assets, classes }) {
       </select>
 
       {ehNovo && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div className="grid2">
           <div>
             <label style={labelStyle}>Ticker novo</label>
             <input style={inputStyle} value={novoTicker} onChange={(e) => setNovoTicker(e.target.value)}
@@ -84,7 +84,7 @@ export default function FormNegociacao({ assets, classes }) {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div className="grid2">
         <div>
           <label style={labelStyle}>Quantidade</label>
           <input style={inputStyle} type="number" step="any" value={quantity}
