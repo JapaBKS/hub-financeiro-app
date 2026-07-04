@@ -91,7 +91,7 @@ export default function SaldosClient({ holdings, classes }) {
 
       <section className="card" style={{ padding: '18px 20px' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', marginBottom: 12 }}>+ Adicionar saldo</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div className="grid2">
           <input style={inp} value={novo.label} onChange={(e) => setNovo({ ...novo, label: e.target.value })} placeholder="Nome (ex.: Mercado Pago)" />
           <select style={inp} value={novo.class_id} onChange={(e) => setNovo({ ...novo, class_id: e.target.value })}>
             {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
