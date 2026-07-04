@@ -72,7 +72,7 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
       <input style={inputStyle} value={description} onChange={(e) => setDescription(e.target.value)}
         placeholder="Ex.: Geladeira nova" required />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div className="grid2">
         <div>
           <label style={labelStyle}>Categoria</label>
           <select style={inputStyle} value={categoria} onChange={(e) => setCategoria(e.target.value)}>
@@ -107,7 +107,7 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div className="grid2">
         <div>
           <label style={labelStyle}>Valor total (R$)</label>
           <input style={inputStyle} type="number" step="any" value={valorTotal}
@@ -120,7 +120,7 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div className="grid2">
         <div>
           <label style={labelStyle}>Data da compra</label>
           <input style={inputStyle} type="date" value={purchasedAt}
