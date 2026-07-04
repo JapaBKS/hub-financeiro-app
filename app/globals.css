@@ -63,6 +63,8 @@ body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webk
 @media(max-width:900px){.grid{grid-template-columns:1fr}}
 @media(max-width:900px){.grid-wide{grid-template-columns:1fr}}
 .nav-inline{display:flex;gap:4px;flex-wrap:wrap;align-items:center;width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:560px){.grid2{grid-template-columns:1fr}}
 .nav-mobile{display:none}
 @media(max-width:720px){
   .nav-inline{display:none}
