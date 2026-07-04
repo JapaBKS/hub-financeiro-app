@@ -30,6 +30,11 @@ export default function Nav() {
 
   const visiveis = role === 'pai' ? links.filter((l) => l.href === '/caixa') : links;
 
+  async function sair() {
+    try { await fetch('/api/logout', { method: 'POST' }); } catch {}
+    window.location.href = '/login';
+  }
+
   return (
     <nav style={{ maxWidth: 1160, margin: '0 auto 4px', padding: '0 4px 14px', display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
       {visiveis.map((l) => {
@@ -52,7 +57,13 @@ export default function Nav() {
           </Link>
         );
       })}
-      <div style={{ marginLeft: 'auto' }}><ThemeToggle /></div>
+      <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+        <ThemeToggle />
+        <button onClick={sair} title="Sair" style={{
+          fontSize: 12.5, fontWeight: 600, padding: '7px 12px', borderRadius: 9, cursor: 'pointer',
+          border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)',
+        }}>Sair</button>
+      </div>
     </nav>
   );
 }
