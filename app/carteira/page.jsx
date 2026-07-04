@@ -127,7 +127,7 @@ export default async function Carteira() {
           {bloco.subgrupos.map((g) => (
             <div key={g.classe}>
               {bloco.subgrupos.length > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 20px', background: '#FAFBF9', borderBottom: '1px solid var(--line-soft)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 20px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line-soft)' }}>
                   <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-soft)' }}>{g.classe}</span>
                   <span style={{ fontSize: 11.5, fontFamily: 'var(--font-display)', color: 'var(--ink-faint)' }}>{brl(g.total)}</span>
                 </div>
