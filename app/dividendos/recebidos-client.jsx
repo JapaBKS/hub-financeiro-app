@@ -47,7 +47,7 @@ export default function RecebidosMes({ meses }) {
             <div key={y.ano}>
               <button onClick={() => toggleAno(y.ano)} style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px',
-                borderBottom: '1px solid var(--line-soft)', background: '#F6F8F4', border: 0, cursor: 'pointer', textAlign: 'left',
+                borderBottom: '1px solid var(--line-soft)', background: 'var(--surface-2)', border: 0, cursor: 'pointer', textAlign: 'left',
               }}>
                 <span style={{ fontSize: 11, color: 'var(--ink-faint)', transform: anoAberto ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>▸</span>
                 <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.02em' }}>{y.ano}</span>
@@ -57,20 +57,26 @@ export default function RecebidosMes({ meses }) {
 
               {anoAberto && y.meses.map((m) => {
                 const aberta = mesAberto === m.mes;
+                const ehAtual = m.mes === mesAtualKey;
                 return (
                   <div key={m.mes}>
                     <button onClick={() => setMesAberto(aberta ? null : m.mes)} style={{
                       width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px 10px 30px',
-                      borderBottom: '1px solid var(--line-soft)', background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left',
+                      borderBottom: '1px solid var(--line-soft)', border: 0, cursor: 'pointer', textAlign: 'left',
+                      borderLeft: ehAtual ? '3px solid var(--forest)' : '3px solid transparent',
+                      background: ehAtual ? 'var(--up-bg)' : 'transparent',
                     }}>
                       <span style={{ fontSize: 10, color: 'var(--ink-faint)', transform: aberta ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>▸</span>
-                      <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'capitalize' }}>{rotulo(m.mes)}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'capitalize', color: ehAtual ? 'var(--forest-2)' : 'inherit' }}>{rotulo(m.mes)}</span>
+                      {ehAtual && (
+                        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.04em', color: '#fff', background: 'var(--forest)', borderRadius: 4, padding: '1px 6px' }}>ESTE MÊS</span>
+                      )}
                       <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>ações {fmt(m.acoes)} · fiis {fmt(m.fiis)}</span>
                       <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: 'var(--up)' }}>{fmt(m.total)}</b>
                     </button>
 
                     {aberta && (
-                      <div style={{ background: '#FAFBF9', borderBottom: '1px solid var(--line-soft)' }}>
+                      <div style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--line-soft)' }}>
                         {m.itens.map((it, i) => (
                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 20px 7px 48px', fontSize: 12.5 }}>
                             <b style={{ fontFamily: 'var(--font-display)' }}>{it.ticker}</b>
