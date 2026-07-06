@@ -139,6 +139,7 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
   const entrouTotal = atual.entradasPagas + atual.entradasPend;
   const saiuTotal = atual.saidasPagas + atual.saidasPend;
   const resultadoMes = entrouTotal - saiuTotal;
+  const sobraFinal = atual.saldoInicial + resultadoMes; // considera o que veio do mês anterior
 
   // gastos por categoria (todas as saídas do mês: pagas + a pagar)
   const gastosCategoria = (() => {
@@ -198,20 +199,32 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
       {temItens && (
         <section className="card" style={{ marginBottom: 18, padding: '16px 20px' }}>
           <div className="card-h" style={{ padding: 0, marginBottom: 12 }}><h2 style={{ margin: 0 }}>Fechamento · <span style={{ textTransform: 'capitalize' }}>{rotulo(mes)}</span></h2></div>
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: gastoTotal > 0 ? 16 : 0 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline', marginBottom: gastoTotal > 0 ? 16 : 0 }}>
+            <div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>Saldo anterior</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17 }}>{fmt(atual.saldoInicial)}</div>
+            </div>
+            <span style={{ fontSize: 18, color: 'var(--up)', alignSelf: 'center', fontWeight: 600 }}>+</span>
             <div>
               <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>Entrou</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18, color: 'var(--up)' }}>{fmt(entrouTotal)}</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, color: 'var(--up)' }}>{fmt(entrouTotal)}</div>
             </div>
+            <span style={{ fontSize: 18, color: 'var(--down)', alignSelf: 'center', fontWeight: 600 }}>−</span>
             <div>
               <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>Saiu</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18, color: 'var(--down)' }}>{fmt(saiuTotal)}</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, color: 'var(--down)' }}>{fmt(saiuTotal)}</div>
             </div>
+            <span style={{ fontSize: 18, color: 'var(--ink-faint)', alignSelf: 'center', fontWeight: 600 }}>=</span>
             <div>
-              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{resultadoMes >= 0 ? 'Sobrou' : 'Faltou'}</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: resultadoMes >= 0 ? 'var(--up)' : 'var(--down)' }}>{fmt(Math.abs(resultadoMes))}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>Sobra final</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, color: sobraFinal >= 0 ? 'var(--up)' : 'var(--down)' }}>{fmt(sobraFinal)}</div>
             </div>
           </div>
+          {resultadoMes < 0 && sobraFinal >= 0 && (
+            <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: -4, marginBottom: gastoTotal > 0 ? 16 : 0 }}>
+              No mês saiu mais do que entrou ({fmt(Math.abs(resultadoMes))}), mas o saldo anterior cobriu.
+            </div>
+          )}
 
           {gastoTotal > 0 && (
             <div>
