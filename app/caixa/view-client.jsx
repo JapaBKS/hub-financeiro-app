@@ -10,6 +10,15 @@ const brDate = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
 
 const inp = { padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5, fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%' };
 
+const CORES = ['#2E5E4E', '#B98A3C', '#6FA287', '#C9A24B', '#3E7C63', '#8C6BB1', '#D98C5F', '#5B8DB8', '#A8B545', '#9C5A5A', '#7A7A7A'];
+function arcPath(a0, a1, cx, cy, R, r) {
+  const p = (ang, rad) => [cx + rad * Math.cos(ang), cy + rad * Math.sin(ang)];
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  const [x0, y0] = p(a0, R), [x1, y1] = p(a1, R);
+  const [x2, y2] = p(a1, r), [x3, y3] = p(a0, r);
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} A ${r} ${r} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)} Z`;
+}
+
 export default function CaixaView({ resumo, categorias, bills = [] }) {
   const mesAtual = mesDe(hojeISO());
   const mesesDisponiveis = resumo.map((r) => r.mes);
@@ -126,6 +135,30 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
 
   const itens = [...atual.itens].sort((a, b) => (a.entry_date || '').localeCompare(b.entry_date || '') || (a.id - b.id));
 
+  // fechamento do mês
+  const entrouTotal = atual.entradasPagas + atual.entradasPend;
+  const saiuTotal = atual.saidasPagas + atual.saidasPend;
+  const resultadoMes = entrouTotal - saiuTotal;
+
+  // gastos por categoria (todas as saídas do mês: pagas + a pagar)
+  const gastosCategoria = (() => {
+    const map = {};
+    atual.itens.filter((i) => i.kind === 'saida').forEach((i) => {
+      const c = i.category || 'Sem categoria';
+      map[c] = (map[c] || 0) + Number(i.amount);
+    });
+    return Object.entries(map).map(([cat, val]) => ({ cat, val })).sort((a, b) => b.val - a.val);
+  })();
+  const gastoTotal = gastosCategoria.reduce((s, c) => s + c.val, 0);
+  const fatias = (() => {
+    let ang = -Math.PI / 2;
+    return gastosCategoria.map((g, idx) => {
+      const frac = gastoTotal > 0 ? g.val / gastoTotal : 0;
+      const a0 = ang; const a1 = ang + frac * 2 * Math.PI; ang = a1;
+      return { ...g, frac, color: CORES[idx % CORES.length], a0, a1 };
+    });
+  })();
+
   return (
     <div>
       {/* HERO: saldo disponível */}
@@ -160,6 +193,54 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
           </div>
         </div>
       </section>
+
+      {/* FECHAMENTO DO MÊS */}
+      {temItens && (
+        <section className="card" style={{ marginBottom: 18, padding: '16px 20px' }}>
+          <div className="card-h" style={{ padding: 0, marginBottom: 12 }}><h2 style={{ margin: 0 }}>Fechamento · <span style={{ textTransform: 'capitalize' }}>{rotulo(mes)}</span></h2></div>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: gastoTotal > 0 ? 16 : 0 }}>
+            <div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>Entrou</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18, color: 'var(--up)' }}>{fmt(entrouTotal)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>Saiu</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18, color: 'var(--down)' }}>{fmt(saiuTotal)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{resultadoMes >= 0 ? 'Sobrou' : 'Faltou'}</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: resultadoMes >= 0 ? 'var(--up)' : 'var(--down)' }}>{fmt(Math.abs(resultadoMes))}</div>
+            </div>
+          </div>
+
+          {gastoTotal > 0 && (
+            <div>
+              <div style={{ fontSize: 12, color: 'var(--ink-faint)', marginBottom: 8 }}>Gastos por categoria · <b style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>{fmt(gastoTotal)}</b></div>
+              <div style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
+                <svg viewBox="0 0 150 150" width="150" height="150" style={{ flex: 'none' }}>
+                  {fatias.length === 1 ? (
+                    <circle cx="75" cy="75" r="56" fill="none" stroke={fatias[0].color} strokeWidth="28" />
+                  ) : (
+                    fatias.map((s) => <path key={s.cat} d={arcPath(s.a0, s.a1, 75, 75, 70, 42)} fill={s.color} />)
+                  )}
+                  <text x="75" y="80" textAnchor="middle" fontSize="12.5" fontWeight="600" fill="var(--ink)" style={{ fontFamily: 'var(--font-display)' }}>{fmt(gastoTotal)}</text>
+                </svg>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  {fatias.map((g) => (
+                    <div key={g.cat} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
+                      <span style={{ width: 11, height: 11, borderRadius: 3, background: g.color, flex: 'none' }} />
+                      <span style={{ color: 'var(--ink-soft)' }}>{g.cat}</span>
+                      <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
+                        {fmt(g.val)}<span style={{ fontSize: 11, color: 'var(--ink-faint)', fontWeight: 400 }}> · {Math.round(g.frac * 100)}%</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* GRID: lançamentos | lateral */}
       <div className="grid-wide">
