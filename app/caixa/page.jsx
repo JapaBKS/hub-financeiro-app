@@ -1,6 +1,5 @@
 import { supabaseServer } from '../../lib/supabase';
 import CaixaView from './view-client';
-import ImportarCaixa from './importar-client';
 import AlertaContas from '../alerta-contas';
 
 export const dynamic = 'force-dynamic';
@@ -31,12 +30,12 @@ export default async function Caixa() {
   let primeiroSaldo = null;
   const resumo = meses.map((mes) => {
     const g = porMes[mes];
-    const resultadoMes = g.entradasPagas - g.saidasPagas;       // movimento líquido do mês (pagos)
-    const saldoInicial = saldoAnterior;                          // vem do mês anterior
-    const saldoDisponivel = saldoInicial + resultadoMes;         // saldo que fica
+    const resultadoMes = g.entradasPagas - g.saidasPagas;
+    const saldoInicial = saldoAnterior;
+    const saldoDisponivel = saldoInicial + resultadoMes;
     if (primeiroSaldo == null) primeiroSaldo = saldoDisponivel;
-    const aumentoMensal = saldoDisponivel - saldoInicial;        // vs mês anterior
-    const aumentoTotal = saldoDisponivel - primeiroSaldo;        // vs primeiro mês
+    const aumentoMensal = saldoDisponivel - saldoInicial;
+    const aumentoTotal = saldoDisponivel - primeiroSaldo;
     saldoAnterior = saldoDisponivel;
     return {
       mes,
@@ -52,7 +51,6 @@ export default async function Caixa() {
     };
   });
 
-  // categorias já usadas (pra sugerir)
   const categorias = [...new Set((rows || []).map((r) => r.category).filter(Boolean))].sort();
 
   return (
@@ -66,7 +64,6 @@ export default async function Caixa() {
       </header>
       <AlertaContas dias={3} />
       <CaixaView resumo={resumo} categorias={categorias} bills={bills || []} />
-      <ImportarCaixa />
     </div>
   );
 }
