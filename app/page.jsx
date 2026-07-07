@@ -20,7 +20,7 @@ export default async function Home() {
     sb.from('dividends_pending').select('amount, classe, pay_date'),
     sb.from('v_card_invoice').select('*'),
     sb.from('goal_config').select('*').single(),
-    sb.from('v_positions').select('ticker, quantidade, preco_atual'),
+    sb.from('v_positions').select('ticker, quantidade, preco_atual, preco_medio, lucro_rs, valor_carteira'),
     sb.from('prices').select('ticker, previous_close, updated_at'),
   ]);
 
@@ -100,6 +100,18 @@ export default async function Home() {
   const varDiaPct = (total - varDia) > 0 ? varDia / (total - varDia) : 0;
   const subiu = varDia >= 0;
 
+  // rentabilidade real dos ativos negociados (valor atual − custo) ÷ custo
+  let lucroNeg = 0, investidoNeg = 0;
+  for (const p of positions.data || []) {
+    const temCot = p.preco_atual != null;
+    const valor = temCot ? Number(p.valor_carteira) : Number(p.quantidade) * Number(p.preco_medio);
+    const lucro = temCot ? Number(p.lucro_rs) : 0;
+    lucroNeg += lucro;
+    investidoNeg += (valor - lucro);
+  }
+  const rentNeg = investidoNeg > 0 ? lucroNeg / investidoNeg : 0;
+  const subiuRent = lucroNeg >= 0;
+
   // faturas do mês
   const mes = mesAtualISO();
   const faturasMes = (faturas.data || []).filter((f) => (f.bill_month || '').slice(0, 10) === mes).sort((a, b) => a.due_day - b.due_day);
@@ -142,6 +154,12 @@ export default async function Home() {
           <div>
             <div className="eyebrow">Patrimônio total</div>
             <div className="big"><small>R$</small>{total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style={{ marginTop: 6, fontSize: 12.5, color: 'var(--ink-soft)' }}>
+              rentabilidade dos negociados:{' '}
+              <b style={{ fontFamily: 'var(--font-display)', color: subiuRent ? 'var(--up)' : 'var(--down)' }}>
+                {subiuRent ? '+' : '−'}{brl(Math.abs(lucroNeg))} · {pct(Math.abs(rentNeg))}
+              </b>
+            </div>
           </div>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600,
