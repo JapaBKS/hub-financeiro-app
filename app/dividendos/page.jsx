@@ -2,17 +2,16 @@ import { supabaseServer } from '../../lib/supabase';
 import FormDividendos from './form-client';
 import RecebidosMes from './recebidos-client';
 import ImportarB3 from './importar-b3-client';
-import PorAtivo from './por-ativo-client';
+import EvolucaoProventos from './evolucao-client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function Dividendos() {
   const sb = supabaseServer();
-  const [{ data: pend }, { data: recebidos }, { data: positions }] = await Promise.all([
+  const [{ data: pend }, { data: recebidos }] = await Promise.all([
     sb.from('dividends_pending').select('ticker, pay_date, kind, amount, classe').order('pay_date'),
     sb.from('dividends').select('ticker, paid_at, kind, amount, assets(asset_classes(name))').order('paid_at', { ascending: false }),
-    sb.from('v_positions').select('ticker, quantidade, preco_medio'),
   ]);
 
   const hojeISO = new Date().toISOString().slice(0, 10);
@@ -37,24 +36,25 @@ export default async function Dividendos() {
   const meses = Object.values(mapMes).sort((a, b) => b.mes.localeCompare(a.mes));
   meses.forEach((m) => m.itens.sort((a, b) => b.amount - a.amount));
 
-  // --- por ativo: total (todo período e 12 meses) + custo p/ yield ---
-  const doze = new Date(); doze.setFullYear(doze.getFullYear() - 1);
-  const dozeISO = doze.toISOString().slice(0, 10);
-  const custoDe = {};
-  (positions || []).forEach((p) => {
-    const c = Number(p.quantidade) * Number(p.preco_medio);
-    if (c > 0) custoDe[p.ticker] = c;
-  });
-  const mapAtivo = {};
-  for (const d of recebidos || []) {
-    const t = d.ticker;
-    if (!t) continue;
-    if (!mapAtivo[t]) mapAtivo[t] = { ticker: t, fii: (d.assets?.asset_classes?.name === 'FIIS'), totalAll: 0, total12m: 0 };
-    const v = Number(d.amount);
-    mapAtivo[t].totalAll += v;
-    if ((d.paid_at || '').slice(0, 10) >= dozeISO) mapAtivo[t].total12m += v;
+  // --- séries de evolução (ascendente): preenche meses vazios entre o primeiro e o último ---
+  const mesesAsc = [...meses].sort((a, b) => a.mes.localeCompare(b.mes)).filter((m) => m.mes >= '2000-01');
+  let porMes = [];
+  if (mesesAsc.length) {
+    const totalPorMes = {}; mesesAsc.forEach((m) => { totalPorMes[m.mes] = m.total; });
+    const [ya, ma] = mesesAsc[0].mes.split('-').map(Number);
+    const fim = hojeISO.slice(0, 7);
+    let y = ya, mo = ma;
+    while (true) {
+      const key = `${y}-${String(mo).padStart(2, '0')}`;
+      porMes.push({ key, total: totalPorMes[key] || 0 });
+      if (key === fim || key > fim) break;
+      mo++; if (mo > 12) { mo = 1; y++; }
+      if (porMes.length > 400) break;
+    }
   }
-  const ativos = Object.values(mapAtivo).map((a) => ({ ...a, custo: custoDe[a.ticker] || null }));
+  const anoMap = {};
+  mesesAsc.forEach((m) => { const a = m.mes.slice(0, 4); anoMap[a] = (anoMap[a] || 0) + m.total; });
+  const porAno = Object.entries(anoMap).map(([key, total]) => ({ key, total })).sort((a, b) => a.key.localeCompare(b.key));
 
   return (
     <div className="wrap" style={{ maxWidth: 680 }}>
@@ -67,7 +67,7 @@ export default async function Dividendos() {
       </header>
       <FormDividendos totalAtual={totalAtual} qtdAtual={(pend || []).length} acoesAtual={acoesAtual} fiisAtual={fiisAtual} />
       <ImportarB3 />
-      <PorAtivo ativos={ativos} />
+      <EvolucaoProventos porMes={porMes} porAno={porAno} />
       <RecebidosMes meses={meses} />
     </div>
   );
