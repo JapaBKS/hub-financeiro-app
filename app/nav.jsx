@@ -11,7 +11,6 @@ const links = [
   { href: '/alvos', label: 'Alvos' },
   { href: '/negociacoes', label: 'Negociações' },
   { href: '/cartoes', label: 'Cartões' },
-  { href: '/faturas', label: 'Faturas' },
   { href: '/dividendos', label: 'Proventos' },
   { href: '/caixa', label: 'Caixa' },
   { href: '/saldos', label: 'Saldos' },
