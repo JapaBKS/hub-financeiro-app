@@ -37,8 +37,6 @@ export default function Nav() {
   const linkStyle = (ativo, bloco) => ({
     fontSize: 13, fontWeight: 500, textDecoration: 'none',
     padding: bloco ? '11px 14px' : '7px 14px', borderRadius: 9,
-    color: ativo ? '#fff' : 'var(--ink-soft)',
-    background: ativo ? 'var(--forest)' : (bloco ? 'var(--surface)' : 'transparent'),
     display: 'block',
   });
 
@@ -58,7 +56,7 @@ export default function Nav() {
       <div className="nav-inline">
         {visiveis.map((l) => {
           const ativo = l.href === '/' ? path === '/' : path.startsWith(l.href);
-          return <Link key={l.href} href={l.href} style={linkStyle(ativo, false)}>{l.label}</Link>;
+          return <Link key={l.href} href={l.href} className={ativo ? 'navlink active' : 'navlink'} style={linkStyle(ativo, false)}>{l.label}</Link>;
         })}
         <div style={{ marginLeft: 'auto' }}>{acoes}</div>
       </div>
@@ -77,7 +75,7 @@ export default function Nav() {
         <div className="nav-mobile" style={{ flexDirection: 'column', gap: 4, marginTop: 8, alignItems: 'stretch' }}>
           {visiveis.map((l) => {
             const ativo = l.href === '/' ? path === '/' : path.startsWith(l.href);
-            return <Link key={l.href} href={l.href} onClick={() => setAberto(false)} style={linkStyle(ativo, true)}>{l.label}</Link>;
+            return <Link key={l.href} href={l.href} onClick={() => setAberto(false)} className={ativo ? 'navlink active' : 'navlink'} style={linkStyle(ativo, true)}>{l.label}</Link>;
           })}
         </div>
       )}
