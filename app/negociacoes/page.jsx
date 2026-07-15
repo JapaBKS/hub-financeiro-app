@@ -1,16 +1,20 @@
 import { supabaseServer } from '../../lib/supabase';
 import ListaNegociacoes from './lista-client';
+import RegistrarNegociacao from './registrar-client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function Negociacoes() {
   const sb = supabaseServer();
-  const { data: trades } = await sb
-    .from('trades')
-    .select('id, traded_at, side, quantity, price, assets(ticker)')
-    .order('traded_at', { ascending: false })
-    .order('id', { ascending: false });
+  const [{ data: trades }, { data: assets }, { data: classes }] = await Promise.all([
+    sb.from('trades')
+      .select('id, traded_at, side, quantity, price, assets(ticker)')
+      .order('traded_at', { ascending: false })
+      .order('id', { ascending: false }),
+    sb.from('assets').select('ticker').order('ticker'),
+    sb.from('asset_classes').select('id, name').order('name'),
+  ]);
 
   const flat = (trades || []).map((t) => ({
     id: t.id,
@@ -28,8 +32,9 @@ export default async function Negociacoes() {
           <div className="mark" />
           <div><b>Negociações</b><span>{flat.length} no total</span></div>
         </div>
-        <a href="/registrar" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>+ nova</a>
+        <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
+      <RegistrarNegociacao assets={assets || []} classes={classes || []} />
       <ListaNegociacoes trades={flat} />
     </div>
   );
