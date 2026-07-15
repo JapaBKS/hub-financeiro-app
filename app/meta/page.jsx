@@ -2,6 +2,7 @@ import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
 import MetaForm from './meta-client';
 import MetaChart from './meta-chart';
+import ValorizacaoMensal from './valorizacao-client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -17,10 +18,11 @@ const valor = (v) => (v ? Number(v).toLocaleString('pt-BR', { minimumFractionDig
 
 export default async function Meta() {
   const sb = supabaseServer();
-  const [{ data: goal }, { data: snaps }, { data: alloc }] = await Promise.all([
+  const [{ data: goal }, { data: snaps }, { data: alloc }, { data: trades }] = await Promise.all([
     sb.from('goal_config').select('*').eq('id', 1).maybeSingle(),
     sb.from('portfolio_snapshots').select('snapshot_month, value, asset_classes(name)'),
     sb.from('v_class_allocation').select('classe, valor'),
+    sb.from('trades').select('side, value, quantity, price, traded_at'),
   ]);
 
   const realNow = (alloc || []).reduce((s, c) => s + Number(c.valor), 0);
@@ -117,6 +119,32 @@ export default async function Meta() {
   (snaps || []).forEach((s) => { const k = ymIndex(s.snapshot_month); realMap[k] = (realMap[k] || 0) + Number(s.value); });
   realMap[todayIdx] = realNow;
   const realPts = Object.entries(realMap).map(([k, val]) => ({ idx: Number(k), value: val })).sort((a, b) => a.idx - b.idx);
+
+  // ---- valorização mensal (só ativos negociados): valor(mês) − valor(mês−1) − aportes(mês) ----
+  const NEGOCIADAS = new Set(['Ações BR', 'BDRS', 'FIIS', 'BTC', 'PENDLE', 'SOLANA']);
+  const valNegMes = {}; // 'YYYY-MM' -> valor de mercado dos negociados
+  (snaps || []).forEach((s2) => {
+    const nome = s2.asset_classes?.name || '';
+    if (!NEGOCIADAS.has(nome)) return;
+    const ym = (s2.snapshot_month || '').slice(0, 7);
+    if (!ym) return;
+    valNegMes[ym] = (valNegMes[ym] || 0) + Number(s2.value);
+  });
+  const aporteMes = {}; // 'YYYY-MM' -> aportes líquidos (compras − vendas)
+  (trades || []).forEach((t) => {
+    const ym = (t.traded_at || '').slice(0, 7);
+    if (!ym) return;
+    const v = Number(t.value != null ? t.value : Number(t.quantity) * Number(t.price)) || 0;
+    aporteMes[ym] = (aporteMes[ym] || 0) + (t.side === 'compra' ? v : -v);
+  });
+  const mesesNeg = Object.keys(valNegMes).sort();
+  const valorizacao = [];
+  for (let i = 1; i < mesesNeg.length; i++) {
+    const m = mesesNeg[i], mAnt = mesesNeg[i - 1];
+    const ap = aporteMes[m] || 0;
+    const val = valNegMes[m] - valNegMes[mAnt] - ap;
+    valorizacao.push({ mes: m, val, aportes: ap });
+  }
 
   // histórico mês a mês (mais recente primeiro) com variação vs mês anterior disponível
   const historico = realPts.map((p, n) => {
@@ -267,6 +295,7 @@ export default async function Meta() {
 
       {/* gráfico */}
       <MetaChart proj={proj} realPts={realPts} target={target} todayIdx={todayIdx} realNow={realNow} />
+      <ValorizacaoMensal dados={valorizacao} />
 
       {/* projetado vs real */}
       <section className="card" style={{ marginBottom: 16 }}>
