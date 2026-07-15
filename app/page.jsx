@@ -2,6 +2,7 @@ import { supabaseServer } from '../lib/supabase';
 import { brl, brlShort, pct } from '../lib/format';
 import CardOrigem from './card-origem-client';
 import AlertaContas from './alerta-contas';
+import NumeroAnimado from './numero-animado';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -141,7 +142,7 @@ export default async function Home() {
         <div className="hero-top">
           <div>
             <div className="eyebrow">Patrimônio total</div>
-            <div className="big"><small>R$</small>{total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="big"><small>R$</small><NumeroAnimado valor={total} /></div>
           </div>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600,
