@@ -7,6 +7,23 @@ const rotulo = (ym) => { const [a, m] = ym.split('-'); return `${MESES[Number(m)
 const KIND = { dividendo: 'Dividendo', jcp: 'JCP', rendimento: 'Rendimento' };
 
 export default function RecebidosMes({ meses }) {
+  async function excluirItem(it) {
+    const dia = (it.paid_at || '').split('-').reverse().join('/');
+    if (!window.confirm(`Excluir ${it.ticker} (${dia}) de ${fmt(it.amount)}?`)) return;
+    const res = await fetch('/api/dividends-delete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: it.id }),
+    });
+    if (res.ok) window.location.reload();
+    else window.alert('Não foi possível excluir.');
+  }
+  async function limparMes(m) {
+    if (!window.confirm(`Limpar TODOS os proventos de ${rotulo(m.mes)}? Apaga ${m.itens.length} lançamento(s). Use para reimportar da B3.`)) return;
+    const res = await fetch('/api/dividends-delete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ month: m.mes }),
+    });
+    if (res.ok) window.location.reload();
+    else window.alert('Não foi possível limpar o mês.');
+  }
   // agrupa por ano (meses já vêm em ordem decrescente)
   const anos = [];
   const porAno = {};
@@ -78,6 +95,12 @@ export default function RecebidosMes({ meses }) {
 
                     {aberta && (
                       <div style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--line-soft)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 20px 2px' }}>
+                          <button onClick={() => limparMes(m)} title="apagar tudo deste mês para reimportar da B3" style={{
+                            fontSize: 10.5, fontWeight: 600, color: 'var(--down)', background: 'transparent',
+                            border: '1px solid var(--line)', borderRadius: 7, padding: '4px 9px', cursor: 'pointer',
+                          }}>limpar mês (reimportar B3)</button>
+                        </div>
                         {m.itens.map((it, i) => (
                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 20px 7px 48px', fontSize: 12.5 }}>
                             <b style={{ fontFamily: 'var(--font-display)' }}>{it.ticker}</b>
@@ -85,6 +108,10 @@ export default function RecebidosMes({ meses }) {
                             <span style={{ color: 'var(--ink-faint)' }}>{KIND[it.kind] || it.kind}</span>
                             <span style={{ color: 'var(--ink-faint)', fontSize: 11 }}>{(it.paid_at || '').split('-').reverse().join('/')}</span>
                             <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{fmt(it.amount)}</b>
+                            <button onClick={() => excluirItem(it)} title="excluir este provento" style={{
+                              border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 6,
+                              padding: '2px 7px', cursor: 'pointer', fontSize: 11, color: 'var(--down)',
+                            }}>✕</button>
                           </div>
                         ))}
                       </div>
