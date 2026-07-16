@@ -159,6 +159,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
   const [cardId, setCardId] = useState(cards[0]?.id ?? null);
   const [mes, setMes] = useState(cards[0]?.id ? mesPadrao(cards[0].id) : mesHoje);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [verPagas, setVerPagas] = useState(false);
 
   function trocarCartao(id) {
     setCardId(id);
@@ -167,6 +168,8 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
 
   const cartao = cards.find((c) => c.id === cardId);
   const meses = mesesDoCartao(cardId);
+  const pagasEscondidas = meses.filter((m) => pagoDe(cardId, m) && m !== mes);
+  const mesesVisiveis = verPagas ? meses : meses.filter((m) => !pagoDe(cardId, m) || m === mes);
   const faturaSel = invoices.find((i) => i.card_id === cardId && norm(i.bill_month) === mes);
   const itensSel = itensState
     .filter((i) => i.card_id === cardId && norm(i.bill_month) === mes)
@@ -253,7 +256,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
         <>
           {/* faixa de meses */}
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 14 }}>
-            {meses.map((m) => {
+            {mesesVisiveis.map((m) => {
               const ativo = m === mes;
               return (
                 <button key={m} onClick={() => setMes(m)} style={{
@@ -272,6 +275,12 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                 </button>
               );
             })}
+            {pagasEscondidas.length > 0 && (
+              <button onClick={() => setVerPagas((v) => !v)} title="mostrar/ocultar faturas pagas" style={{
+                flex: 'none', padding: '8px 12px', borderRadius: 9, cursor: 'pointer', minWidth: 76,
+                border: '1px dashed var(--line)', background: 'transparent', color: 'var(--ink-faint)', fontSize: 11, fontWeight: 600,
+              }}>{verPagas ? 'ocultar pagas' : `✓ pagas (${pagasEscondidas.length})`}</button>
+            )}
           </div>
 
           {/* fatura selecionada */}
