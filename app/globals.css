@@ -110,7 +110,7 @@ button:active{transform:scale(.97)}
 [data-theme="dark"] button:hover{box-shadow:none;filter:brightness(1.22)}
 input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px var(--up-bg)}
 .card{transition:box-shadow .2s ease,border-color .2s ease,background .2s ease}
-.navlink{transition:background .16s ease,color .16s ease}
+.navlink{color:var(--ink-soft);background:transparent;transition:background .16s ease,color .16s ease}
 .navlink:hover{background:var(--surface-2);color:var(--ink)}
 .navlink.active{background:var(--forest);color:#fff}
 .navlink.active:hover{background:var(--forest);color:#fff;filter:brightness(1.12)}
