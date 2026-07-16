@@ -1,0 +1,98 @@
+'use client';
+import { useState } from 'react';
+
+const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+function parseValor(s) {
+  if (!s) return 0;
+  const limpo = String(s).replace(/r\$/i, '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(limpo);
+  return isNaN(n) ? 0 : n;
+}
+function parseData(s) {
+  const m = String(s || '').trim().match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+}
+function normKind(s) {
+  const l = (s || '').toLowerCase();
+  if (l.includes('juros') || l.includes('jcp') || l.includes('jscp')) return 'jcp';
+  if (l.includes('rendimento')) return 'rendimento';
+  return 'dividendo';
+}
+// Aba "a receber" da B3: Produto | Tipo | Previsão De Pagamento | Tipo De Evento | Instituição | Qtd | Preço | Valor Líquido
+function parseReceber(raw) {
+  const linhas = raw.split('\n').map((l) => l.replace(/\r$/, '')).filter((l) => l.trim());
+  const out = [];
+  for (const linha of linhas) {
+    if (/produto/i.test(linha) && /pagamento/i.test(linha)) continue; // cabeçalho
+    const cols = linha.split('\t').map((c) => c.trim()).filter((c) => c !== '');
+    if (cols.length < 5) continue;
+    const ticker = (cols[0].split(' - ')[0] || '').trim().toUpperCase();
+    const dateCol = cols.find((c) => /\d{2}\/\d{2}\/\d{4}/.test(c));
+    const pay_date = parseData(dateCol);
+    if (!ticker || !pay_date) continue;
+    const kindCol = cols.find((c) => /rendimento|juros|jcp|jscp|dividendo/i.test(c));
+    const rsCols = cols.filter((c) => /r\$/i.test(c) || /^\d+[.,]\d{2}$/.test(c));
+    const amount = parseValor(rsCols[rsCols.length - 1]);
+    const ehFundo = cols.some((c) => /fundo/i.test(c)) || /11$/.test(ticker);
+    out.push({ ticker, pay_date, kind: normKind(kindCol), amount, classe: ehFundo ? 'fiis' : 'acoes' });
+  }
+  return out;
+}
+
+const ta = {
+  width: '100%', minHeight: 110, padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
+  fontSize: 12.5, fontFamily: 'monospace', boxSizing: 'border-box', background: 'var(--surface)', color: 'var(--ink)', resize: 'vertical',
+};
+
+export default function ImportarB3Receber() {
+  const [texto, setTexto] = useState('');
+  const [estado, setEstado] = useState(null);
+  const [msg, setMsg] = useState('');
+
+  const itens = parseReceber(texto);
+  const total = itens.reduce((s, p) => s + p.amount, 0);
+
+  async function importar() {
+    setEstado('enviando'); setMsg('');
+    const res = await fetch('/api/dividends-pending-import', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itens }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      setEstado('ok');
+      setMsg(`${data.inseridos} adicionados · ${data.ignorados} já existiam.`);
+      setTimeout(() => window.location.reload(), 1100);
+    } else {
+      setEstado('erro');
+      setMsg(data.erro || 'Não foi possível importar.');
+    }
+  }
+
+  return (
+    <section className="card" style={{ marginTop: 16, padding: '4px 0 18px' }}>
+      <div className="card-h"><h2>Importar a receber da B3</h2></div>
+      <div style={{ padding: '8px 20px 0' }}>
+        <p style={{ fontSize: 12, color: 'var(--ink-faint)', margin: '0 0 8px' }}>
+          Cole a aba “a receber” copiada do site da B3 (com o cabeçalho). Vai pros proventos pendentes. Só entra o que ainda não existe.
+        </p>
+        <textarea style={ta} value={texto} onChange={(e) => setTexto(e.target.value)}
+          placeholder="Produto&#9;Tipo&#9;Previsão de Pagamento&#9;Tipo de Evento&#9;Instituição&#9;Quantidade&#9;Preço Unitário&#9;Valor Líquido" />
+
+        {itens.length > 0 && (
+          <div style={{ marginTop: 10, fontSize: 12.5, color: 'var(--ink-soft)' }}>
+            Detectados <b>{itens.length}</b> proventos · total <b style={{ fontFamily: 'var(--font-display)', color: 'var(--up)' }}>{fmt(total)}</b>
+          </div>
+        )}
+
+        <button onClick={importar} disabled={estado === 'enviando' || itens.length === 0} style={{
+          marginTop: 12, padding: '10px 16px', borderRadius: 9, border: 0, cursor: 'pointer',
+          background: 'var(--forest)', color: '#fff', fontSize: 13.5, fontWeight: 600,
+          opacity: itens.length === 0 ? 0.5 : 1,
+        }}>{estado === 'enviando' ? 'Importando…' : 'Importar a receber'}</button>
+
+        {msg && <div style={{ marginTop: 10, fontSize: 12.5, color: estado === 'erro' ? 'var(--down)' : 'var(--up)' }}>{msg}</div>}
+      </div>
+    </section>
+  );
+}
