@@ -25,7 +25,7 @@ function normKind(s) {
 //   Instituicao
 //   Qtd  R$ preco  R$ valor liquido
 // Agrupamos por linha de ticker e extraimos data/evento/valor do bloco todo.
-const ehLinhaTicker = (l) => /^[A-Z]{4}\d{1,2}\b/.test(l) && l.includes('-');
+const ehLinhaTicker = (l) => /^[A-Z][A-Z0-9]{3,4}\d\b/.test(l) && l.includes('-');
 
 function parseReceber(raw) {
   const linhas = raw.split('\n').map((l) => l.replace(/\r$/, '').replace(/\t/g, ' ').trim()).filter(Boolean);
@@ -41,7 +41,7 @@ function parseReceber(raw) {
   const out = [];
   for (const reg of registros) {
     const texto = reg.join('  ');
-    const tk = texto.match(/^([A-Z]{4}\d{1,2})/);
+    const tk = texto.match(/^([A-Z][A-Z0-9]{3,4}\d)/);
     const ticker = tk ? tk[1] : '';
     const pay_date = parseData(texto);
     if (!ticker || !pay_date) continue;
