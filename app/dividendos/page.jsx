@@ -11,7 +11,7 @@ export default async function Dividendos() {
   const sb = supabaseServer();
   const [{ data: pend }, { data: recebidos }] = await Promise.all([
     sb.from('dividends_pending').select('ticker, pay_date, kind, amount, classe').order('pay_date'),
-    sb.from('dividends').select('ticker, paid_at, kind, amount, assets(asset_classes(name))').order('paid_at', { ascending: false }),
+    sb.from('dividends').select('id, ticker, paid_at, kind, amount, assets(asset_classes(name))').order('paid_at', { ascending: false }),
   ]);
 
   const hojeISO = new Date().toISOString().slice(0, 10);
@@ -31,7 +31,7 @@ export default async function Dividendos() {
     if (!mapMes[mes]) mapMes[mes] = { mes, total: 0, acoes: 0, fiis: 0, itens: [] };
     mapMes[mes].total += val;
     if (ehFii) mapMes[mes].fiis += val; else mapMes[mes].acoes += val;
-    mapMes[mes].itens.push({ ticker: d.ticker, kind: d.kind, amount: val, fii: ehFii, paid_at: (d.paid_at || '').slice(0, 10) });
+    mapMes[mes].itens.push({ id: d.id, ticker: d.ticker, kind: d.kind, amount: val, fii: ehFii, paid_at: (d.paid_at || '').slice(0, 10) });
   }
   const meses = Object.values(mapMes).sort((a, b) => b.mes.localeCompare(a.mes));
   // dentro do mês, ordena por data (mais recente primeiro); empata pelo maior valor
