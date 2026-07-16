@@ -19,22 +19,36 @@ function normKind(s) {
   if (l.includes('rendimento')) return 'rendimento';
   return 'dividendo';
 }
-// Aba "a receber" da B3: Produto | Tipo | Previsão De Pagamento | Tipo De Evento | Instituição | Qtd | Preço | Valor Líquido
+// Aba "a receber" da B3. O texto cola quebrado em varias linhas por ativo:
+//   TICKER - Nome...        (linha do ativo)
+//   Tipo  data  evento
+//   Instituicao
+//   Qtd  R$ preco  R$ valor liquido
+// Agrupamos por linha de ticker e extraimos data/evento/valor do bloco todo.
+const ehLinhaTicker = (l) => /^[A-Z]{4}\d{1,2}\b/.test(l) && l.includes('-');
+
 function parseReceber(raw) {
-  const linhas = raw.split('\n').map((l) => l.replace(/\r$/, '')).filter((l) => l.trim());
+  const linhas = raw.split('\n').map((l) => l.replace(/\r$/, '').replace(/\t/g, ' ').trim()).filter(Boolean);
+  const registros = [];
+  let atual = null;
+  for (const l of linhas) {
+    if (/produto/i.test(l) && /pagamento/i.test(l)) continue; // cabecalho
+    if (ehLinhaTicker(l)) { if (atual) registros.push(atual); atual = [l]; }
+    else if (atual) atual.push(l);
+  }
+  if (atual) registros.push(atual);
+
   const out = [];
-  for (const linha of linhas) {
-    if (/produto/i.test(linha) && /pagamento/i.test(linha)) continue; // cabeçalho
-    const cols = linha.split('\t').map((c) => c.trim()).filter((c) => c !== '');
-    if (cols.length < 5) continue;
-    const ticker = (cols[0].split(' - ')[0] || '').trim().toUpperCase();
-    const dateCol = cols.find((c) => /\d{2}\/\d{2}\/\d{4}/.test(c));
-    const pay_date = parseData(dateCol);
+  for (const reg of registros) {
+    const texto = reg.join('  ');
+    const tk = texto.match(/^([A-Z]{4}\d{1,2})/);
+    const ticker = tk ? tk[1] : '';
+    const pay_date = parseData(texto);
     if (!ticker || !pay_date) continue;
-    const kindCol = cols.find((c) => /rendimento|juros|jcp|jscp|dividendo/i.test(c));
-    const rsCols = cols.filter((c) => /r\$/i.test(c) || /^\d+[.,]\d{2}$/.test(c));
-    const amount = parseValor(rsCols[rsCols.length - 1]);
-    const ehFundo = cols.some((c) => /fundo/i.test(c)) || /11$/.test(ticker);
+    const kindCol = (texto.match(/rendimento|juros sobre capital|jcp|jscp|dividendo/i) || [])[0];
+    const rs = texto.match(/R\$\s*[\d.]+,\d{2}/g) || [];
+    const amount = parseValor(rs[rs.length - 1]); // ultimo R$ = valor liquido
+    const ehFundo = /fundo/i.test(texto) || /11$/.test(ticker);
     out.push({ ticker, pay_date, kind: normKind(kindCol), amount, classe: ehFundo ? 'fiis' : 'acoes' });
   }
   return out;
