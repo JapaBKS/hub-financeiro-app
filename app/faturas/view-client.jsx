@@ -54,7 +54,16 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ card_id: cid, bill_month: m }),
     });
-    if (res.ok) { const d = await res.json(); setPagos((p) => ({ ...p, [payKey(cid, m)]: d.paid_at })); }
+    if (res.ok) {
+      const d = await res.json();
+      setPagos((p) => ({ ...p, [payKey(cid, m)]: d.paid_at }));
+      // se estava vendo a fatura que acabou de pagar, avança pra próxima do cartão
+      if (cid === cardId && norm(m) === norm(mes)) {
+        const ms = mesesDoCartao(cid);
+        const prox = ms[ms.indexOf(norm(m)) + 1];
+        if (prox) setMes(prox);
+      }
+    }
   }
   async function desfazer(cid, m) {
     const res = await fetch('/api/invoice-payment', {
@@ -140,8 +149,11 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
   }
   function mesPadrao(cardId) {
     const meses = mesesDoCartao(cardId);
-    if (meses.includes(mesAlvo)) return mesAlvo;
-    return meses.find((m) => m >= mesAlvo) || meses[meses.length - 1] || mesAlvo;
+    // primeira fatura ainda não paga (a que você precisa resolver)
+    const naoPaga = meses.find((m) => !pagoDe(cardId, m));
+    if (naoPaga) return naoPaga;
+    // todas pagas: mostra a mais recente
+    return meses[meses.length - 1] || mesAlvo;
   }
 
   const [cardId, setCardId] = useState(cards[0]?.id ?? null);
