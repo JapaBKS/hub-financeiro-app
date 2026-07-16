@@ -34,7 +34,8 @@ export default async function Dividendos() {
     mapMes[mes].itens.push({ ticker: d.ticker, kind: d.kind, amount: val, fii: ehFii, paid_at: (d.paid_at || '').slice(0, 10) });
   }
   const meses = Object.values(mapMes).sort((a, b) => b.mes.localeCompare(a.mes));
-  meses.forEach((m) => m.itens.sort((a, b) => b.amount - a.amount));
+  // dentro do mês, ordena por data (mais recente primeiro); empata pelo maior valor
+  meses.forEach((m) => m.itens.sort((a, b) => (b.paid_at || '').localeCompare(a.paid_at || '') || (b.amount - a.amount)));
 
   // --- séries de evolução (ascendente): preenche meses vazios entre o primeiro e o último ---
   const mesesAsc = [...meses].sort((a, b) => a.mes.localeCompare(b.mes)).filter((m) => m.mes >= '2000-01');
