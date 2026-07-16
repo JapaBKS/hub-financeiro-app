@@ -15,7 +15,7 @@ function mesAtualISO() {
 export default async function Home() {
   const sb = supabaseServer();
 
-  const [alloc, divs, pend, faturas, goal, positions, precos] = await Promise.all([
+  const [alloc, divs, pend, faturas, goal, positions, precos, pagamentos] = await Promise.all([
     sb.from('v_class_allocation').select('*'),
     sb.from('dividends').select('paid_at, amount'),
     sb.from('dividends_pending').select('amount, classe, pay_date'),
@@ -23,6 +23,7 @@ export default async function Home() {
     sb.from('goal_config').select('*').single(),
     sb.from('v_positions').select('ticker, quantidade, preco_atual'),
     sb.from('prices').select('ticker, previous_close, updated_at'),
+    sb.from('invoice_payments').select('card_id, bill_month'),
   ]);
 
   const classes = (alloc.data || []).filter((c) => Number(c.valor) > 0);
@@ -101,9 +102,13 @@ export default async function Home() {
   const varDiaPct = (total - varDia) > 0 ? varDia / (total - varDia) : 0;
   const subiu = varDia >= 0;
 
-  // faturas do mês
+  // faturas do mês (esconde as já pagas)
   const mes = mesAtualISO();
-  const faturasMes = (faturas.data || []).filter((f) => (f.bill_month || '').slice(0, 10) === mes).sort((a, b) => a.due_day - b.due_day);
+  const pagosSet = new Set((pagamentos.data || []).map((p) => `${p.card_id}|${(p.bill_month || '').slice(0, 10)}`));
+  const faturasMes = (faturas.data || [])
+    .filter((f) => (f.bill_month || '').slice(0, 10) === mes)
+    .filter((f) => !pagosSet.has(`${f.card_id}|${(f.bill_month || '').slice(0, 10)}`))
+    .sort((a, b) => a.due_day - b.due_day);
 
   const alvo = Number(goal.data?.target_value || 1000000);
   const progresso = Math.min(1, total / alvo);
