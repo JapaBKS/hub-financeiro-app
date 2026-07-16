@@ -14,8 +14,12 @@ export async function POST(req) {
   }
 
   if (b.month && /^\d{4}-\d{2}$/.test(b.month)) {
+    const [y, m] = b.month.split('-').map(Number);
+    const inicio = `${b.month}-01`;
+    // primeiro dia do mês seguinte (data sempre válida, evita "31 de setembro")
+    const proximo = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
     const { error } = await sb.from('dividends').delete()
-      .gte('paid_at', `${b.month}-01`).lte('paid_at', `${b.month}-31`);
+      .gte('paid_at', inicio).lt('paid_at', proximo);
     if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   }
