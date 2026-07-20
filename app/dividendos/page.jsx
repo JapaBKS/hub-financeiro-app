@@ -1,5 +1,4 @@
 import { supabaseServer } from '../../lib/supabase';
-import FormDividendos from './form-client';
 import RecebidosMes from './recebidos-client';
 import ImportarB3 from './importar-b3-client';
 import ImportarB3Receber from './importar-b3-receber-client';
@@ -17,9 +16,6 @@ export default async function Dividendos() {
 
   const hojeISO = new Date().toISOString().slice(0, 10);
   const futuros = (pend || []).filter((p) => (p.pay_date || '').slice(0, 10) >= hojeISO);
-  const totalAtual = futuros.reduce((s, p) => s + Number(p.amount), 0);
-  const fiisAtual = futuros.filter((p) => p.classe === 'fiis').reduce((s, p) => s + Number(p.amount), 0);
-  const acoesAtual = totalAtual - fiisAtual;
 
   // recebidos por mês (todo o histórico), com split ações/fiis e detalhe por ativo
   const mapMes = {};
@@ -70,11 +66,10 @@ export default async function Dividendos() {
       <header className="topbar">
         <div className="brand">
           <div className="mark" />
-          <div><b>Proventos a receber</b><span>sincronizar com a Rico</span></div>
+          <div><b>Proventos</b><span>recebidos e a receber</span></div>
         </div>
         <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
-      <FormDividendos totalAtual={totalAtual} qtdAtual={(pend || []).length} acoesAtual={acoesAtual} fiisAtual={fiisAtual} />
       <ImportarB3Receber />
       <ImportarB3 />
       <EvolucaoProventos porMes={porMes} porAno={porAno} />
