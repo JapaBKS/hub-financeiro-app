@@ -40,23 +40,30 @@ export default async function Dividendos() {
 
   // --- séries de evolução (ascendente): preenche meses vazios entre o primeiro e o último ---
   const mesesAsc = [...meses].sort((a, b) => a.mes.localeCompare(b.mes)).filter((m) => m.mes >= '2000-01');
+  const totalPorMes = {}; mesesAsc.forEach((m) => { totalPorMes[m.mes] = m.total; });
+  // pendentes (a receber) por mês
+  const pendPorMes = {};
+  futuros.forEach((p) => { const k = (p.pay_date || '').slice(0, 7); if (k) pendPorMes[k] = (pendPorMes[k] || 0) + Number(p.amount); });
+
   let porMes = [];
-  if (mesesAsc.length) {
-    const totalPorMes = {}; mesesAsc.forEach((m) => { totalPorMes[m.mes] = m.total; });
-    const [ya, ma] = mesesAsc[0].mes.split('-').map(Number);
-    const fim = hojeISO.slice(0, 7);
+  const chavesMes = [...new Set([...Object.keys(totalPorMes), ...Object.keys(pendPorMes)])].sort();
+  if (chavesMes.length) {
+    const [ya, ma] = chavesMes[0].split('-').map(Number);
+    const fim = chavesMes[chavesMes.length - 1];
     let y = ya, mo = ma;
     while (true) {
       const key = `${y}-${String(mo).padStart(2, '0')}`;
-      porMes.push({ key, total: totalPorMes[key] || 0 });
+      porMes.push({ key, total: totalPorMes[key] || 0, pendente: pendPorMes[key] || 0 });
       if (key === fim || key > fim) break;
       mo++; if (mo > 12) { mo = 1; y++; }
       if (porMes.length > 400) break;
     }
   }
+  // por ano (recebido + a receber)
   const anoMap = {};
-  mesesAsc.forEach((m) => { const a = m.mes.slice(0, 4); anoMap[a] = (anoMap[a] || 0) + m.total; });
-  const porAno = Object.entries(anoMap).map(([key, total]) => ({ key, total })).sort((a, b) => a.key.localeCompare(b.key));
+  mesesAsc.forEach((m) => { const a = m.mes.slice(0, 4); if (!anoMap[a]) anoMap[a] = { total: 0, pendente: 0 }; anoMap[a].total += m.total; });
+  Object.entries(pendPorMes).forEach(([k, v]) => { const a = k.slice(0, 4); if (!anoMap[a]) anoMap[a] = { total: 0, pendente: 0 }; anoMap[a].pendente += v; });
+  const porAno = Object.entries(anoMap).map(([key, o]) => ({ key, total: o.total, pendente: o.pendente })).sort((a, b) => a.key.localeCompare(b.key));
 
   return (
     <div className="wrap" style={{ maxWidth: 680 }}>
