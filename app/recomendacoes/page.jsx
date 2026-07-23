@@ -1,5 +1,6 @@
 import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
+import RecomendacoesLista from './lista-client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -9,12 +10,14 @@ const TOL = 0.03;
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }, { data: precos }] = await Promise.all([
+  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('assets').select('ticker, target_pct, asset_classes(name, target_pct)').gt('target_pct', 0),
     sb.from('v_class_allocation').select('valor'),
     sb.from('asset_classes').select('name, target_pct'),
     sb.from('prices').select('ticker, price'),
+    sb.from('assets').select('ticker').order('ticker'),
+    sb.from('asset_classes').select('id, name').order('name'),
   ]);
 
   const precoDe = {};
@@ -117,70 +120,6 @@ export default async function Recomendacoes() {
   const manter = itens.filter((i) => i.acao === 'manter');
   const novasN = comprar.filter((i) => i.nova).length;
 
-  const Linha = ({ i }) => (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px',
-      borderBottom: '1px solid var(--line-soft)',
-      borderLeft: i.nova ? '3px solid var(--up)' : i.atencao ? '3px solid var(--amber)' : '3px solid transparent',
-      background: i.nova ? 'var(--up-bg)' : 'transparent',
-    }}>
-      <div style={{
-        width: 30, height: 30, borderRadius: 8, flex: 'none', display: 'grid', placeItems: 'center',
-        fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13,
-        background: i.tom === 'buy' ? 'var(--up-bg)' : i.tom === 'sell' ? 'var(--down-bg)' : 'var(--surface-2)',
-        color: i.tom === 'buy' ? 'var(--up)' : i.tom === 'sell' ? 'var(--down)' : 'var(--ink-faint)',
-      }}>{i.tom === 'buy' ? 'C' : i.tom === 'sell' ? 'V' : '–'}</div>
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-          <b style={{ fontFamily: 'var(--font-display)', fontSize: 14 }}>{i.ticker}</b>
-          {i.nova && (
-            <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: '#fff', background: 'var(--up)', borderRadius: 4, padding: '1px 6px' }}>NOVA</span>
-          )}
-          <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{i.classe}</span>
-        </div>
-        <div style={{ fontSize: 12, marginTop: 2, color: i.atencao ? 'var(--amber)' : 'var(--ink-soft)' }}>
-          {i.atencao ? '⚠ ' : ''}{i.motivo}
-        </div>
-        {i.held && i.p && (
-          <div style={{ fontSize: 11.5, marginTop: 3, color: 'var(--ink-faint)', fontFamily: 'var(--font-display)' }}>
-            PM {brl(Number(i.p.preco_medio))}
-            {i.p.preco_atual != null && (
-              <>
-                {' · agora '}{brl(Number(i.p.preco_atual))}
-                {i.desconto != null && (
-                  <b style={{ color: i.desconto <= 0 ? 'var(--up)' : 'var(--down)', marginLeft: 4 }}>
-                    ({i.desconto > 0 ? '+' : ''}{pct(i.desconto)})
-                  </b>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: i.tom === 'buy' ? 'var(--up)' : 'var(--down)' }}>
-          {i.sugestaoRs >= 0 ? 'comprar ' : 'reduzir '}{brl(Math.abs(i.sugestaoRs))}
-        </div>
-        {(i.acao === 'comprar' || i.acao === 'reduzir') && (
-          i.precoUnit > 0 ? (
-            <div style={{ fontSize: 11, marginTop: 2, color: i.umaCotaPassa ? 'var(--amber)' : 'var(--ink-faint)' }}>
-              {i.umaCotaPassa
-                ? `1 cota = ${brl(i.precoUnit)} (acima do ajuste)`
-                : i.inteiro
-                  ? `≈ ${i.qtd} cota${i.qtd === 1 ? '' : 's'} a ${brl(i.precoUnit)}`
-                  : `≈ ${i.qtd.toLocaleString('pt-BR', { maximumFractionDigits: 6 })} un.`}
-            </div>
-          ) : (
-            <div style={{ fontSize: 11, marginTop: 2, color: 'var(--ink-faint)' }}>sem cotação p/ calcular cotas</div>
-          )
-        )}
-        <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>
-          {pct(i.pesoReal)} de {pct(i.target)}
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="wrap" style={{ maxWidth: 760 }}>
       <header className="topbar">
@@ -191,28 +130,15 @@ export default async function Recomendacoes() {
         <a href="/carteira" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>carteira →</a>
       </header>
 
-      <section className="card" style={{ marginBottom: 16 }}>
-        <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <h2>Comprar ({comprar.length})</h2>
-          {novasN > 0 && <span style={{ fontSize: 12, color: 'var(--up)', fontWeight: 600 }}>{novasN} {novasN === 1 ? 'nova' : 'novas'}</span>}
-        </div>
-        <div style={{ marginTop: 6 }}>
-          {comprar.map((i) => <Linha key={i.ticker} i={i} />)}
-          {comprar.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nada abaixo do alvo agora.</div>}
-        </div>
-      </section>
-
-      <section className="card" style={{ marginBottom: 16 }}>
-        <div className="card-h"><h2>Reduzir ({reduzir.length})</h2></div>
-        <div style={{ marginTop: 6 }}>
-          {reduzir.map((i) => <Linha key={i.ticker} i={i} />)}
-          {reduzir.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nenhum ativo acima do alvo.</div>}
-        </div>
-      </section>
-
-      <p style={{ fontSize: 12, color: 'var(--ink-faint)', textAlign: 'center', margin: '4px 0 18px' }}>
-        {manter.length} ativos no alvo. ⚠ = fora da condição de preço (comprar acima do PM ou vender abaixo) — aparece como aviso. Tolerância {(TOL * 100).toFixed(0)}%.
-      </p>
+      <RecomendacoesLista
+        comprar={comprar}
+        reduzir={reduzir}
+        manterN={manter.length}
+        novasN={novasN}
+        tol={TOL}
+        assets={listaAssets || []}
+        classes={listaClasses || []}
+      />
     </div>
   );
 }
