@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const inputStyle = {
   width: '100%', padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
@@ -7,7 +7,7 @@ const inputStyle = {
 };
 const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '14px 0 6px' };
 
-export default function FormNegociacao({ assets, classes }) {
+export default function FormNegociacao({ assets, classes, preset }) {
   const hoje = new Date().toISOString().slice(0, 10);
   const [ticker, setTicker] = useState('');
   const [novoTicker, setNovoTicker] = useState('');
@@ -18,6 +18,16 @@ export default function FormNegociacao({ assets, classes }) {
   const [price, setPrice] = useState('');
   const [estado, setEstado] = useState(null);
   const [msg, setMsg] = useState('');
+
+  // preenche automaticamente quando vem de uma recomendação clicada
+  useEffect(() => {
+    if (!preset) return;
+    if (preset.ticker) setTicker(preset.ticker);
+    if (preset.side) setSide(preset.side);
+    if (preset.quantity != null && preset.quantity !== '') setQuantity(String(preset.quantity));
+    if (preset.price != null && preset.price !== '') setPrice(String(preset.price));
+    setEstado(null); setMsg('');
+  }, [preset]);
 
   const ehNovo = ticker === '__novo__';
   const tickerFinal = ehNovo ? novoTicker : ticker;
