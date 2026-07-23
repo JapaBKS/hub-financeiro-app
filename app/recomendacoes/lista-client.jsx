@@ -1,14 +1,15 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { brl, pct } from '../../lib/format';
 import FormNegociacao from '../negociacoes/form-client';
 
 export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, tol, assets, classes }) {
   const [preset, setPreset] = useState(null);
-  const [aberto, setAberto] = useState(false);
-  const formRef = useRef(null);
+  const [abertoTicker, setAbertoTicker] = useState(null); // abre inline sob a linha
+  const [aberto, setAberto] = useState(false);            // form avulso no rodapé
 
   function usarRecomendacao(i) {
+    if (abertoTicker === i.ticker) { setAbertoTicker(null); return; } // clicar de novo fecha
     setPreset({
       ticker: i.ticker,
       side: i.acao === 'reduzir' ? 'venda' : 'compra',
@@ -16,8 +17,8 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
       price: i.precoUnit > 0 ? Number(i.precoUnit.toFixed(2)) : '',
       _t: Date.now(),
     });
-    setAberto(true);
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    setAbertoTicker(i.ticker);
+    setAberto(false);
   }
 
   const Linha = ({ i }) => (
@@ -26,7 +27,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
         display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', cursor: 'pointer',
         borderBottom: '1px solid var(--line-soft)',
         borderLeft: i.nova ? '3px solid var(--up)' : i.atencao ? '3px solid var(--amber)' : '3px solid transparent',
-        background: i.nova ? 'var(--up-bg)' : 'transparent',
+        background: abertoTicker === i.ticker ? 'var(--surface-2)' : i.nova ? 'var(--up-bg)' : 'transparent',
       }}>
       <div style={{
         width: 30, height: 30, borderRadius: 8, flex: 'none', display: 'grid', placeItems: 'center',
@@ -85,6 +86,23 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
     </div>
   );
 
+  const LinhaComForm = ({ i }) => (
+    <div>
+      <Linha i={i} />
+      {abertoTicker === i.ticker && (
+        <div style={{ padding: '4px 16px 16px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line-soft)' }}>
+          <FormNegociacao assets={assets} classes={classes} preset={preset} />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+            <button onClick={() => setAbertoTicker(null)} style={{
+              padding: '6px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)',
+            }}>fechar</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div>
       <section className="card" style={{ marginBottom: 16 }}>
@@ -93,7 +111,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
           {novasN > 0 && <span style={{ fontSize: 12, color: 'var(--up)', fontWeight: 600 }}>{novasN} {novasN === 1 ? 'nova' : 'novas'}</span>}
         </div>
         <div style={{ marginTop: 6 }}>
-          {comprar.map((i) => <Linha key={i.ticker} i={i} />)}
+          {comprar.map((i) => <LinhaComForm key={i.ticker} i={i} />)}
           {comprar.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nada abaixo do alvo agora.</div>}
         </div>
       </section>
@@ -101,7 +119,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
       <section className="card" style={{ marginBottom: 16 }}>
         <div className="card-h"><h2>Reduzir ({reduzir.length})</h2></div>
         <div style={{ marginTop: 6 }}>
-          {reduzir.map((i) => <Linha key={i.ticker} i={i} />)}
+          {reduzir.map((i) => <LinhaComForm key={i.ticker} i={i} />)}
           {reduzir.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nenhum ativo acima do alvo.</div>}
         </div>
       </section>
@@ -110,7 +128,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
         {manterN} ativos no alvo. ⚠ = fora da condição de preço. Tolerância {(tol * 100).toFixed(0)}%. Clique numa recomendação para registrar.
       </p>
 
-      <div ref={formRef}>
+      <div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: aberto ? 12 : 0 }}>
           <button onClick={() => setAberto((v) => !v)} style={{
             padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontSize: 13.5, fontWeight: 600,
