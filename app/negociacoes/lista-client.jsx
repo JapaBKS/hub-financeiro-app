@@ -64,7 +64,7 @@ export default function ListaNegociacoes({ trades }) {
             return (
               <div key={t.id} style={{ padding: '12px 18px', borderBottom: '1px solid var(--line-soft)' }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: 8 }}>{t.ticker}</div>
-                <div className="grid2">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <input style={inp} type="date" value={form.traded_at} onChange={(e) => setForm({ ...form, traded_at: e.target.value })} />
                   <select style={inp} value={form.side} onChange={(e) => setForm({ ...form, side: e.target.value })}>
                     <option value="compra">Compra</option>
@@ -85,8 +85,13 @@ export default function ListaNegociacoes({ trades }) {
               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5, color: t.side === 'compra' ? 'var(--up)' : 'var(--down)', background: t.side === 'compra' ? 'var(--up-bg)' : 'var(--down-bg)' }}>{t.side === 'compra' ? 'C' : 'V'}</span>
               <b style={{ fontFamily: 'var(--font-display)', minWidth: 58 }}>{t.ticker}</b>
               <span style={{ color: 'var(--ink-faint)', fontSize: 12 }}>{fmtData(t.traded_at)}</span>
-              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
-                {Number(t.quantity).toLocaleString('pt-BR')} × {fmt(t.price)}
+              <span style={{ marginLeft: 'auto', textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ display: 'block', fontWeight: 600, color: t.side === 'compra' ? 'var(--down)' : 'var(--up)' }}>
+                  {t.side === 'compra' ? '−' : '+'}{fmt(Number(t.quantity) * Number(t.price))}
+                </span>
+                <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-faint)' }}>
+                  {Number(t.quantity).toLocaleString('pt-BR')} × {fmt(t.price)}
+                </span>
               </span>
               <button onClick={() => abrirEdicao(t)} title="Editar" style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 14, padding: '0 2px' }}>✎</button>
               <button onClick={() => apagar(t.id)} disabled={busy === t.id} title="Apagar" style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 18, lineHeight: 1, padding: '0 2px' }}>{busy === t.id ? '…' : '×'}</button>
