@@ -130,6 +130,9 @@ export default async function Home() {
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   }
   const attLabel = rotuloAtt(ultimaAtt);
+  const horasAtt = ultimaAtt ? (Date.now() - ultimaAtt.getTime()) / 3600000 : Infinity;
+  const cotacoesDesatualizadas = horasAtt >= 48; // 2+ dias sem atualizar (job pode ter quebrado)
+  const diasAtt = isFinite(horasAtt) ? Math.floor(horasAtt / 24) : null;
 
   return (
     <div className="wrap">
@@ -142,7 +145,13 @@ export default async function Home() {
           fontSize: 12, fontWeight: 600, color: 'var(--forest-2)', textDecoration: 'none',
           border: '1px solid var(--line)', borderRadius: 8, padding: '6px 11px', marginRight: 12, whiteSpace: 'nowrap',
         }}>⤓ backup</a>
-        <div className="clock">cotações · {attLabel}<br /><b>{hoje}</b></div>
+        <div className="clock">
+          cotações · {attLabel}
+          {cotacoesDesatualizadas && (
+            <span style={{ color: 'var(--amber)', fontWeight: 600 }}> · ⚠ desatualizadas{diasAtt != null ? ` há ${diasAtt}d` : ''}</span>
+          )}
+          <br /><b>{hoje}</b>
+        </div>
       </header>
 
       <AlertaContas dias={3} compact />
