@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { brl, pct } from '../../lib/format';
 import FormNegociacao from '../negociacoes/form-client';
+import PrecoManual from '../preco-manual-client';
 
 export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, tol, assets, classes }) {
   const [preset, setPreset] = useState(null);
@@ -76,7 +77,9 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
                   : `≈ ${i.qtd.toLocaleString('pt-BR', { maximumFractionDigits: 6 })} un.`}
             </div>
           ) : (
-            <div style={{ fontSize: 11, marginTop: 2, color: 'var(--ink-faint)' }}>sem cotação p/ calcular cotas</div>
+            <div style={{ fontSize: 11, marginTop: 3 }} onClick={(e) => e.stopPropagation()}>
+              <PrecoManual ticker={i.ticker} valor={i.precoManual} />
+            </div>
           )
         )}
         <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>
