@@ -2,7 +2,6 @@ import { supabaseServer } from '../../lib/supabase';
 import RecebidosMes from './recebidos-client';
 import ImportarB3 from './importar-b3-client';
 import ImportarB3Receber from './importar-b3-receber-client';
-import AReceber from './a-receber-client';
 import EvolucaoProventos from './evolucao-client';
 
 export const dynamic = 'force-dynamic';
@@ -42,18 +41,22 @@ export default async function Dividendos() {
   const pendPorMes = {};
   futuros.forEach((p) => { const k = (p.pay_date || '').slice(0, 7); if (k) pendPorMes[k] = (pendPorMes[k] || 0) + Number(p.amount); });
 
-  // detalhe do a receber, agrupado por mês (cronológico)
-  const arMap = {};
+  // meses SEGUINTES (a receber): estritamente após o mês atual, marcados como futuro
+  const mesAtualKey = hojeISO.slice(0, 7);
+  const futMap = {};
   futuros.forEach((p) => {
     const k = (p.pay_date || '').slice(0, 7);
-    if (!k) return;
-    if (!arMap[k]) arMap[k] = { mes: k, total: 0, itens: [] };
-    arMap[k].total += Number(p.amount);
-    arMap[k].itens.push({ ticker: p.ticker, kind: p.kind, amount: Number(p.amount), pay_date: (p.pay_date || '').slice(0, 10), fii: p.classe === 'fiis' });
+    if (!k || k <= mesAtualKey) return;
+    if (!futMap[k]) futMap[k] = { mes: k, total: 0, acoes: 0, fiis: 0, itens: [], futuro: true };
+    const v = Number(p.amount); const ehFii = p.classe === 'fiis';
+    futMap[k].total += v;
+    if (ehFii) futMap[k].fiis += v; else futMap[k].acoes += v;
+    futMap[k].itens.push({ ticker: p.ticker, kind: p.kind, amount: v, pay_date: (p.pay_date || '').slice(0, 10), fii: ehFii });
   });
-  const aReceber = Object.values(arMap).sort((a, b) => a.mes.localeCompare(b.mes));
-  aReceber.forEach((m) => m.itens.sort((a, b) => a.pay_date.localeCompare(b.pay_date)));
-  const totalAReceber = futuros.reduce((s, p) => s + Number(p.amount), 0);
+  const futMeses = Object.values(futMap);
+  futMeses.forEach((m) => m.itens.sort((a, b) => a.pay_date.localeCompare(b.pay_date)));
+  // junta com os recebidos e ordena do mais recente/futuro pro mais antigo
+  const mesesComFuturo = [...meses, ...futMeses].sort((a, b) => b.mes.localeCompare(a.mes));
 
   let porMes = [];
   const chavesMes = [...new Set([...Object.keys(totalPorMes), ...Object.keys(pendPorMes)])].sort();
@@ -85,10 +88,9 @@ export default async function Dividendos() {
         <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
       <ImportarB3Receber />
-      <AReceber meses={aReceber} total={totalAReceber} />
       <ImportarB3 />
       <EvolucaoProventos porMes={porMes} porAno={porAno} />
-      <RecebidosMes meses={meses} />
+      <RecebidosMes meses={mesesComFuturo} />
     </div>
   );
 }
