@@ -148,3 +148,7 @@ input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px var(--
   animation: barGrow .55s cubic-bezier(.22,.61,.36,1) both;
 }
 @media (prefers-reduced-motion: reduce) { .bar-grow { animation: none; } }
+
+/* variante p/ barras que são divs HTML (ex.: dividendos por ano no painel) */
+.bar-grow-h { transform-origin: center bottom; animation: barGrow .55s cubic-bezier(.22,.61,.36,1) both; }
+@media (prefers-reduced-motion: reduce) { .bar-grow-h { animation: none; } }
