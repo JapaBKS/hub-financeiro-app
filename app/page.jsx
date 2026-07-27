@@ -138,6 +138,10 @@ export default async function Home() {
           <div className="mark" />
           <div><b>Patrimônio</b><span>seu hub financeiro</span></div>
         </div>
+        <a href="/api/backup" title="Baixar backup (.zip com todos os dados)" style={{
+          fontSize: 12, fontWeight: 600, color: 'var(--forest-2)', textDecoration: 'none',
+          border: '1px solid var(--line)', borderRadius: 8, padding: '6px 11px', marginRight: 12, whiteSpace: 'nowrap',
+        }}>⤓ backup</a>
         <div className="clock">cotações · {attLabel}<br /><b>{hoje}</b></div>
       </header>
 
