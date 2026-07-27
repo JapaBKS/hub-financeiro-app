@@ -118,3 +118,24 @@ input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px var(--
   *,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important;scroll-behavior:auto !important}
   button:active{transform:none}
 }
+
+/* fade-in dos cards ao carregar (com leve subida) + stagger em sequência */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card {
+  animation: cardIn .45s cubic-bezier(.22,.61,.36,1) both;
+}
+/* stagger: cada card entra um pouquinho depois do anterior */
+.card:nth-of-type(1) { animation-delay: .02s; }
+.card:nth-of-type(2) { animation-delay: .08s; }
+.card:nth-of-type(3) { animation-delay: .14s; }
+.card:nth-of-type(4) { animation-delay: .20s; }
+.card:nth-of-type(5) { animation-delay: .26s; }
+.card:nth-of-type(6) { animation-delay: .32s; }
+.card:nth-of-type(n+7) { animation-delay: .36s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card { animation: none; }
+}
