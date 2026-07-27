@@ -1,5 +1,6 @@
 import { supabaseServer } from '../../lib/supabase';
 import { brl, pct } from '../../lib/format';
+import PrecoManual from '../preco-manual-client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -8,15 +9,23 @@ const fmtNum = (n, d = 2) => Number(n).toLocaleString('pt-BR', { minimumFraction
 
 export default async function Carteira() {
   const sb = supabaseServer();
-  const { data: pos } = await sb.from('v_positions').select('*');
+  const [{ data: pos }, { data: manuais }] = await Promise.all([
+    sb.from('v_positions').select('*'),
+    sb.from('manual_prices').select('ticker, price'),
+  ]);
+  const manualDe = {};
+  (manuais || []).forEach((m) => { manualDe[m.ticker] = Number(m.price); });
 
   // inclui todos; quem não tem cotação usa o PM como valor provisório
   const ativos = (pos || []).map((p) => {
-    const semCotacao = p.preco_atual == null;
-    const precoRef = semCotacao ? Number(p.preco_medio) : Number(p.preco_atual);
+    const semAuto = p.preco_atual == null;
+    const manual = semAuto ? (manualDe[p.ticker] ?? null) : null;
+    const usouManual = semAuto && manual != null;
+    const semCotacao = semAuto && manual == null;
+    const precoRef = !semAuto ? Number(p.preco_atual) : (usouManual ? manual : Number(p.preco_medio));
     const valor = Number(p.quantidade) * precoRef;
-    const lucro = semCotacao ? 0 : Number(p.lucro_rs);
-    return { ...p, semCotacao, precoRef, valor, lucro };
+    const lucro = !semAuto ? Number(p.lucro_rs) : (usouManual ? valor - Number(p.quantidade) * Number(p.preco_medio) : 0);
+    return { ...p, semAuto, semCotacao, usouManual, manual, precoRef, valor, lucro };
   });
 
   const totalCarteira = ativos.reduce((s, p) => s + p.valor, 0);
@@ -61,6 +70,9 @@ export default async function Carteira() {
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <b style={{ fontFamily: 'var(--font-display)', fontSize: 14 }}>{p.ticker}</b>
+            {p.usouManual && (
+              <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--forest-2)', background: 'var(--up-bg)', borderRadius: 5, padding: '1px 6px' }}>preço manual</span>
+            )}
             {p.semCotacao && (
               <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--amber)', background: 'var(--amber-bg)', borderRadius: 5, padding: '1px 6px' }}>aguardando cotação</span>
             )}
@@ -70,8 +82,11 @@ export default async function Carteira() {
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 2, fontFamily: 'var(--font-display)' }}>
             {fmtNum(p.quantidade, Number.isInteger(Number(p.quantidade)) ? 0 : 2)} · PM {fmtNum(p.preco_medio)}
-            {p.semCotacao ? '' : ` · agora ${fmtNum(p.preco_atual)}`}
+            {p.semAuto ? (p.usouManual ? ` · manual ${fmtNum(p.manual)}` : '') : ` · agora ${fmtNum(p.preco_atual)}`}
           </div>
+          {p.semAuto && (
+            <div style={{ marginTop: 5 }}><PrecoManual ticker={p.ticker} valor={p.manual} /></div>
+          )}
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{brl(p.valor)}</div>
