@@ -75,7 +75,7 @@ export default function ImportarB3Receber() {
     const data = await res.json().catch(() => ({}));
     if (res.ok && data.ok) {
       setEstado('ok');
-      setMsg(`${data.inseridos} adicionados · ${data.ignorados} já existiam.`);
+      setMsg(`${data.inseridos} proventos importados (substituiu os "a receber" anteriores).`);
       setTimeout(() => window.location.reload(), 1100);
     } else {
       setEstado('erro');
@@ -88,7 +88,7 @@ export default function ImportarB3Receber() {
       <div className="card-h"><h2>Importar a receber da B3</h2></div>
       <div style={{ padding: '8px 20px 0' }}>
         <p style={{ fontSize: 12, color: 'var(--ink-faint)', margin: '0 0 8px' }}>
-          Cole a aba “a receber” copiada do site da B3 (com o cabeçalho). Vai pros proventos pendentes. Só entra o que ainda não existe.
+          Cole a aba “a receber” COMPLETA copiada do site da B3 (com o cabeçalho). A B3 é a fonte da verdade: isto substitui todos os “a receber” pelos da B3 (os já recebidos não são afetados).
         </p>
         <textarea style={ta} value={texto} onChange={(e) => setTexto(e.target.value)}
           placeholder="Produto&#9;Tipo&#9;Previsão de Pagamento&#9;Tipo de Evento&#9;Instituição&#9;Quantidade&#9;Preço Unitário&#9;Valor Líquido" />
