@@ -64,7 +64,7 @@ export default function MetaChart({ proj, realPts, target, todayIdx, realNow }) 
           ))}
           <line x1={padL} y1={py(target)} x2={W - padR} y2={py(target)} stroke="var(--brass)" strokeWidth="1" strokeDasharray="2 3" opacity="0.5" />
           <polyline points={projLine} fill="none" stroke="var(--brass)" strokeWidth="2" strokeDasharray="5 4" />
-          {realLine && <polyline points={realLine} fill="none" stroke="var(--forest-2)" strokeWidth="2.5" />}
+          {realLine && <polyline points={realLine} pathLength="1" className="line-draw" fill="none" stroke="var(--forest-2)" strokeWidth="2.5" />}
           <circle cx={px(todayIdx)} cy={py(realNow)} r="3.5" fill="var(--forest)" />
 
           {/* guia + pontos no hover */}
