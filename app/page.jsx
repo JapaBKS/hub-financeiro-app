@@ -184,7 +184,7 @@ export default async function Home() {
           <section className="card">
             <div className="card-h"><h2>Carteira por classe · real vs. alvo</h2></div>
             <div>
-              {classes.map((c) => {
+              {classes.map((c, i) => {
                 const real = Number(c.pct_real);
                 const alvoPct = Number(c.pct_alvo || 0);
                 const ajuste = Number(c.ajuste_rs);
@@ -194,7 +194,7 @@ export default async function Home() {
                   <div className="alloc-row" key={c.classe}>
                     <div className="a-name">{c.classe}<span>{brl(Number(c.valor))}</span></div>
                     <div className="a-bar">
-                      <div className="fill" style={{ width: `${(real / maxPct) * 100}%`, background: tag === 'sell' ? 'var(--amber)' : 'var(--forest-2)' }} />
+                      <div className="fill bar-grow-x" style={{ width: `${(real / maxPct) * 100}%`, background: tag === 'sell' ? 'var(--amber)' : 'var(--forest-2)', animationDelay: `${0.12 + i * 0.05}s` }} />
                       <div className="ideal" style={{ left: `${(alvoPct / maxPct) * 100}%` }} />
                     </div>
                     <div className="a-act">
