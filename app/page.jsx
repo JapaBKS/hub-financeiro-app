@@ -221,9 +221,9 @@ export default async function Home() {
               <div><div className="eyebrow" style={{ marginBottom: 3 }}>Acumulado</div><div className="v">{brl(divTotal)}</div></div>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 78, padding: '8px 20px 16px' }}>
-              {anos.map((a) => (
+              {anos.map((a, i) => (
                 <div key={a} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, height: '100%', justifyContent: 'flex-end' }}>
-                  <div style={{ width: '100%', maxWidth: 34, height: `${(porAno[a] / maxAno) * 100}%`, background: a === anoAtual ? 'var(--forest)' : 'var(--brass)', opacity: a === anoAtual ? 1 : 0.85, borderRadius: '4px 4px 0 0', minHeight: 3 }} />
+                  <div className="bar-grow-h" style={{ width: '100%', maxWidth: 34, height: `${(porAno[a] / maxAno) * 100}%`, background: a === anoAtual ? 'var(--forest)' : 'var(--brass)', opacity: a === anoAtual ? 1 : 0.85, borderRadius: '4px 4px 0 0', minHeight: 3, animationDelay: `${0.15 + i * 0.06}s` }} />
                   <span style={{ fontSize: 10, color: 'var(--ink-faint)', fontFamily: 'var(--font-display)' }}>{a}</span>
                 </div>
               ))}
