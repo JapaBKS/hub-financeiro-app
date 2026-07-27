@@ -231,11 +231,13 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
               <div style={{ fontSize: 12, color: 'var(--ink-faint)', marginBottom: 8 }}>Gastos por categoria · <b style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>{fmt(gastoTotal)}</b></div>
               <div style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
                 <svg viewBox="0 0 150 150" width="150" height="150" style={{ flex: 'none' }}>
-                  {fatias.length === 1 ? (
-                    <circle cx="75" cy="75" r="56" fill="none" stroke={fatias[0].color} strokeWidth="28" />
-                  ) : (
-                    fatias.map((s) => <path key={s.cat} d={arcPath(s.a0, s.a1, 75, 75, 70, 42)} fill={s.color} />)
-                  )}
+                  <g className="donut-in">
+                    {fatias.length === 1 ? (
+                      <circle cx="75" cy="75" r="56" fill="none" stroke={fatias[0].color} strokeWidth="28" />
+                    ) : (
+                      fatias.map((s) => <path key={s.cat} d={arcPath(s.a0, s.a1, 75, 75, 70, 42)} fill={s.color} />)
+                    )}
+                  </g>
                   <text x="75" y="80" textAnchor="middle" fontSize="12.5" fontWeight="600" fill="var(--ink)" style={{ fontFamily: 'var(--font-display)' }}>{fmt(gastoTotal)}</text>
                 </svg>
                 <div style={{ flex: 1, minWidth: 180 }}>
