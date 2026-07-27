@@ -139,3 +139,12 @@ input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px var(--
 @media (prefers-reduced-motion: reduce) {
   .card { animation: none; }
 }
+
+/* barras de gráfico crescendo do zero (a partir da base) */
+@keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.bar-grow {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: barGrow .55s cubic-bezier(.22,.61,.36,1) both;
+}
+@media (prefers-reduced-motion: reduce) { .bar-grow { animation: none; } }
