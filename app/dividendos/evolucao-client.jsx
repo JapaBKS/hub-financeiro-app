@@ -72,10 +72,12 @@ export default function EvolucaoProventos({ porMes, porAno }) {
                 <rect x={cx(i) - bw / 2} y={padT} width={bw} height={chartH} fill="transparent" />
                 {d.total > 0 && (
                   <rect x={cx(i) - barW / 2} y={baseline - hR} width={barW} height={Math.max(hR, 1)} rx="3"
+                    className="bar-grow" style={{ animationDelay: `${0.1 + i * 0.03}s` }}
                     fill={ativo ? 'var(--forest)' : 'var(--forest-2)'} />
                 )}
                 {(d.pendente || 0) > 0 && (
                   <rect x={cx(i) - barW / 2} y={baseline - hR - hP} width={barW} height={Math.max(hP, 1)} rx="3"
+                    className="bar-grow" style={{ animationDelay: `${0.1 + i * 0.03}s` }}
                     fill="var(--forest-2)" opacity={ativo ? 0.5 : 0.32} />
                 )}
                 {(modo === 'ano' || n <= 14 || i % Math.ceil(n / 14) === 0) && (
