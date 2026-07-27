@@ -10,7 +10,7 @@ const TOL = 0.03;
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }] = await Promise.all([
+  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }, { data: manuais }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('assets').select('ticker, target_pct, asset_classes(name, target_pct)').gt('target_pct', 0),
     sb.from('v_class_allocation').select('valor'),
@@ -18,12 +18,15 @@ export default async function Recomendacoes() {
     sb.from('prices').select('ticker, price'),
     sb.from('assets').select('ticker').order('ticker'),
     sb.from('asset_classes').select('id, name').order('name'),
+    sb.from('manual_prices').select('ticker, price'),
   ]);
 
   const precoDe = {};
   (precos || []).forEach((p) => { precoDe[p.ticker] = Number(p.price); });
   const pmDe = {};
   (pos || []).forEach((p) => { if (Number(p.preco_medio) > 0) pmDe[p.ticker] = Number(p.preco_medio); });
+  const manualDe = {};
+  (manuais || []).forEach((m) => { manualDe[m.ticker] = Number(m.price); });
 
   // classes com pesos por ativo (têm vários ativos dentro)
   const GRUPOS = ['Ações BR', 'BDRS', 'FIIS'];
@@ -95,7 +98,10 @@ export default async function Recomendacoes() {
     // preço unitário: cotação atual, senão do mapa de preços, senão PM (de qualquer posição)
     const precoUnit = (held && p.preco_atual != null ? Number(p.preco_atual) : null)
       ?? (precoDe[u.ticker] > 0 ? precoDe[u.ticker] : null)
+      ?? (manualDe[u.ticker] > 0 ? manualDe[u.ticker] : null)
       ?? (pmDe[u.ticker] > 0 ? pmDe[u.ticker] : null);
+    const semCotacaoAuto = !(held && p.preco_atual != null) && !(precoDe[u.ticker] > 0);
+    const precoManual = manualDe[u.ticker] ?? null;
     const inteiro = GRUPOS.includes(u.classe); // ações/BDRs/FIIs = cotas inteiras
     const rs = Math.abs(sugestaoRs);
     let qtd = null, umaCotaPassa = false;
@@ -108,7 +114,7 @@ export default async function Recomendacoes() {
       }
     }
 
-    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto: d, acao, tom, motivo, forca, nova, atencao, p, precoUnit, qtd, inteiro, umaCotaPassa });
+    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto: d, acao, tom, motivo, forca, nova, atencao, p, precoUnit, qtd, inteiro, umaCotaPassa, semCotacaoAuto, precoManual });
   }
 
   // novas primeiro, depois clean vs atenção; dentro de cada grupo, MAIOR valor no topo
