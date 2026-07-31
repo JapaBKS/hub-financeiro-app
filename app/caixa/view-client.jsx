@@ -22,8 +22,24 @@ function arcPath(a0, a1, cx, cy, R, r) {
 export default function CaixaView({ resumo, categorias, bills = [] }) {
   const mesAtual = mesDe(hojeISO());
   const mesesDisponiveis = resumo.map((r) => r.mes);
-  const inicial = mesesDisponiveis.includes(mesAtual) ? mesAtual : (mesesDisponiveis[mesesDisponiveis.length - 1] || mesAtual);
-  const [mes, setMes] = useState(inicial);
+  // mês padrão (igual ao que o servidor calcularia, evita mismatch de hidratação)
+  const inicialPadrao = mesesDisponiveis.includes(mesAtual) ? mesAtual : (mesesDisponiveis[mesesDisponiveis.length - 1] || mesAtual);
+  const [mes, setMesRaw] = useState(inicialPadrao);
+  // ao trocar de mês, guarda na URL (sem navegar) pra sobreviver a um reload (ex.: confirmar pagamento)
+  function setMes(novoMes) {
+    setMesRaw(novoMes);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('mes', novoMes);
+      window.history.replaceState({}, '', url);
+    }
+  }
+  // após montar, se a URL já guardava um mês válido (voltando de um reload), usa ele
+  useEffect(() => {
+    const mesDaUrl = new URLSearchParams(window.location.search).get('mes');
+    if (mesDaUrl && mesDaUrl !== mes && mesesDisponiveis.includes(mesDaUrl)) setMesRaw(mesDaUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // agrupa meses por ano (asc), com anos anteriores recolhidos
   const anoAtual = String(new Date().getFullYear());
@@ -231,13 +247,11 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
               <div style={{ fontSize: 12, color: 'var(--ink-faint)', marginBottom: 8 }}>Gastos por categoria · <b style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>{fmt(gastoTotal)}</b></div>
               <div style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
                 <svg viewBox="0 0 150 150" width="150" height="150" style={{ flex: 'none' }}>
-                  <g className="donut-in">
-                    {fatias.length === 1 ? (
-                      <circle cx="75" cy="75" r="56" fill="none" stroke={fatias[0].color} strokeWidth="28" />
-                    ) : (
-                      fatias.map((s) => <path key={s.cat} d={arcPath(s.a0, s.a1, 75, 75, 70, 42)} fill={s.color} />)
-                    )}
-                  </g>
+                  {fatias.length === 1 ? (
+                    <circle cx="75" cy="75" r="56" fill="none" stroke={fatias[0].color} strokeWidth="28" />
+                  ) : (
+                    fatias.map((s) => <path key={s.cat} d={arcPath(s.a0, s.a1, 75, 75, 70, 42)} fill={s.color} />)
+                  )}
                   <text x="75" y="80" textAnchor="middle" fontSize="12.5" fontWeight="600" fill="var(--ink)" style={{ fontFamily: 'var(--font-display)' }}>{fmt(gastoTotal)}</text>
                 </svg>
                 <div style={{ flex: 1, minWidth: 180 }}>
