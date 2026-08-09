@@ -1,7 +1,8 @@
 import { supabaseServer } from '../lib/supabase';
 
-// Mostra a reserva em MESES de despesa real (média do Caixa), em vez de %.
-// Usa a classe "Emergência" se existir; senão cai pra "Reserva".
+// Reserva em MESES de despesa real (em vez de %).
+// Considera SÓ a sua parte das faturas do cartão (amount − amount_pai),
+// porque as contas da casa no Caixa são pagas pelo seu pai.
 export default async function CoberturaEmergencia({ meses = 6 }) {
   const sb = supabaseServer();
 
@@ -10,20 +11,22 @@ export default async function CoberturaEmergencia({ meses = 6 }) {
   const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - meses, 1);
   const iso = (d) => d.toISOString().slice(0, 10);
 
-  const [{ data: saidas }, { data: classes }] = await Promise.all([
-    sb.from('cashbook').select('entry_date, amount')
-      .eq('kind', 'saida')
-      .gte('entry_date', iso(inicio))
-      .lt('entry_date', iso(primeiroDoMes)),
+  const [{ data: itens }, { data: classes }] = await Promise.all([
+    sb.from('v_card_invoice_items').select('bill_month, amount, amount_pai')
+      .gte('bill_month', iso(inicio))
+      .lt('bill_month', iso(primeiroDoMes)),
     sb.from('v_class_allocation').select('classe, valor'),
   ]);
 
   const porMes = {};
-  (saidas || []).forEach((s) => {
-    const k = (s.entry_date || '').slice(0, 7);
+  (itens || []).forEach((i) => {
+    const k = (i.bill_month || '').slice(0, 7);
     if (!k) return;
-    porMes[k] = (porMes[k] || 0) + Number(s.amount || 0);
+    const meu = Number(i.amount || 0) - Number(i.amount_pai || 0);
+    if (meu <= 0) return; // parcelas 100% do pai não entram
+    porMes[k] = (porMes[k] || 0) + meu;
   });
+
   const mesesComDado = Object.keys(porMes).length;
   if (!mesesComDado) return null;
 
@@ -61,17 +64,17 @@ export default async function CoberturaEmergencia({ meses = 6 }) {
         </div>
         <div style={{ textAlign: 'right', fontSize: 11.5, color: 'var(--ink-faint)' }}>
           <div>{fmt(valor)} guardados</div>
-          <div>gasto médio {fmt(mediaMensal)}/mês</div>
+          <div>sua parte no cartão: {fmt(mediaMensal)}/mês</div>
         </div>
       </div>
 
-      <div style={{ height: 8, borderRadius: 5, background: 'var(--track)', overflow: 'hidden', marginTop: 12, position: 'relative' }}>
+      <div style={{ height: 8, borderRadius: 5, background: 'var(--track)', overflow: 'hidden', marginTop: 12 }}>
         <div className="bar-grow-x" style={{ width: `${preenchido * 100}%`, height: '100%', background: cor, borderRadius: 5 }} />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 10.5, color: 'var(--ink-faint)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 10.5, color: 'var(--ink-faint)', gap: 8, flexWrap: 'wrap' }}>
         <span>{recado}</span>
-        <span>meta {alvoMeses} meses</span>
+        <span>média de {mesesComDado} {mesesComDado === 1 ? 'mês' : 'meses'} · meta {alvoMeses}</span>
       </div>
     </section>
   );
