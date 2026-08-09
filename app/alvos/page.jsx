@@ -14,7 +14,7 @@ export default async function Alvos() {
   const ids = (classes || []).map((c) => c.id);
   const { data: assets } = await sb
     .from('assets')
-    .select('ticker, target_pct, class_id')
+    .select('ticker, target_pct, class_id, congelado')
     .in('class_id', ids)
     .not('target_pct', 'is', null);
 
@@ -26,7 +26,7 @@ export default async function Alvos() {
       groupTarget: Number(c.target_pct),
       itens: (assets || [])
         .filter((a) => a.class_id === c.id)
-        .map((a) => ({ ticker: a.ticker, pct: Math.round(Number(a.target_pct) * 10000) / 100 })) // fração -> %
+        .map((a) => ({ ticker: a.ticker, pct: Math.round(Number(a.target_pct) * 10000) / 100, congelado: !!a.congelado })) // fração -> %
         .sort((a, b) => b.pct - a.pct),
     }));
 
