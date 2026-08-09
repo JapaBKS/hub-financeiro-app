@@ -16,7 +16,7 @@ function mesAtualISO() {
 export default async function Home() {
   const sb = supabaseServer();
 
-  const [alloc, divs, pend, faturas, goal, positions, precos, pagamentos] = await Promise.all([
+  const [alloc, divs, pend, faturas, goal, positions, precos, pagamentos, classesCfg] = await Promise.all([
     sb.from('v_class_allocation').select('*'),
     sb.from('dividends').select('paid_at, amount'),
     sb.from('dividends_pending').select('amount, classe, pay_date'),
@@ -25,9 +25,15 @@ export default async function Home() {
     sb.from('v_positions').select('ticker, quantidade, preco_atual'),
     sb.from('prices').select('ticker, previous_close, updated_at'),
     sb.from('invoice_payments').select('card_id, bill_month'),
+    sb.from('asset_classes').select('name, alvo_valor'),
   ]);
 
   const classes = (alloc.data || []).filter((c) => Number(c.valor) > 0);
+  // classes com alvo em R$ (ex.: reserva) — o alvo delas não é percentual
+  const alvoFixoDe = {};
+  (classesCfg.data || []).forEach((c) => {
+    if (c.alvo_valor != null && Number(c.alvo_valor) > 0) alvoFixoDe[c.name] = Number(c.alvo_valor);
+  });
   const total = classes.reduce((s, c) => s + Number(c.valor), 0);
   const maxPct = Math.max(0.01, ...classes.map((c) => Math.max(Number(c.pct_real), Number(c.pct_alvo || 0))));
 
@@ -189,10 +195,14 @@ export default async function Home() {
             <div>
               {classes.map((c, i) => {
                 const real = Number(c.pct_real);
-                const alvoPct = Number(c.pct_alvo || 0);
-                const ajuste = Number(c.ajuste_rs);
-                const tag = ajuste > 50 ? 'buy' : ajuste < -50 ? 'sell' : 'hold';
-                const tagTxt = ajuste > 50 ? `comprar ${brlShort(ajuste)}` : ajuste < -50 ? `acima ${brlShort(ajuste)}` : 'manter';
+                const fixo = alvoFixoDe[c.classe];
+                const temFixo = fixo != null;
+                const alvoPct = temFixo ? (total > 0 ? fixo / total : 0) : Number(c.pct_alvo || 0);
+                const ajuste = temFixo ? fixo - Number(c.valor) : Number(c.ajuste_rs);
+                const tag = ajuste > 50 ? 'buy' : (!temFixo && ajuste < -50) ? 'sell' : 'hold';
+                const tagTxt = temFixo
+                  ? (ajuste > 50 ? `guardar ${brlShort(ajuste)}` : ajuste < -50 ? `sobra ${brlShort(-ajuste)}` : 'no alvo')
+                  : (ajuste > 50 ? `comprar ${brlShort(ajuste)}` : ajuste < -50 ? `acima ${brlShort(ajuste)}` : 'manter');
                 return (
                   <div className="alloc-row" key={c.classe}>
                     <div className="a-name">{c.classe}<span>{brl(Number(c.valor))}</span></div>
@@ -202,7 +212,7 @@ export default async function Home() {
                     </div>
                     <div className="a-act">
                       <span className={`tag ${tag}`}>{tagTxt}</span>
-                      <span className="pct">{pct(real)} · alvo {pct(alvoPct)}</span>
+                      <span className="pct">{pct(real)} · alvo {temFixo ? brlShort(fixo) : pct(alvoPct)}</span>
                     </div>
                   </div>
                 );
