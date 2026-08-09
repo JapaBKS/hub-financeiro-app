@@ -58,7 +58,7 @@ export default async function Home() {
   const aReceberAcoes = aReceber - aReceberFiis;
 
   // total "na Rico" = classes que ficam na corretora
-  const CLASSES_RICO = ['FIIS', 'Ações BR', 'BDRS', 'Tesouro', 'Fundos de Investimentos'];
+  const CLASSES_RICO = ['FIIS', 'Ações BR', 'Global', 'Tesouro', 'Fundos de Investimentos'];
   const investidoRico = classes.filter((c) => CLASSES_RICO.includes(c.classe)).reduce((s, c) => s + Number(c.valor), 0);
   const ricoComReceber = investidoRico + aReceber;
 
@@ -67,14 +67,14 @@ export default async function Home() {
 
   const valorClasse = (nome) => Number((classes.find((c) => c.classe === nome) || {}).valor || 0);
   const vAcoes = valorClasse('Ações BR');
-  const vBdrs = valorClasse('BDRS');
+  const vGlobal = valorClasse('Global');
   const ricoItens = [
     { label: 'FIIS', valor: valorClasse('FIIS') },
     {
-      label: 'Renda Variável', valor: vAcoes + vBdrs,
+      label: 'Renda Variável', valor: vAcoes + vGlobal,
       sub: [
         { label: 'Ações BR', valor: vAcoes },
-        { label: 'BDRS', valor: vBdrs },
+        { label: 'Global', valor: vGlobal },
       ].filter((s) => s.valor > 0),
     },
     { label: 'Tesouro', valor: valorClasse('Tesouro') },
