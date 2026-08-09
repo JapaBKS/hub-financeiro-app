@@ -3,6 +3,7 @@ import { brl, brlShort, pct } from '../lib/format';
 import CardOrigem from './card-origem-client';
 import AlertaContas from './alerta-contas';
 import NumeroAnimado from './numero-animado';
+import CoberturaEmergencia from './cobertura-emergencia';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -155,6 +156,8 @@ export default async function Home() {
       </header>
 
       <AlertaContas dias={3} compact />
+
+      <CoberturaEmergencia meses={6} />
 
       <section className="card hero">
         <div className="hero-top">
