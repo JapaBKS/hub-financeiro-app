@@ -9,16 +9,25 @@ const fmtNum = (n, d = 2) => Number(n).toLocaleString('pt-BR', { minimumFraction
 
 export default async function Carteira() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: manuais }] = await Promise.all([
+  const [{ data: pos }, { data: manuais }, { data: precos }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('manual_prices').select('ticker, price'),
+    sb.from('prices').select('ticker, updated_at'),
   ]);
   const manualDe = {};
   (manuais || []).forEach((m) => { manualDe[m.ticker] = Number(m.price); });
+  // cotação parada há 2+ dias é tratada como "sem cotação" (ex.: BDRs que a brapi parou de devolver)
+  const FRESCO_MS = 48 * 3600 * 1000;
+  const AGORA = Date.now();
+  const staleDe = {};
+  (precos || []).forEach((p) => {
+    const idade = p.updated_at ? (AGORA - new Date(p.updated_at).getTime()) : Infinity;
+    staleDe[p.ticker] = idade >= FRESCO_MS;
+  });
 
   // inclui todos; quem não tem cotação usa o PM como valor provisório
   const ativos = (pos || []).map((p) => {
-    const semAuto = p.preco_atual == null;
+    const semAuto = p.preco_atual == null || staleDe[p.ticker] === true;
     const manual = semAuto ? (manualDe[p.ticker] ?? null) : null;
     const usouManual = semAuto && manual != null;
     const semCotacao = semAuto && manual == null;
@@ -44,7 +53,7 @@ export default async function Carteira() {
   };
 
   // Renda Variável = Ações BR + BDRs (duas listas, total somado, como na Rico)
-  const RV = ['Ações BR', 'BDRS'];
+  const RV = ['Ações BR', 'Global'];
   const blocos = [];
   const rvSubs = RV.filter((c) => porClasse[c]).map(subgrupo);
   if (rvSubs.length) {
