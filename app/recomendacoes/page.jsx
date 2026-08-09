@@ -38,8 +38,15 @@ export default async function Recomendacoes() {
   const congeladoDe = {};
   (congelados || []).forEach((a) => { congeladoDe[a.ticker] = !!a.congelado; });
 
-  // classes com pesos por ativo (têm vários ativos dentro)
-  const GRUPOS = ['Ações BR', 'Global', 'FIIS'];
+  // uma classe é "grupo" (pesos por ativo) quando tem ao menos um ativo com peso
+  // definido — assim novas abas funcionam sozinhas, sem lista fixa no código
+  const classesComPesos = new Set((alvoAssets || []).map((a) => a.asset_classes?.name).filter(Boolean));
+  // classe é fracionável se alguma posição dela tem quantidade quebrada (cripto);
+  // o resto (B3) negocia em cotas inteiras
+  const classesFracionadas = new Set();
+  (pos || []).forEach((p) => {
+    if (p.classe && Number(p.quantidade) % 1 !== 0) classesFracionadas.add(p.classe);
+  });
   const metaClasse = {};
   (classes || []).forEach((c) => { metaClasse[c.name] = Number(c.target_pct) || 0; });
 
@@ -58,7 +65,7 @@ export default async function Recomendacoes() {
     if (!universo.has(p.ticker)) {
       // classe de ativo único (ex.: BTC): o ativo é 100% da classe -> alvo = meta da classe.
       // classe com grupo (Ações/BDRs/FIIs) sem peso cadastrado -> fora da lista (alvo 0).
-      const target = GRUPOS.includes(p.classe) ? 0 : (metaClasse[p.classe] || 0);
+      const target = classesComPesos.has(p.classe) ? 0 : (metaClasse[p.classe] || 0);
       universo.set(p.ticker, { ticker: p.ticker, target, classe: p.classe, congelado: congeladoDe[p.ticker] || false });
     }
   });
@@ -116,7 +123,7 @@ export default async function Recomendacoes() {
       ?? (pmDe[u.ticker] > 0 ? pmDe[u.ticker] : null);
     const semCotacaoAuto = precoAtualFresco == null && !(precoDe[u.ticker] > 0);
     const precoManual = manualDe[u.ticker] ?? null;
-    const inteiro = GRUPOS.includes(u.classe); // ações/BDRs/FIIs = cotas inteiras
+    const inteiro = !classesFracionadas.has(u.classe); // só cripto é fracionário
     const rs = Math.abs(sugestaoRs);
     let qtd = null, umaCotaPassa = false;
     if (precoUnit > 0 && (acao === 'comprar' || acao === 'reduzir')) {
