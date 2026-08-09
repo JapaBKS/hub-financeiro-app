@@ -10,23 +10,33 @@ const TOL = 0.03;
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }, { data: manuais }] = await Promise.all([
+  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }, { data: manuais }, { data: congelados }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('assets').select('ticker, target_pct, asset_classes(name, target_pct)').gt('target_pct', 0),
     sb.from('v_class_allocation').select('valor'),
     sb.from('asset_classes').select('name, target_pct'),
-    sb.from('prices').select('ticker, price'),
+    sb.from('prices').select('ticker, price, updated_at'),
     sb.from('assets').select('ticker').order('ticker'),
     sb.from('asset_classes').select('id, name').order('name'),
     sb.from('manual_prices').select('ticker, price'),
+    sb.from('assets').select('ticker, congelado'),
   ]);
 
+  const FRESCO_MS = 48 * 3600 * 1000; // 2 dias
+  const AGORA = Date.now();
   const precoDe = {};
-  (precos || []).forEach((p) => { precoDe[p.ticker] = Number(p.price); });
+  const staleDe = {};
+  (precos || []).forEach((p) => {
+    const idade = p.updated_at ? (AGORA - new Date(p.updated_at).getTime()) : Infinity;
+    staleDe[p.ticker] = idade >= FRESCO_MS;
+    if (!staleDe[p.ticker]) precoDe[p.ticker] = Number(p.price); // cotação velha é ignorada
+  });
   const pmDe = {};
   (pos || []).forEach((p) => { if (Number(p.preco_medio) > 0) pmDe[p.ticker] = Number(p.preco_medio); });
   const manualDe = {};
   (manuais || []).forEach((m) => { manualDe[m.ticker] = Number(m.price); });
+  const congeladoDe = {};
+  (congelados || []).forEach((a) => { congeladoDe[a.ticker] = !!a.congelado; });
 
   // classes com pesos por ativo (têm vários ativos dentro)
   const GRUPOS = ['Ações BR', 'BDRS', 'FIIS'];
@@ -42,13 +52,14 @@ export default async function Recomendacoes() {
     ticker: a.ticker,
     target: Number(a.target_pct) * Number(a.asset_classes?.target_pct || 0),
     classe: a.asset_classes?.name,
+    congelado: congeladoDe[a.ticker] || false,
   }));
   Object.values(posMap).forEach((p) => {
     if (!universo.has(p.ticker)) {
       // classe de ativo único (ex.: BTC): o ativo é 100% da classe -> alvo = meta da classe.
       // classe com grupo (Ações/BDRs/FIIs) sem peso cadastrado -> fora da lista (alvo 0).
       const target = GRUPOS.includes(p.classe) ? 0 : (metaClasse[p.classe] || 0);
-      universo.set(p.ticker, { ticker: p.ticker, target, classe: p.classe });
+      universo.set(p.ticker, { ticker: p.ticker, target, classe: p.classe, congelado: congeladoDe[p.ticker] || false });
     }
   });
 
@@ -66,7 +77,9 @@ export default async function Recomendacoes() {
 
     let acao = 'manter', tom = 'hold', motivo = 'no alvo', forca = 0, nova = false, atencao = false;
 
-    if (!held && u.target > 0) {
+    if (u.congelado) {
+      motivo = 'congelado — fora do rebalanceamento';
+    } else if (!held && u.target > 0) {
       acao = 'comprar'; tom = 'buy'; motivo = 'nova posição — você ainda não tem'; forca = 5; nova = true;
     } else if (held) {
       const abaixoAlvo = gap > 0.002;
@@ -96,11 +109,12 @@ export default async function Recomendacoes() {
     }
 
     // preço unitário: cotação atual, senão do mapa de preços, senão PM (de qualquer posição)
-    const precoUnit = (held && p.preco_atual != null ? Number(p.preco_atual) : null)
+    const precoAtualFresco = (held && p.preco_atual != null && !staleDe[u.ticker]) ? Number(p.preco_atual) : null;
+    const precoUnit = precoAtualFresco
       ?? (precoDe[u.ticker] > 0 ? precoDe[u.ticker] : null)
       ?? (manualDe[u.ticker] > 0 ? manualDe[u.ticker] : null)
       ?? (pmDe[u.ticker] > 0 ? pmDe[u.ticker] : null);
-    const semCotacaoAuto = !(held && p.preco_atual != null) && !(precoDe[u.ticker] > 0);
+    const semCotacaoAuto = precoAtualFresco == null && !(precoDe[u.ticker] > 0);
     const precoManual = manualDe[u.ticker] ?? null;
     const inteiro = GRUPOS.includes(u.classe); // ações/BDRs/FIIs = cotas inteiras
     const rs = Math.abs(sugestaoRs);
