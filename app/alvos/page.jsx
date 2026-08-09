@@ -8,7 +8,7 @@ export const revalidate = 0;
 export default async function Alvos() {
   const sb = supabaseServer();
   const [{ data: todasClasses }, { data: assets }] = await Promise.all([
-    sb.from('asset_classes').select('id, name, target_pct').order('target_pct', { ascending: false }),
+    sb.from('asset_classes').select('id, name, target_pct, alvo_valor').order('target_pct', { ascending: false }),
     sb.from('assets').select('ticker, target_pct, class_id, congelado'),
   ]);
 
