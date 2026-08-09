@@ -39,7 +39,7 @@ export default async function Recomendacoes() {
   (congelados || []).forEach((a) => { congeladoDe[a.ticker] = !!a.congelado; });
 
   // classes com pesos por ativo (têm vários ativos dentro)
-  const GRUPOS = ['Ações BR', 'BDRS', 'FIIS'];
+  const GRUPOS = ['Ações BR', 'Global', 'FIIS'];
   const metaClasse = {};
   (classes || []).forEach((c) => { metaClasse[c.name] = Number(c.target_pct) || 0; });
 
