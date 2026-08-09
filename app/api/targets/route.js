@@ -16,12 +16,13 @@ export async function POST(req) {
     const tk = String(it.ticker || '').trim().toUpperCase();
     if (!tk) continue;
     const pct = Number(it.pct); // fração (0-1)
+    const congelado = !!it.congelado;
     tickers.push(tk);
     const { data: ex } = await sb.from('assets').select('id').eq('ticker', tk).maybeSingle();
     if (ex) {
-      await sb.from('assets').update({ target_pct: pct, class_id: Number(class_id), is_active: true }).eq('id', ex.id);
+      await sb.from('assets').update({ target_pct: pct, class_id: Number(class_id), is_active: true, congelado }).eq('id', ex.id);
     } else {
-      await sb.from('assets').insert({ ticker: tk, class_id: Number(class_id), target_pct: pct, is_active: true });
+      await sb.from('assets').insert({ ticker: tk, class_id: Number(class_id), target_pct: pct, is_active: true, congelado });
     }
   }
 
