@@ -11,8 +11,8 @@ const idxLabel = (i) => `${String((i % 12) + 1).padStart(2, '0')}/${Math.floor(i
 const idxYear = (i) => Math.floor(i / 12);
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const mesLabel = (i) => `${MESES[i % 12]}/${Math.floor(i / 12)}`;
-const ORDEM = ['Ações BR', 'BDRS', 'FIIS', 'BTC', 'PENDLE', 'SOLANA', 'Tesouro', 'Fundos de Investimentos', 'Reserva', 'Proventos'];
-const CURTO = { 'Ações BR': 'Ações BR', 'BDRS': 'BDRs', 'FIIS': 'FIIs', 'BTC': 'BTC', 'PENDLE': 'PENDLE', 'SOLANA': 'SOLANA', 'Tesouro': 'Tesouro', 'Fundos de Investimentos': 'Fundos', 'Reserva': 'Reserva', 'Proventos': 'Prov.' };
+const ORDEM = ['Ações BR', 'Global', 'FIIS', 'BTC', 'PENDLE', 'SOLANA', 'Tesouro', 'Fundos de Investimentos', 'Reserva', 'Proventos'];
+const CURTO = { 'Ações BR': 'Ações BR', 'Global': 'Global', 'FIIS': 'FIIs', 'BTC': 'BTC', 'PENDLE': 'PENDLE', 'SOLANA': 'SOLANA', 'Tesouro': 'Tesouro', 'Fundos de Investimentos': 'Fundos', 'Reserva': 'Reserva', 'Proventos': 'Prov.' };
 const valor = (v) => (v ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—');
 
 export default async function Meta() {
