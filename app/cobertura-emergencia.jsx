@@ -1,8 +1,9 @@
 import { supabaseServer } from '../lib/supabase';
 
-// Reserva de emergência: progresso até o alvo em R$ + quantos meses isso cobre.
-// A despesa considera SÓ a sua parte das faturas do cartão (amount − amount_pai),
-// porque as contas da casa no Caixa são pagas pelo seu pai.
+// Mostra TODAS as classes com alvo em R$ (ex.: Emergência, Fluxo do mês).
+// Na de emergência, mostra também quantos meses ela cobre — usando só a SUA
+// parte das faturas do cartão (amount − amount_pai), já que as contas da casa
+// no Caixa são pagas pelo seu pai.
 export default async function CoberturaEmergencia({ meses = 6 }) {
   const sb = supabaseServer();
 
@@ -19,18 +20,15 @@ export default async function CoberturaEmergencia({ meses = 6 }) {
     sb.from('asset_classes').select('name, alvo_valor'),
   ]);
 
-  // classe da reserva: prioriza uma com alvo em R$ definido; senão Emergência/Reserva
-  const comAlvo = (classes || []).filter((c) => c.alvo_valor != null && Number(c.alvo_valor) > 0);
-  const nomeBusca = ['emergência', 'emergencia', 'reserva'];
-  const escolhida =
-    comAlvo.find((c) => nomeBusca.includes((c.name || '').toLowerCase())) ||
-    comAlvo[0] ||
-    (classes || []).find((c) => nomeBusca.includes((c.name || '').toLowerCase()));
-  if (!escolhida) return null;
+  const cofres = (classes || [])
+    .filter((c) => c.alvo_valor != null && Number(c.alvo_valor) > 0)
+    .map((c) => {
+      const linha = (alloc || []).find((a) => a.classe === c.name);
+      return { nome: c.name, alvo: Number(c.alvo_valor), valor: Number(linha?.valor || 0) };
+    })
+    .sort((a, b) => b.alvo - a.alvo);
 
-  const linha = (alloc || []).find((c) => c.classe === escolhida.name);
-  const valor = Number(linha?.valor || 0);
-  const alvo = escolhida.alvo_valor != null ? Number(escolhida.alvo_valor) : null;
+  if (!cofres.length) return null;
 
   const porMes = {};
   (itens || []).forEach((i) => {
@@ -42,55 +40,54 @@ export default async function CoberturaEmergencia({ meses = 6 }) {
   });
   const nMeses = Object.keys(porMes).length;
   const mediaMensal = nMeses ? Object.values(porMes).reduce((s, v) => s + v, 0) / nMeses : 0;
-  const cobertura = mediaMensal > 0 ? valor / mediaMensal : null;
 
+  const ehEmergencia = (n) => ['emergência', 'emergencia', 'reserva'].includes((n || '').toLowerCase());
   const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  // sem alvo definido: mostra só a cobertura em meses
-  const temAlvo = alvo != null && alvo > 0;
-  const progresso = temAlvo ? Math.min(valor / alvo, 1) : 0;
-  const falta = temAlvo ? alvo - valor : 0;
-  const cor = !temAlvo
-    ? 'var(--forest-2)'
-    : falta > 0 ? 'var(--amber)' : 'var(--up)';
-
   return (
-    <section className="card" style={{ padding: '14px 20px 16px', marginBottom: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ fontSize: 11, color: 'var(--ink-faint)', letterSpacing: '.03em', textTransform: 'uppercase' }}>
-            {escolhida.name}
-          </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, color: cor, marginTop: 2 }}>
-            {fmt(valor)}
-            {temAlvo && <span style={{ fontSize: 13, color: 'var(--ink-faint)', fontWeight: 500 }}> de {fmt(alvo)}</span>}
-          </div>
-        </div>
-        <div style={{ textAlign: 'right', fontSize: 11.5, color: 'var(--ink-faint)' }}>
-          {cobertura != null && <div>cobre {cobertura.toFixed(1).replace('.', ',')} meses</div>}
-          {mediaMensal > 0 && <div>sua parte no cartão: {fmt(mediaMensal)}/mês</div>}
-        </div>
+    <section className="card" style={{ padding: '12px 20px 14px', marginBottom: 14 }}>
+      <div style={{ fontSize: 11, color: 'var(--ink-faint)', letterSpacing: '.03em', textTransform: 'uppercase', marginBottom: 8 }}>
+        Cofres · alvo em R$
       </div>
 
-      {temAlvo && (
-        <>
-          <div style={{ height: 8, borderRadius: 5, background: 'var(--track)', overflow: 'hidden', marginTop: 12 }}>
-            <div className="bar-grow-x" style={{ width: `${progresso * 100}%`, height: '100%', background: cor, borderRadius: 5 }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 10.5, color: 'var(--ink-faint)', gap: 8, flexWrap: 'wrap' }}>
-            <span>
-              {falta > 0
-                ? `faltam ${fmt(falta)} para completar`
-                : `${fmt(-falta)} acima do alvo — disponível para investir`}
-            </span>
-            <span>{(progresso * 100).toFixed(0)}%</span>
-          </div>
-        </>
-      )}
+      {cofres.map((c, i) => {
+        const falta = c.alvo - c.valor;
+        const progresso = Math.min(c.valor / c.alvo, 1);
+        const cor = falta > 0 ? 'var(--amber)' : 'var(--up)';
+        const cobertura = ehEmergencia(c.nome) && mediaMensal > 0 ? c.valor / mediaMensal : null;
+        return (
+          <div key={c.nome} style={{ marginTop: i === 0 ? 0 : 14 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{c.nome}</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, color: cor, marginLeft: 8 }}>
+                  {fmt(c.valor)}
+                </span>
+                <span style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}> de {fmt(c.alvo)}</span>
+              </div>
+              {cobertura != null && (
+                <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
+                  cobre {cobertura.toFixed(1).replace('.', ',')} meses
+                </span>
+              )}
+            </div>
 
-      {!temAlvo && (
-        <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 8 }}>
-          Defina um alvo em R$ para esta classe em Alvos → Metas por classe.
+            <div style={{ height: 7, borderRadius: 4, background: 'var(--track)', overflow: 'hidden', marginTop: 7 }}>
+              <div className="bar-grow-x" style={{ width: `${progresso * 100}%`, height: '100%', background: cor, borderRadius: 4, animationDelay: `${0.1 + i * 0.06}s` }} />
+            </div>
+
+            <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 4 }}>
+              {falta > 0
+                ? `faltam ${fmt(falta)}`
+                : `${fmt(-falta)} acima do alvo — disponível para investir`}
+            </div>
+          </div>
+        );
+      })}
+
+      {mediaMensal > 0 && (
+        <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 10, borderTop: '1px solid var(--line-soft)', paddingTop: 8 }}>
+          sua parte no cartão: {fmt(mediaMensal)}/mês · média de {nMeses} {nMeses === 1 ? 'mês' : 'meses'}
         </div>
       )}
     </section>
