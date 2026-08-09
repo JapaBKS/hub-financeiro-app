@@ -30,11 +30,14 @@ export default function AlvosClient({ grupos: gruposIniciais }) {
   function remover(idx) {
     setItens(g.itens.filter((_, i) => i !== idx));
   }
+  function alternarCongelado(idx) {
+    setItens(g.itens.map((it, i) => (i === idx ? { ...it, congelado: !it.congelado } : it)));
+  }
   function adicionar() {
     const tk = novoTicker.trim().toUpperCase();
     if (!tk) return;
     if (g.itens.some((it) => it.ticker === tk)) { setMsg(`${tk} já está na lista.`); return; }
-    setItens([...g.itens, { ticker: tk, pct: Number(novoPct) || 0 }]);
+    setItens([...g.itens, { ticker: tk, pct: Number(novoPct) || 0, congelado: false }]);
     setNovoTicker(''); setNovoPct('');
   }
 
@@ -44,7 +47,7 @@ export default function AlvosClient({ grupos: gruposIniciais }) {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         class_id: g.class_id,
-        itens: g.itens.map((it) => ({ ticker: it.ticker, pct: (Number(it.pct) || 0) / 100 })),
+        itens: g.itens.map((it) => ({ ticker: it.ticker, pct: (Number(it.pct) || 0) / 100, congelado: !!it.congelado })),
       }),
     });
     if (res.ok) { setEstado('ok'); setMsg('Salvo!'); }
@@ -75,6 +78,10 @@ export default function AlvosClient({ grupos: gruposIniciais }) {
             <input style={{ ...inp, width: 90, textAlign: 'right' }} type="number" step="any" value={it.pct}
               onChange={(e) => mudarPct(idx, e.target.value)} />
             <span style={{ color: 'var(--ink-faint)', fontSize: 13 }}>%</span>
+            <label title="congelado: nunca sugerir comprar ou vender esse ativo" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: it.congelado ? 'var(--forest-2)' : 'var(--ink-faint)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <input type="checkbox" checked={!!it.congelado} onChange={() => alternarCongelado(idx)} style={{ margin: 0 }} />
+              congelado
+            </label>
             <button onClick={() => remover(idx)} title="Remover" style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 18, padding: '0 2px' }}>×</button>
           </div>
         ))}
