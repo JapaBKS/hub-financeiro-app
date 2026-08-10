@@ -1,6 +1,7 @@
 import { supabaseServer } from '../../lib/supabase';
 import ListaNegociacoes from './lista-client';
 import RegistrarNegociacao from './registrar-client';
+import ImportarNegociacoesB3 from './importar-b3-client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -34,6 +35,7 @@ export default async function Negociacoes() {
         </div>
         <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
+      <ImportarNegociacoesB3 />
       <RegistrarNegociacao assets={assets || []} classes={classes || []} />
       <ListaNegociacoes trades={flat} />
     </div>
