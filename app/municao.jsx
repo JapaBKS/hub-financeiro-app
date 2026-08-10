@@ -18,9 +18,12 @@ export default async function Municao() {
   const foraDoRateio = (c) => !!c.fora_rateio || (c.alvo_valor != null && Number(c.alvo_valor) > 0);
 
   // munição = soma das classes marcadas como "fora do rateio" (sem alvo em R$)
-  const municao = (classes || [])
+  const partes = (classes || [])
     .filter((c) => c.fora_rateio && !(c.alvo_valor != null && Number(c.alvo_valor) > 0))
-    .reduce((s, c) => s + (valorDe[c.name] || 0), 0);
+    .map((c) => ({ nome: c.name, valor: valorDe[c.name] || 0 }))
+    .filter((p) => p.valor > 0)
+    .sort((a, b) => b.valor - a.valor);
+  const municao = partes.reduce((s, p) => s + p.valor, 0);
 
   if (municao <= 0) return null;
 
@@ -60,6 +63,14 @@ export default async function Municao() {
           ver recomendações →
         </a>
       </div>
+
+      {partes.length > 1 && (
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 6, fontSize: 11, color: 'var(--ink-faint)' }}>
+          {partes.map((p) => (
+            <span key={p.nome}>{p.nome} <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-soft)' }}>{fmt(p.valor)}</b></span>
+          ))}
+        </div>
+      )}
 
       {alvo ? (
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line-soft)', fontSize: 12.5, color: 'var(--ink-soft)' }}>
