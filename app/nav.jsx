@@ -8,6 +8,7 @@ const links = [
   { href: '/', label: 'Visão geral' },
   { href: '/carteira', label: 'Carteira' },
   { href: '/biblioteca', label: 'Biblioteca' },
+  { href: '/apuracao', label: 'Apuração' },
   { href: '/recomendacoes', label: 'Recomendações' },
   { href: '/alvos', label: 'Alvos' },
   { href: '/negociacoes', label: 'Negociações' },
