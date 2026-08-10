@@ -16,20 +16,32 @@ export default function ApuracaoLista({ meses }) {
     return <section className="card" style={{ padding: 20, fontSize: 13, color: 'var(--ink-faint)' }}>Nenhuma venda registrada ainda.</section>;
   }
 
-  // acumulados desde o início (ordem cronológica)
+  // saldo de prejuízo a compensar: cresce em meses negativos, é CONSUMIDO nos positivos
   const cron = [...meses].sort((a, b) => a.mes.localeCompare(b.mes));
-  let accRV = 0, accFii = 0;
+  let saldoRV = 0, saldoFii = 0;   // prejuízo disponível (positivo = tem a usar)
   const acumulado = {};
   cron.forEach((m) => {
     const isentoAcao = m.vendasAcao > 0 && m.vendasAcao <= LIMITE_ISENCAO;
     // vendas de ação isentas não entram na compensação
     const rvMes = (isentoAcao ? 0 : m.resAcao) + m.resBdrEtf;
-    accRV += rvMes;
-    accFii += m.resFii;
-    acumulado[m.mes] = { rv: accRV, fii: accFii, rvMes, isentoAcao };
+
+    let tribRV = 0;
+    if (rvMes >= 0) { tribRV = Math.max(0, rvMes - saldoRV); saldoRV = Math.max(0, saldoRV - rvMes); }
+    else { saldoRV += -rvMes; }
+
+    let tribFii = 0;
+    if (m.resFii >= 0) { tribFii = Math.max(0, m.resFii - saldoFii); saldoFii = Math.max(0, saldoFii - m.resFii); }
+    else { saldoFii += -m.resFii; }
+
+    acumulado[m.mes] = {
+      rv: saldoRV, fii: saldoFii, rvMes, isentoAcao,
+      impostoRV: tribRV * 0.15,
+      impostoFii: tribFii * 0.20,
+    };
   });
 
   const ultimo = acumulado[cron[cron.length - 1].mes];
+  const impostoTotal = cron.reduce((s, m) => s + acumulado[m.mes].impostoRV + acumulado[m.mes].impostoFii, 0);
 
   return (
     <div>
@@ -39,22 +51,29 @@ export default function ApuracaoLista({ meses }) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
           <div>
-            <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>ações · BDRs · ETFs</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: ultimo.rv >= 0 ? 'var(--up)' : 'var(--down)' }}>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>prejuízo a compensar · ações/BDRs/ETFs</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: ultimo.rv > 0 ? 'var(--up)' : 'var(--ink-faint)' }}>
               {brl(ultimo.rv)}
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>
-              {ultimo.rv < 0 ? 'prejuízo a compensar' : 'resultado positivo acumulado'}
+              {ultimo.rv > 0 ? 'disponível para abater ganhos futuros' : 'sem prejuízo acumulado'}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>FIIs (apura separado)</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: ultimo.fii >= 0 ? 'var(--up)' : 'var(--down)' }}>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>prejuízo a compensar · FIIs</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: ultimo.fii > 0 ? 'var(--up)' : 'var(--ink-faint)' }}>
               {brl(ultimo.fii)}
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>
-              {ultimo.fii < 0 ? 'prejuízo a compensar' : 'resultado positivo acumulado'}
+              {ultimo.fii > 0 ? 'só abate ganho de FII' : 'sem prejuízo acumulado'}
             </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>imposto estimado (histórico)</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: impostoTotal > 0 ? 'var(--amber)' : 'var(--ink-faint)' }}>
+              {brl(impostoTotal)}
+            </div>
+            <div style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>soma de todos os meses</div>
           </div>
         </div>
         <p style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 10, lineHeight: 1.5 }}>
@@ -98,7 +117,10 @@ export default function ApuracaoLista({ meses }) {
                     <Bloco rot="resultado ações" val={brl(m.resAcao)} cor={m.resAcao >= 0 ? 'var(--up)' : 'var(--down)'} />
                     <Bloco rot="resultado BDR/ETF" val={brl(m.resBdrEtf)} sub="sem isenção" cor={m.resBdrEtf >= 0 ? 'var(--up)' : 'var(--down)'} />
                     <Bloco rot="resultado FIIs" val={brl(m.resFii)} sub="apura separado (20%)" cor={m.resFii >= 0 ? 'var(--up)' : 'var(--down)'} />
-                    <Bloco rot="acumulado até aqui" val={brl(info.rv)} sub="ações · BDRs · ETFs" cor={info.rv >= 0 ? 'var(--up)' : 'var(--down)'} />
+                    <Bloco rot="imposto do mês" val={brl(info.impostoRV + info.impostoFii)}
+                      sub={info.impostoRV + info.impostoFii > 0 ? 'DARF até o fim do mês seguinte' : 'sem imposto'}
+                      cor={info.impostoRV + info.impostoFii > 0 ? 'var(--amber)' : 'var(--ink-faint)'} />
+                    <Bloco rot="prejuízo restante" val={brl(info.rv)} sub="ações · BDRs · ETFs" />
                   </div>
 
                   <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid var(--line-soft)', borderRadius: 8 }}>
