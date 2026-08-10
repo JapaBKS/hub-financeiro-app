@@ -4,6 +4,7 @@ import CardOrigem from './card-origem-client';
 import AlertaContas from './alerta-contas';
 import NumeroAnimado from './numero-animado';
 import CoberturaEmergencia from './cobertura-emergencia';
+import Municao from './municao';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -162,6 +163,8 @@ export default async function Home() {
       </header>
 
       <AlertaContas dias={3} compact />
+
+      <Municao />
 
       <CoberturaEmergencia meses={6} />
 
