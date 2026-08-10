@@ -42,10 +42,23 @@ export async function DELETE(req) {
   if (!id) return NextResponse.json({ ok: false, erro: 'Id ausente.' }, { status: 400 });
 
   const sb = supabaseServer();
-  const { count } = await sb.from('assets').select('id', { count: 'exact', head: true }).eq('class_id', id);
-  if (count && count > 0) {
+
+  const { count: nAtivos } = await sb.from('assets').select('id', { count: 'exact', head: true }).eq('class_id', id);
+  if (nAtivos && nAtivos > 0) {
     return NextResponse.json(
-      { ok: false, erro: `Essa aba ainda tem ${count} ativo(s). Mova ou remova antes de excluir.` },
+      { ok: false, erro: `Essa aba ainda tem ${nAtivos} ativo(s). Mova ou remova antes de excluir.` },
+      { status: 400 },
+    );
+  }
+
+  // snapshots do histórico apontam pra classe — apagar quebraria a evolução do patrimônio
+  const { count: nSnaps } = await sb.from('portfolio_snapshots').select('id', { count: 'exact', head: true }).eq('class_id', id);
+  if (nSnaps && nSnaps > 0) {
+    return NextResponse.json(
+      {
+        ok: false,
+        erro: `Essa classe tem ${nSnaps} registro(s) no histórico de patrimônio. Excluir apagaria parte da sua evolução. Renomeie a classe ou deixe a meta em 0% em vez de excluir.`,
+      },
       { status: 400 },
     );
   }
