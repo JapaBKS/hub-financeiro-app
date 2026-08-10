@@ -14,7 +14,7 @@ export default async function Recomendacoes() {
     sb.from('v_positions').select('*'),
     sb.from('assets').select('ticker, target_pct, asset_classes(name, target_pct)').gt('target_pct', 0),
     sb.from('v_class_allocation').select('valor'),
-    sb.from('asset_classes').select('name, target_pct, alvo_valor'),
+    sb.from('asset_classes').select('name, target_pct, alvo_valor, fora_rateio'),
     sb.from('prices').select('ticker, price, updated_at'),
     sb.from('assets').select('ticker').order('ticker'),
     sb.from('asset_classes').select('id, name').order('name'),
@@ -52,7 +52,9 @@ export default async function Recomendacoes() {
 
   // classes com alvo em R$ (ex.: reserva) ficam FORA do rateio de % e das sugestões
   const classesValorFixo = new Set(
-    (classes || []).filter((c) => c.alvo_valor != null && Number(c.alvo_valor) > 0).map((c) => c.name),
+    (classes || [])
+      .filter((c) => (c.alvo_valor != null && Number(c.alvo_valor) > 0) || c.fora_rateio)
+      .map((c) => c.name),
   );
 
   // os 100% se distribuem só sobre o que é investimento rebalanceável
