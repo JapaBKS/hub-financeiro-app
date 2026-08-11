@@ -14,6 +14,8 @@ const inp = {
 export default function BibliotecaLista({ ativos }) {
   const [busca, setBusca] = useState('');
   const [filtro, setFiltro] = useState('todos');
+  const [cat, setCat] = useState('todas');
+  const [classe, setClasse] = useState('todas');
   const [aberto, setAberto] = useState(null);
 
   const lista = useMemo(() => {
@@ -21,10 +23,27 @@ export default function BibliotecaLista({ ativos }) {
     return ativos.filter((a) => {
       if (filtro === 'atuais' && !a.aberto) return false;
       if (filtro === 'encerrados' && a.aberto) return false;
+      if (cat !== 'todas' && a.cat !== cat) return false;
+      if (classe !== 'todas' && a.classe !== classe) return false;
       if (!q) return true;
       return a.ticker.includes(q) || (a.classe || '').toUpperCase().includes(q);
     });
-  }, [ativos, busca, filtro, ativos.length]);
+  }, [ativos, busca, filtro, cat, classe]);
+
+  const classesDisponiveis = useMemo(
+    () => [...new Set(ativos.map((a) => a.classe).filter((c) => c && c !== '—'))].sort(),
+    [ativos],
+  );
+  const contaCat = (c) => ativos.filter((a) => a.cat === c).length;
+  const CATS = [
+    ['todas', 'Todos os tipos'],
+    ['acao', 'Ações'],
+    ['bdr', 'BDRs'],
+    ['fii', 'FIIs'],
+    ['etf', 'ETFs'],
+    ['cripto', 'Cripto'],
+  ].filter(([v]) => v === 'todas' || contaCat(v) > 0);
+  const temFiltro = busca || filtro !== 'todos' || cat !== 'todas' || classe !== 'todas';
 
   const totais = useMemo(() => ({
     investido: lista.reduce((s, a) => s + a.totalComprado, 0),
@@ -50,6 +69,35 @@ export default function BibliotecaLista({ ativos }) {
           {btn('todos', `Todos (${ativos.length})`)}
           {btn('atuais', `Na carteira (${ativos.filter((a) => a.aberto).length})`)}
           {btn('encerrados', `Encerrados (${ativos.filter((a) => !a.aberto).length})`)}
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+          {CATS.map(([val, rot]) => (
+            <button key={val} onClick={() => setCat(val)} style={{
+              padding: '6px 11px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              border: '1px solid ' + (cat === val ? 'var(--forest-2)' : 'var(--line)'),
+              background: cat === val ? 'var(--up-bg)' : 'var(--surface)',
+              color: cat === val ? 'var(--forest-2)' : 'var(--ink-faint)',
+            }}>{rot}{val !== 'todas' ? ` (${contaCat(val)})` : ''}</button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <select value={classe} onChange={(e) => setClasse(e.target.value)} style={{
+            ...inp, width: 'auto', minWidth: 150, padding: '7px 10px', fontSize: 12.5,
+          }}>
+            <option value="todas">Todas as classes</option>
+            {classesDisponiveis.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          {temFiltro && (
+            <button onClick={() => { setBusca(''); setFiltro('todos'); setCat('todas'); setClasse('todas'); }} style={{
+              padding: '7px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
+              border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-faint)',
+            }}>limpar filtros</button>
+          )}
+          <span style={{ fontSize: 12, color: 'var(--ink-faint)', marginLeft: 'auto' }}>
+            {lista.length} {lista.length === 1 ? 'ativo' : 'ativos'}
+          </span>
         </div>
       </section>
 
