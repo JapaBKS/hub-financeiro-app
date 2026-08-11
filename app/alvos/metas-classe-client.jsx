@@ -10,7 +10,7 @@ const brl = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', c
 export default function MetasClasse({ classes }) {
   const [vals, setVals] = useState(() => {
     const o = {};
-    classes.forEach((c) => { o[c.id] = (Number(c.target_pct) * 100).toFixed(1).replace(/\.0$/, ''); });
+    classes.forEach((c) => { o[c.id] = (Number(c.target_pct) * 100).toFixed(2); });
     return o;
   });
   const [fixos, setFixos] = useState(() => {
@@ -53,7 +53,7 @@ export default function MetasClasse({ classes }) {
       <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <h2>Metas por classe</h2>
         <span style={{ fontSize: 12.5, fontWeight: 600, color: cem ? 'var(--up)' : 'var(--amber)' }}>
-          soma {total.toFixed(1).replace(/\.0$/, '')}%
+          soma {total.toFixed(2).replace('.', ',')}%
         </span>
       </div>
 
