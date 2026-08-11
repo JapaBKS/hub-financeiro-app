@@ -27,13 +27,20 @@ export default async function Biblioteca() {
     sb.from('manual_prices').select('ticker, price'),
   ]);
 
-  // preço: cotação fresca -> manual -> preço médio (mesma regra da Carteira)
+  // Aqui usamos o ÚLTIMO preço conhecido mesmo que antigo (a Biblioteca é histórico:
+  // é melhor mostrar a cotação de X dias atrás do que cair no preço médio e zerar o retorno).
+  // Quando estiver velha, marcamos a data pra você saber.
   const FRESCO_MS = 48 * 3600 * 1000;
   const AGORA = Date.now();
   const autoDe = {};
+  const attDe = {};
+  const velhoDe = {};
   (precos || []).forEach((p) => {
+    if (!(Number(p.price) > 0)) return;
+    autoDe[p.ticker] = Number(p.price);
+    attDe[p.ticker] = p.updated_at || null;
     const idade = p.updated_at ? (AGORA - new Date(p.updated_at).getTime()) : Infinity;
-    if (idade < FRESCO_MS) autoDe[p.ticker] = Number(p.price);
+    velhoDe[p.ticker] = idade >= FRESCO_MS;
   });
   const manualDe = {};
   (manuais || []).forEach((m) => { manualDe[m.ticker] = Number(m.price); });
@@ -87,13 +94,16 @@ export default async function Biblioteca() {
     const pm = p && Number(p.preco_medio) > 0 ? Number(p.preco_medio) : (a.qtdComprada > 0 ? a.totalComprado / a.qtdComprada : 0);
     const precoAuto = autoDe[a.ticker] ?? null;
     const precoRef = precoAuto ?? manualDe[a.ticker] ?? pm;
-    const origemPreco = precoAuto != null ? 'auto' : (manualDe[a.ticker] != null ? 'manual' : 'pm');
+    const origemPreco = precoAuto != null
+      ? (velhoDe[a.ticker] ? 'auto-velho' : 'auto')
+      : (manualDe[a.ticker] != null ? 'manual' : 'pm');
+    const precoEm = precoAuto != null && attDe[a.ticker] ? String(attDe[a.ticker]).slice(0, 10) : null;
     const valorAtual = aberto ? qtdAtual * precoRef : 0;
     // retorno total: o que saiu de volta + o que ainda vale + proventos − o que entrou
     const retorno = a.totalVendido + valorAtual + a.dividendos - a.totalComprado;
     const retornoPct = a.totalComprado > 0 ? retorno / a.totalComprado : 0;
     return {
-      ...a, qtdAtual, aberto, pm, precoRef, origemPreco, valorAtual, retorno, retornoPct,
+      ...a, qtdAtual, aberto, pm, precoRef, origemPreco, precoEm, valorAtual, retorno, retornoPct,
       cat: categoria(a.ticker, a.classe),
       movimentos: a.movimentos.sort((x, y) => y.dia.localeCompare(x.dia)),
     };
