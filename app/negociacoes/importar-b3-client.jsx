@@ -61,13 +61,27 @@ const ta = {
   color: 'var(--ink)', resize: 'vertical',
 };
 
-export default function ImportarNegociacoesB3() {
+export default function ImportarNegociacoesB3({ assets = [], classes = [] }) {
   const [aberto, setAberto] = useState(false);
   const [texto, setTexto] = useState('');
   const [estado, setEstado] = useState(null);
   const [msg, setMsg] = useState('');
+  const [classeDe, setClasseDe] = useState({});
 
   const itens = parseNegociacoes(texto);
+
+  const cadastrados = new Set(assets.map((a) => (a.ticker || '').toUpperCase()));
+  const naoCadastrados = [...new Set(itens.map((i) => i.ticker).filter((t) => !cadastrados.has(t)))];
+  // palpite de classe pelo padrão do código (você pode trocar no seletor)
+  const sugestao = (tk) => {
+    const nome = (n) => (classes.find((c) => (c.name || '').toUpperCase() === n) || {}).id;
+    if (/^[A-Z0-9]{4}3[2-9]$/.test(tk)) return nome('GLOBAL') || nome('BDRS') || '';
+    if (/11$/.test(tk)) return nome('FIIS') || '';
+    return nome('AÇÕES BR') || nome('ACOES BR') || '';
+  };
+  const classeEscolhida = (tk) => classeDe[tk] ?? sugestao(tk) ?? '';
+  const faltaClasse = naoCadastrados.some((t) => !classeEscolhida(t));
+
   const compras = itens.filter((i) => i.side === 'compra');
   const vendas = itens.filter((i) => i.side === 'venda');
   const totalC = compras.reduce((s, i) => s + i.total, 0);
@@ -77,7 +91,7 @@ export default function ImportarNegociacoesB3() {
     setEstado('enviando'); setMsg('');
     const res = await fetch('/api/trades-import', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ itens }),
+      body: JSON.stringify({ itens, novos: naoCadastrados.map((t) => ({ ticker: t, class_id: Number(classeEscolhida(t)) || null })) }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok && data.ok) {
@@ -141,11 +155,29 @@ export default function ImportarNegociacoesB3() {
           </div>
         )}
 
-        <button onClick={importar} disabled={estado === 'enviando' || itens.length === 0} style={{
+        {naoCadastrados.length > 0 && (
+          <div style={{ marginTop: 12, padding: 10, borderRadius: 9, background: 'var(--amber-bg)', border: '1px solid var(--line)' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--amber)', marginBottom: 6 }}>
+              {naoCadastrados.length} ticker(s) ainda não cadastrado(s) — escolha a classe para criar:
+            </div>
+            {naoCadastrados.map((tk) => (
+              <div key={tk} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
+                <b style={{ fontFamily: 'var(--font-display)', fontSize: 12.5, minWidth: 66 }}>{tk}</b>
+                <select value={classeEscolhida(tk)} onChange={(e) => setClasseDe((m) => ({ ...m, [tk]: e.target.value }))}
+                  style={{ padding: '5px 8px', borderRadius: 7, border: '1px solid var(--line)', fontSize: 12, background: 'var(--surface)', color: 'var(--ink)' }}>
+                  <option value="">escolha a classe…</option>
+                  {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button onClick={importar} disabled={estado === 'enviando' || itens.length === 0 || faltaClasse} style={{
           marginTop: 12, padding: '10px 16px', borderRadius: 9, border: 0, cursor: 'pointer',
           background: 'var(--forest)', color: '#fff', fontSize: 13.5, fontWeight: 600,
-          opacity: itens.length === 0 ? 0.5 : 1,
-        }}>{estado === 'enviando' ? 'Importando…' : `Importar ${itens.length || ''}`}</button>
+          opacity: (itens.length === 0 || faltaClasse) ? 0.5 : 1,
+        }}>{estado === 'enviando' ? 'Importando…' : faltaClasse ? 'Escolha as classes acima' : `Importar ${itens.length || ''}`}</button>
 
         {msg && <div style={{ marginTop: 10, fontSize: 12.5, color: estado === 'erro' ? 'var(--down)' : 'var(--up)' }}>{msg}</div>}
       </div>
