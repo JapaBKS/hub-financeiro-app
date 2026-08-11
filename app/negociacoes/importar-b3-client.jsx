@@ -19,7 +19,7 @@ function parseDataExtenso(linha) {
 }
 function limpaTicker(tk, mercado) {
   const t = (tk || '').toUpperCase().trim();
-  if (/racion/i.test(mercado || '') && /^[A-Z]{4}\d{1,2}F$/.test(t)) return t.slice(0, -1);
+  if (/racion/i.test(mercado || '') && /^[A-Z][A-Z0-9]{3}\d{1,2}F$/.test(t)) return t.slice(0, -1);
   return t;
 }
 
@@ -41,7 +41,7 @@ function parseNegociacoes(raw) {
     const cols = t.split('\t').map((c) => c.trim()).filter((c) => c !== '');
     const side = /^compra/i.test(t) ? 'compra' : 'venda';
     const mercado = cols[1] || '';
-    const tkCol = cols.find((c) => /^[A-Z][A-Z0-9]{3,5}$/.test(c) && /\d/.test(c));
+    const tkCol = cols.find((c) => /^[A-Z][A-Z0-9]{3,6}$/.test(c) && /\d/.test(c));
     const ticker = limpaTicker(tkCol, mercado);
     const rs = t.match(/R\$\s*[\d.]+,\d{2}/g) || [];
     const preco = rs.length >= 2 ? parseValor(rs[rs.length - 2]) : 0;
