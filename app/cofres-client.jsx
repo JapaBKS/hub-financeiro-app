@@ -53,7 +53,7 @@ export default function CofresClient({ cofres }) {
                     color: acima ? 'var(--up)' : 'var(--amber)',
                     background: acima ? 'var(--up-bg)' : 'var(--amber-bg)',
                   }}>
-                    {acima ? '+' : ''}{pct.toFixed(1).replace('.', ',')}%
+                    {acima ? '+' : ''}{pct.toFixed(2).replace('.', ',')}%
                   </span>
                   <button
                     onClick={() => { setEditId(c.id); setValor(String(c.alvo)); }}
