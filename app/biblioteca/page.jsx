@@ -4,6 +4,17 @@ import BibliotecaLista from './lista-client';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Tipo do ativo, pro filtro da biblioteca
+function categoria(ticker, classe) {
+  const t = (ticker || '').toUpperCase();
+  const c = (classe || '').toUpperCase();
+  if (['BTC', 'SOLANA', 'PENDLE', 'CRIPTO'].includes(c)) return 'cripto';
+  if (c === 'FIIS') return 'fii';
+  if (/^[A-Z0-9]{4}3[2-9]$/.test(t)) return 'bdr';
+  if (/11$/.test(t)) return 'etf';
+  return 'acao';
+}
+
 export default async function Biblioteca() {
   const sb = supabaseServer();
   const [{ data: trades }, { data: divs }, { data: pos }, { data: precos }, { data: manuais }] = await Promise.all([
@@ -83,6 +94,7 @@ export default async function Biblioteca() {
     const retornoPct = a.totalComprado > 0 ? retorno / a.totalComprado : 0;
     return {
       ...a, qtdAtual, aberto, pm, precoRef, origemPreco, valorAtual, retorno, retornoPct,
+      cat: categoria(a.ticker, a.classe),
       movimentos: a.movimentos.sort((x, y) => y.dia.localeCompare(x.dia)),
     };
   }).sort((x, y) => {
