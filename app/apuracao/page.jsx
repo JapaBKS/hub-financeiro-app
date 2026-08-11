@@ -18,11 +18,15 @@ function categoria(ticker, classe) {
 
 export default async function Apuracao() {
   const sb = supabaseServer();
-  const { data: trades } = await sb
-    .from('trades')
-    .select('traded_at, side, quantity, price, assets(ticker, asset_classes(name))')
-    .order('traded_at', { ascending: true })
-    .order('id', { ascending: true });
+  const [{ data: trades }, { data: darfsPagas }] = await Promise.all([
+    sb.from('trades')
+      .select('traded_at, side, quantity, price, assets(ticker, asset_classes(name))')
+      .order('traded_at', { ascending: true })
+      .order('id', { ascending: true }),
+    sb.from('darf_payments').select('mes_apuracao, paid_at'),
+  ]);
+  const pagos = {};
+  (darfsPagas || []).forEach((d) => { pagos[d.mes_apuracao] = d.paid_at; });
 
   // custo médio móvel por ticker
   const pos = {}; // ticker -> { qtd, custo }
@@ -94,7 +98,7 @@ export default async function Apuracao() {
         </div>
         <a href="/biblioteca" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>biblioteca →</a>
       </header>
-      <ApuracaoLista meses={lista} />
+      <ApuracaoLista meses={lista} pagos={pagos} />
     </div>
   );
 }
