@@ -14,6 +14,23 @@ export async function POST(req) {
   }
 
   const sb = supabaseServer();
+
+  // cria os ativos que ainda não existem (o cliente manda ticker + classe)
+  const novos = Array.isArray(b.novos) ? b.novos : [];
+  const paraCriar = novos.filter((n) => n && n.ticker && n.class_id);
+  if (paraCriar.length) {
+    const { data: existentes } = await sb.from('assets').select('ticker')
+      .in('ticker', paraCriar.map((n) => n.ticker));
+    const jaExiste = new Set((existentes || []).map((a) => a.ticker));
+    const inserir = paraCriar
+      .filter((n) => !jaExiste.has(n.ticker))
+      .map((n) => ({ ticker: n.ticker, class_id: Number(n.class_id), is_active: true }));
+    if (inserir.length) {
+      const { error } = await sb.from('assets').insert(inserir);
+      if (error) return NextResponse.json({ ok: false, erro: `Erro ao cadastrar ativos: ${error.message}` }, { status: 500 });
+    }
+  }
+
   const { data: assets } = await sb.from('assets').select('id, ticker');
   const idDe = {};
   (assets || []).forEach((a) => { idDe[a.ticker] = a.id; });
