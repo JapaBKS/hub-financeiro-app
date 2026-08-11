@@ -43,6 +43,37 @@ export default function ApuracaoLista({ meses }) {
   const ultimo = acumulado[cron[cron.length - 1].mes];
   const impostoTotal = cron.reduce((s, m) => s + acumulado[m.mes].impostoRV + acumulado[m.mes].impostoFii, 0);
 
+  // REGRA DOS R$10: imposto menor que R$10 não vira DARF no mês — acumula
+  // e é somado aos meses seguintes até atingir R$10.
+  const MINIMO_DARF = 10;
+  const darfs = [];
+  let saldo = 0;
+  let contribuintes = [];
+  cron.forEach((m) => {
+    const imp = acumulado[m.mes].impostoRV + acumulado[m.mes].impostoFii;
+    if (imp > 0) { saldo += imp; contribuintes.push({ mes: m.mes, valor: imp }); }
+    if (saldo >= MINIMO_DARF) {
+      darfs.push({ mesApuracao: m.mes, valor: saldo, meses: contribuintes });
+      saldo = 0;
+      contribuintes = [];
+    }
+  });
+  const pendente = { valor: saldo, meses: contribuintes };
+
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  function vencimentoDe(ym) {
+    const [a, mm] = ym.split('-').map(Number);
+    const d = new Date(a, mm, 0); // último dia do mês SEGUINTE ao de apuração
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { iso, br: iso.split('-').reverse().join('/') };
+  }
+  const darfsComVenc = darfs.map((d) => {
+    const v = vencimentoDe(d.mesApuracao);
+    return { ...d, venc: v, vencido: v.iso < hojeISO };
+  });
+  const totalAtrasado = darfsComVenc.filter((d) => d.vencido).reduce((s, d) => s + d.valor, 0);
+
   return (
     <div>
       <section className="card" style={{ padding: '14px 18px', marginBottom: 14 }}>
@@ -82,6 +113,66 @@ export default function ApuracaoLista({ meses }) {
         </p>
       </section>
 
+      <section className="card" style={{ marginBottom: 14 }}>
+        <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
+          <h2>DARFs</h2>
+          {totalAtrasado > 0 && (
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--down)' }}>{brl(totalAtrasado)} em atraso</span>
+          )}
+        </div>
+
+        <p style={{ fontSize: 11.5, color: 'var(--ink-faint)', margin: '4px 20px 8px', lineHeight: 1.5 }}>
+          Imposto abaixo de {brl(MINIMO_DARF)} não vira DARF no mês: acumula e entra num mês seguinte.
+          Abaixo, só os meses que realmente geram guia — código <b>6015</b>, vencimento no último dia útil do mês seguinte.
+        </p>
+
+        {darfsComVenc.length === 0 && (
+          <div style={{ padding: '10px 20px 16px', fontSize: 13, color: 'var(--ink-faint)' }}>
+            Nenhuma DARF gerada — o imposto acumulado nunca atingiu {brl(MINIMO_DARF)}.
+          </div>
+        )}
+
+        {darfsComVenc.map((d, i) => (
+          <div key={i} style={{
+            padding: '10px 20px', borderBottom: '1px solid var(--line-soft)',
+            borderLeft: '3px solid ' + (d.vencido ? 'var(--down)' : 'var(--amber)'),
+          }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+              <div>
+                <b style={{ fontSize: 13.5, textTransform: 'capitalize' }}>{rotulo(d.mesApuracao)}</b>
+                <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}> · venceu em {d.venc.br}</span>
+                {d.vencido && (
+                  <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', background: 'var(--down)', borderRadius: 4, padding: '1px 6px', marginLeft: 6 }}>EM ATRASO</span>
+                )}
+              </div>
+              <b style={{ fontFamily: 'var(--font-display)', fontSize: 15, color: d.vencido ? 'var(--down)' : 'var(--amber)' }}>{brl(d.valor)}</b>
+            </div>
+            {d.meses.length > 1 && (
+              <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 3 }}>
+                acumulado de: {d.meses.map((x) => `${rotulo(x.mes)} ${brl(x.valor)}`).join(' + ')}
+              </div>
+            )}
+          </div>
+        ))}
+
+        {pendente.valor > 0 && (
+          <div style={{ padding: '10px 20px 16px', fontSize: 12, color: 'var(--ink-faint)' }}>
+            Acumulado ainda sem guia: <b style={{ color: 'var(--ink)' }}>{brl(pendente.valor)}</b> — só vira DARF
+            quando passar de {brl(MINIMO_DARF)}.
+            {pendente.meses.length > 0 && (
+              <div style={{ marginTop: 3 }}>
+                de: {pendente.meses.map((x) => `${rotulo(x.mes)} ${brl(x.valor)}`).join(' + ')}
+              </div>
+            )}
+          </div>
+        )}
+
+        <p style={{ fontSize: 10.5, color: 'var(--ink-faint)', margin: '8px 20px 14px', lineHeight: 1.5 }}>
+          Os valores em atraso ainda recebem multa (0,33% ao dia, até 20%) e juros Selic, que não estão
+          calculados aqui. Confirme com um contador antes de recolher.
+        </p>
+      </section>
+
       <section className="card">
         {meses.map((m) => {
           const exp = aberto === m.mes;
@@ -104,7 +195,7 @@ export default function ApuracaoLista({ meses }) {
                   <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: info.rvMes >= 0 ? 'var(--up)' : 'var(--down)' }}>
                     {brl(info.rvMes)}
                   </div>
-                  <div style={{ fontSize: 10, color: 'var(--ink-faint)' }}>tributável no mês</div>
+                  <div style={{ fontSize: 10, color: 'var(--ink-faint)' }}>resultado do mês</div>
                 </div>
               </button>
 
