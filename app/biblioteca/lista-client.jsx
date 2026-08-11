@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 
 const brl = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-const pct = (n) => `${n >= 0 ? '+' : ''}${(n * 100).toFixed(1).replace('.', ',')}%`;
+const pct = (n) => `${n >= 0 ? '+' : ''}${(n * 100).toFixed(2).replace('.', ',')}%`;
 const dataBR = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
 const num = (n, casas = 0) => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: casas });
 
