@@ -9,8 +9,19 @@ const LIMITE_ISENCAO = 20000;
 
 const CAT = { acao: 'ação', bdr: 'BDR', etf: 'ETF', fii: 'FII' };
 
-export default function ApuracaoLista({ meses }) {
+export default function ApuracaoLista({ meses, pagos = {} }) {
   const [aberto, setAberto] = useState(meses[0]?.mes || null);
+  const [salvando, setSalvando] = useState(null);
+
+  async function alternarPago(mes, valor, jaPago) {
+    setSalvando(mes);
+    await fetch('/api/darf-payment', {
+      method: jaPago ? 'DELETE' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mes, valor }),
+    });
+    window.location.reload();
+  }
 
   if (!meses.length) {
     return <section className="card" style={{ padding: 20, fontSize: 13, color: 'var(--ink-faint)' }}>Nenhuma venda registrada ainda.</section>;
@@ -63,16 +74,18 @@ export default function ApuracaoLista({ meses }) {
   const hojeISO = new Date().toISOString().slice(0, 10);
   function vencimentoDe(ym) {
     const [a, mm] = ym.split('-').map(Number);
-    const d = new Date(a, mm, 0); // último dia do mês SEGUINTE ao de apuração
+    const d = new Date(a, mm + 1, 0); // dia 0 do mês+2 = último dia do mês seguinte
     while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1);
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return { iso, br: iso.split('-').reverse().join('/') };
   }
   const darfsComVenc = darfs.map((d) => {
     const v = vencimentoDe(d.mesApuracao);
-    return { ...d, venc: v, vencido: v.iso < hojeISO };
+    const pagoEm = pagos[d.mesApuracao] || null;
+    return { ...d, venc: v, pagoEm, vencido: !pagoEm && v.iso < hojeISO };
   });
   const totalAtrasado = darfsComVenc.filter((d) => d.vencido).reduce((s, d) => s + d.valor, 0);
+  const totalPago = darfsComVenc.filter((d) => d.pagoEm).reduce((s, d) => s + d.valor, 0);
 
   return (
     <div>
@@ -116,9 +129,10 @@ export default function ApuracaoLista({ meses }) {
       <section className="card" style={{ marginBottom: 14 }}>
         <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
           <h2>DARFs</h2>
-          {totalAtrasado > 0 && (
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--down)' }}>{brl(totalAtrasado)} em atraso</span>
-          )}
+          <span style={{ display: 'flex', gap: 10, fontSize: 12.5, fontWeight: 600 }}>
+            {totalPago > 0 && <span style={{ color: 'var(--up)' }}>{brl(totalPago)} pago</span>}
+            {totalAtrasado > 0 && <span style={{ color: 'var(--down)' }}>{brl(totalAtrasado)} em atraso</span>}
+          </span>
         </div>
 
         <p style={{ fontSize: 11.5, color: 'var(--ink-faint)', margin: '4px 20px 8px', lineHeight: 1.5 }}>
@@ -135,17 +149,31 @@ export default function ApuracaoLista({ meses }) {
         {darfsComVenc.map((d, i) => (
           <div key={i} style={{
             padding: '10px 20px', borderBottom: '1px solid var(--line-soft)',
-            borderLeft: '3px solid ' + (d.vencido ? 'var(--down)' : 'var(--amber)'),
+            borderLeft: '3px solid ' + (d.pagoEm ? 'var(--up)' : d.vencido ? 'var(--down)' : 'var(--amber)'),
+            opacity: d.pagoEm ? 0.75 : 1,
           }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
               <div>
                 <b style={{ fontSize: 13.5, textTransform: 'capitalize' }}>{rotulo(d.mesApuracao)}</b>
-                <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}> · venceu em {d.venc.br}</span>
-                {d.vencido && (
+                <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}> · vence em {d.venc.br}</span>
+                {d.pagoEm ? (
+                  <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', background: 'var(--up)', borderRadius: 4, padding: '1px 6px', marginLeft: 6 }}>
+                    PAGA {(d.pagoEm || '').split('-').reverse().join('/')}
+                  </span>
+                ) : d.vencido ? (
                   <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', background: 'var(--down)', borderRadius: 4, padding: '1px 6px', marginLeft: 6 }}>EM ATRASO</span>
-                )}
+                ) : null}
               </div>
-              <b style={{ fontFamily: 'var(--font-display)', fontSize: 15, color: d.vencido ? 'var(--down)' : 'var(--amber)' }}>{brl(d.valor)}</b>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <b style={{ fontFamily: 'var(--font-display)', fontSize: 15, color: d.pagoEm ? 'var(--up)' : d.vencido ? 'var(--down)' : 'var(--amber)' }}>{brl(d.valor)}</b>
+                <button onClick={() => alternarPago(d.mesApuracao, d.valor, !!d.pagoEm)} disabled={salvando === d.mesApuracao}
+                  title={d.pagoEm ? 'desmarcar' : 'marcar como paga'}
+                  style={{
+                    fontSize: 11, fontWeight: 600, padding: '4px 9px', borderRadius: 7, cursor: 'pointer',
+                    border: '1px solid var(--line)', background: 'var(--surface)',
+                    color: d.pagoEm ? 'var(--ink-faint)' : 'var(--forest-2)',
+                  }}>{salvando === d.mesApuracao ? '…' : d.pagoEm ? 'desfazer' : '✓ paga'}</button>
+              </div>
             </div>
             {d.meses.length > 1 && (
               <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 3 }}>
