@@ -135,7 +135,9 @@ export default function BibliotecaLista({ ativos }) {
                     )}
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 2, fontFamily: 'var(--font-display)' }}>
-                    {a.aberto ? `${num(a.qtdAtual, 6)} cotas · ${brl(a.valorAtual)}` : `${dataBR(a.primeiraCompra)} → ${dataBR(a.ultimaVenda)}`}
+                    {a.aberto
+                      ? `${num(a.qtdAtual, 6)} × ${brl(a.precoRef)} · ${brl(a.valorAtual)}`
+                      : `${dataBR(a.primeiraCompra)} → ${dataBR(a.ultimaVenda)}`}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -153,7 +155,21 @@ export default function BibliotecaLista({ ativos }) {
                     <Dado rot="comprado" val={brl(a.totalComprado)} sub={`${num(a.qtdComprada, 6)} cotas`} />
                     <Dado rot="vendido" val={brl(a.totalVendido)} sub={a.qtdVendida > 0 ? `${num(a.qtdVendida, 6)} cotas` : '—'} />
                     <Dado rot="proventos" val={brl(a.dividendos)} sub={`${a.nDividendos} pagamento(s)`} cor="var(--brass)" />
-                    <Dado rot="preço médio" val={brl(a.pm)} sub={a.aberto ? `agora ${brl(a.precoRef)}${a.origemPreco === 'manual' ? ' (manual)' : a.origemPreco === 'pm' ? ' (sem cotação)' : ''}` : '—'} />
+                    <Dado rot="preço médio" val={brl(a.pm)} sub={`${num(a.qtdComprada, 6)} cotas compradas`} />
+                    {a.aberto && (
+                      <Dado
+                        rot="preço atual"
+                        val={brl(a.precoRef)}
+                        sub={
+                          a.origemPreco === 'manual' ? 'informado por você'
+                            : a.origemPreco === 'pm' ? 'sem cotação — usando o PM'
+                            : a.origemPreco === 'auto-velho' ? `cotação de ${dataBR(a.precoEm)}`
+                            : 'cotação atualizada'
+                        }
+                        cor={a.origemPreco === 'auto' ? 'var(--up)' : a.origemPreco === 'pm' ? 'var(--ink-faint)' : 'var(--amber)'}
+                      />
+                    )}
+                    {a.aberto && <Dado rot="valor na carteira" val={brl(a.valorAtual)} sub={`${num(a.qtdAtual, 6)} cotas`} />}
                     <Dado rot="primeira compra" val={dataBR(a.primeiraCompra)} sub={`${a.nTrades} negociação(ões)`} />
                     <Dado rot={a.aberto ? 'última movimentação' : 'última venda'} val={dataBR(a.aberto ? a.ultimaMov : a.ultimaVenda)} />
                   </div>
