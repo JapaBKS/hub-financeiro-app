@@ -123,8 +123,17 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
     setPuxando(it.id);
     const res = await fetch(`/api/fatura-pai?card_id=${it.card_id}&month=${mes}`);
     const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) { setPuxando(null); return; }
+
+    const valor = Number(data.total_pai) || 0;
+    setRevVals((v) => ({ ...v, [it.id]: valor.toFixed(2) }));
+
+    // grava o valor já — segue como "a conferir" pra você poder revisar antes do ok
+    await fetch('/api/cashbook', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: it.id, amount: valor, needs_review: true }),
+    }).catch(() => {});
     setPuxando(null);
-    if (res.ok && data.ok) setRevVals((v) => ({ ...v, [it.id]: String(data.total_pai.toFixed(2)) }));
   }
 
   async function confirmarValor(it) {
