@@ -7,7 +7,7 @@ export const revalidate = 0;
 export default async function Cartoes() {
   const sb = supabaseServer();
   const [{ data: cards }, { data: recentes }, { data: invoices }, { data: items }, { data: payments }] = await Promise.all([
-    sb.from('cards').select('id, name, due_day').order('name'),
+    sb.from('cards').select('id, name, due_day, ativo').order('name'),
     sb.from('card_purchases')
       .select('id, description, categoria, pagador, pai_pct, purchased_at, installment_amount, installments_count, first_billed_month, card_id, cards(name)')
       .order('first_billed_month', { ascending: false })
