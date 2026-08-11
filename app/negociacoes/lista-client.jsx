@@ -15,12 +15,24 @@ export default function ListaNegociacoes({ trades }) {
   const [form, setForm] = useState({});
   const [busca, setBusca] = useState('');
   const [tipo, setTipo] = useState('todos');
+  const [ano, setAno] = useState('todos');
+  const [mes, setMes] = useState('todos');
+
+  const anos = [...new Set(lista.map((t) => (t.traded_at || '').slice(0, 4)).filter(Boolean))].sort((a, b) => b.localeCompare(a));
+  const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
   const filtradas = lista.filter((t) => {
     if (tipo !== 'todos' && t.side !== tipo) return false;
     if (busca && !t.ticker.includes(busca.toUpperCase())) return false;
+    const d = (t.traded_at || '').slice(0, 10);
+    if (ano !== 'todos' && d.slice(0, 4) !== ano) return false;
+    if (mes !== 'todos' && d.slice(5, 7) !== mes) return false;
     return true;
   });
+
+  const totC = filtradas.filter((t) => t.side === 'compra').reduce((s, t) => s + Number(t.quantity) * Number(t.price), 0);
+  const totV = filtradas.filter((t) => t.side === 'venda').reduce((s, t) => s + Number(t.quantity) * Number(t.price), 0);
+  const temFiltro = tipo !== 'todos' || busca || ano !== 'todos' || mes !== 'todos';
 
   async function apagar(id) {
     if (!confirm('Apagar este lançamento? Isso recalcula sua carteira.')) return;
@@ -45,17 +57,38 @@ export default function ListaNegociacoes({ trades }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-        <input style={{ ...inp, flex: 1 }} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar ticker (ex.: PETR4)" />
-        <select style={{ ...inp, width: 130 }} value={tipo} onChange={(e) => setTipo(e.target.value)}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+        <input style={{ ...inp, flex: 1, minWidth: 150 }} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar ticker (ex.: PETR4)" />
+        <select style={{ ...inp, width: 120 }} value={tipo} onChange={(e) => setTipo(e.target.value)}>
           <option value="todos">Todas</option>
           <option value="compra">Compras</option>
           <option value="venda">Vendas</option>
         </select>
       </div>
 
-      <div style={{ fontSize: 12, color: 'var(--ink-faint)', marginBottom: 8 }}>
-        {filtradas.length} {filtradas.length === 1 ? 'negociação' : 'negociações'}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+        <select style={{ ...inp, width: 110 }} value={ano} onChange={(e) => setAno(e.target.value)}>
+          <option value="todos">Todo ano</option>
+          {anos.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <select style={{ ...inp, width: 130 }} value={mes} onChange={(e) => setMes(e.target.value)}>
+          <option value="todos">Todo mês</option>
+          {MESES.map((nome, i) => (
+            <option key={nome} value={String(i + 1).padStart(2, '0')}>{nome}</option>
+          ))}
+        </select>
+        {temFiltro && (
+          <button onClick={() => { setBusca(''); setTipo('todos'); setAno('todos'); setMes('todos'); }} style={{
+            padding: '7px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
+            border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-faint)',
+          }}>limpar filtros</button>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap', fontSize: 12, color: 'var(--ink-faint)', marginBottom: 8 }}>
+        <span>{filtradas.length} {filtradas.length === 1 ? 'negociação' : 'negociações'}</span>
+        {totC > 0 && <span>compras <b style={{ fontFamily: 'var(--font-display)', color: 'var(--down)' }}>{fmt(totC)}</b></span>}
+        {totV > 0 && <span>vendas <b style={{ fontFamily: 'var(--font-display)', color: 'var(--up)' }}>{fmt(totV)}</b></span>}
       </div>
 
       <section className="card">
