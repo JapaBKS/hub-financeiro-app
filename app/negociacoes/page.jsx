@@ -35,7 +35,7 @@ export default async function Negociacoes() {
         </div>
         <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
-      <ImportarNegociacoesB3 />
+      <ImportarNegociacoesB3 assets={assets || []} classes={classes || []} />
       <RegistrarNegociacao assets={assets || []} classes={classes || []} />
       <ListaNegociacoes trades={flat} />
     </div>
