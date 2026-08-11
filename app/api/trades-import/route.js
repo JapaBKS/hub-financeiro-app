@@ -53,18 +53,22 @@ export async function POST(req) {
     .select('asset_id, traded_at, side, quantity, price')
     .in('traded_at', datas);
 
-  const jaTem = new Set(
-    (existentes || []).map((t) =>
-      chave(t.asset_id, (t.traded_at || '').slice(0, 10), t.side, t.quantity, t.price)),
-  );
+  // Conta QUANTAS de cada assinatura já existem — execuções idênticas no mesmo dia
+  // são legítimas (ordem partida), então não dá pra deduplicar por presença.
+  const noBanco = {};
+  (existentes || []).forEach((t) => {
+    const k = chave(t.asset_id, (t.traded_at || '').slice(0, 10), t.side, t.quantity, t.price);
+    noBanco[k] = (noBanco[k] || 0) + 1;
+  });
 
   const novas = [];
-  const vistas = new Set();
+  const vistas = {};
   for (const i of validos) {
     const assetId = idDe[i.ticker];
     const k = chave(assetId, i.traded_at, i.side, i.quantity, i.price);
-    if (jaTem.has(k) || vistas.has(k)) continue;
-    vistas.add(k);
+    vistas[k] = (vistas[k] || 0) + 1;
+    // se o banco já tem essa 1ª/2ª/3ª ocorrência, pula; senão insere
+    if (vistas[k] <= (noBanco[k] || 0)) continue;
     novas.push({
       asset_id: assetId,
       side: i.side,
