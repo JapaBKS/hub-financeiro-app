@@ -22,16 +22,35 @@ export async function POST(req) {
 export async function PATCH(req) {
   const b = await req.json().catch(() => ({}));
   const id = Number(b.id);
-  const name = String(b.name || '').trim();
-  if (!id || !name) return NextResponse.json({ ok: false, erro: 'Dados inválidos.' }, { status: 400 });
+  if (!id) return NextResponse.json({ ok: false, erro: 'Id ausente.' }, { status: 400 });
 
   const sb = supabaseServer();
-  const { data: ja } = await sb.from('asset_classes').select('id').ilike('name', name).maybeSingle();
-  if (ja && Number(ja.id) !== id) {
-    return NextResponse.json({ ok: false, erro: `Já existe uma classe "${name}".` }, { status: 400 });
+  const patch = {};
+
+  if (b.name !== undefined) {
+    const name = String(b.name || '').trim();
+    if (!name) return NextResponse.json({ ok: false, erro: 'Nome não pode ficar vazio.' }, { status: 400 });
+    const { data: ja } = await sb.from('asset_classes').select('id').ilike('name', name).maybeSingle();
+    if (ja && Number(ja.id) !== id) {
+      return NextResponse.json({ ok: false, erro: `Já existe uma classe "${name}".` }, { status: 400 });
+    }
+    patch.name = name;
   }
 
-  const { error } = await sb.from('asset_classes').update({ name }).eq('id', id);
+  // alvo em R$ (cofres). null/'' limpa o alvo.
+  if (b.alvo_valor !== undefined) {
+    const v = b.alvo_valor === null || b.alvo_valor === '' ? null : Number(b.alvo_valor);
+    if (v !== null && !(v >= 0)) {
+      return NextResponse.json({ ok: false, erro: 'Valor inválido.' }, { status: 400 });
+    }
+    patch.alvo_valor = v;
+  }
+
+  if (!Object.keys(patch).length) {
+    return NextResponse.json({ ok: false, erro: 'Nada para alterar.' }, { status: 400 });
+  }
+
+  const { error } = await sb.from('asset_classes').update(patch).eq('id', id);
   if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
