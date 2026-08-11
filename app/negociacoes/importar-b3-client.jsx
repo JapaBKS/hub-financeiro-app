@@ -23,34 +23,45 @@ function limpaTicker(tk, mercado) {
   return t;
 }
 
-// Extrato de negociação da B3: blocos por data ("2 de julho de 2026"),
-// cada linha começando com Compra/Venda.
+// Aceita os dois formatos da B3:
+//  (a) blocos por data -> "2 de julho de 2026" + linhas começando com Compra/Venda
+//  (b) tabela plana    -> "04/09/2024  Venda  Mercado Fracionário ..." (planilha)
 function parseNegociacoes(raw) {
   const linhas = raw.split('\n').map((l) => l.replace(/\r$/, '')).filter((l) => l.trim());
   const out = [];
-  let dataAtual = null;
+  let dataBloco = null;
+
   for (const linha of linhas) {
     const d = parseDataExtenso(linha);
-    if (d) { dataAtual = d; continue; }
-    if (/^total\s+compra/i.test(linha.trim())) continue;
-    if (/movimenta/i.test(linha) && /quantidade/i.test(linha)) continue;
+    if (d) { dataBloco = d; continue; }
 
     const t = linha.trim();
-    if (!/^(compra|venda)\b/i.test(t) || !dataAtual) continue;
+    if (/^total\s+compra/i.test(t)) continue;
+    if (/quantidade/i.test(t) && /(movimenta|pre[çc]o)/i.test(t)) continue;
 
     const cols = t.split('\t').map((c) => c.trim()).filter((c) => c !== '');
-    const side = /^compra/i.test(t) ? 'compra' : 'venda';
-    const mercado = cols[1] || '';
+    const sideCol = cols.find((c) => /^(compra|venda)$/i.test(c));
+    if (!sideCol) continue;
+    const side = /compra/i.test(sideCol) ? 'compra' : 'venda';
+
+    // data: a PRIMEIRA da linha (algumas trazem vencimento junto) ou a do bloco
+    const mData = t.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    const traded_at = mData ? `${mData[3]}-${mData[2]}-${mData[1]}` : dataBloco;
+    if (!traded_at) continue;
+
+    const mercado = cols.find((c) => /mercado/i.test(c)) || '';
     const tkCol = cols.find((c) => /^[A-Z][A-Z0-9]{3,6}$/.test(c) && /\d/.test(c));
     const ticker = limpaTicker(tkCol, mercado);
+
     const rs = t.match(/R\$\s*[\d.]+,\d{2}/g) || [];
     const preco = rs.length >= 2 ? parseValor(rs[rs.length - 2]) : 0;
     const total = rs.length >= 1 ? parseValor(rs[rs.length - 1]) : 0;
+
     const qtdCol = cols.find((c) => /^\d+$/.test(c));
     const qtd = qtdCol ? Number(qtdCol) : 0;
 
     if (!ticker || !qtd || !preco) continue;
-    out.push({ ticker, traded_at: dataAtual, side, quantity: qtd, price: preco, total });
+    out.push({ ticker, traded_at, side, quantity: qtd, price: preco, total });
   }
   return out;
 }
@@ -126,8 +137,9 @@ export default function ImportarNegociacoesB3({ assets = [], classes = [] }) {
       </div>
       <div style={{ padding: '8px 20px 0' }}>
         <p style={{ fontSize: 12, color: 'var(--ink-faint)', margin: '0 0 8px' }}>
-          Cole o extrato de negociação da B3 (com as datas). O sufixo “F” do fracionário é removido
-          automaticamente. Nada é duplicado: o que já existe é ignorado.
+          Cole o extrato de negociação da B3 — funciona tanto no formato do site (blocos por data)
+          quanto na planilha baixada (uma linha por negócio). O sufixo “F” do fracionário é removido
+          automaticamente e nada é duplicado.
         </p>
         <textarea style={ta} value={texto} onChange={(e) => setTexto(e.target.value)}
           placeholder={'2 de julho de 2026\nCompra\tMercado Fracionário\t-\tXP...\tALOS3F\t28\tR$ 27,97\tR$ 783,16'} />
