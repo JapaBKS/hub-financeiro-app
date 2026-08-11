@@ -3,9 +3,10 @@ import { useState } from 'react';
 import FormCartao from './form-client';
 import Recentes from './recentes-client';
 import FaturasView from '../faturas/view-client';
+import GerenciarCartoes from './gerenciar-cartoes-client';
 
 export default function CartoesTabs({ cards, recentes, invoices, items, payments }) {
-  const [aba, setAba] = useState('faturas'); // 'faturas' | 'lancar'
+  const [aba, setAba] = useState('faturas'); // 'faturas' | 'lancar' | 'cartoes'
 
   const tab = (val, label) => (
     <button onClick={() => setAba(val)} style={{
@@ -21,9 +22,12 @@ export default function CartoesTabs({ cards, recentes, invoices, items, payments
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {tab('faturas', 'Faturas')}
         {tab('lancar', '+ Lançar compra')}
+        {tab('cartoes', 'Meus cartões')}
       </div>
 
-      {aba === 'faturas' ? (
+      {aba === 'cartoes' ? (
+        <GerenciarCartoes cards={cards} />
+      ) : aba === 'faturas' ? (
         <FaturasView cards={cards} invoices={invoices} items={items} payments={payments} />
       ) : (
         <div style={{ maxWidth: 560 }}>
