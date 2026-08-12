@@ -194,21 +194,55 @@ export default async function Home() {
 
       <div className="grid">
         <div className="col">
-          <AlocacaoDonut
-            total={total}
-            dados={classes.map((c) => {
-              const real = Number(c.pct_real);
-              const fixo = alvoFixoDe[c.classe];
-              const temFixo = fixo != null;
-              const alvo = temFixo ? (total > 0 ? fixo / total : 0) : Number(c.pct_alvo || 0);
-              const ajuste = temFixo ? fixo - Number(c.valor) : Number(c.ajuste_rs);
-              const tag = ajuste > 50 ? 'buy' : (!temFixo && ajuste < -50) ? 'sell' : 'hold';
-              const tagTxt = temFixo
-                ? (ajuste > 50 ? `guardar ${brlShort(ajuste)}` : ajuste < -50 ? `sobra ${brlShort(-ajuste)}` : 'no alvo')
-                : (ajuste > 50 ? `comprar ${brlShort(ajuste)}` : ajuste < -50 ? `acima ${brlShort(ajuste)}` : 'manter');
-              return { classe: c.classe, valor: Number(c.valor), real, alvo, temFixo, fixo, ajuste, tag, tagTxt };
-            })}
-          />
+          <div className="so-desktop">
+          <section className="card">
+            <div className="card-h"><h2>Carteira por classe · real vs. alvo</h2></div>
+            <div>
+              {classes.map((c, i) => {
+                const real = Number(c.pct_real);
+                const fixo = alvoFixoDe[c.classe];
+                const temFixo = fixo != null;
+                const alvoPct = temFixo ? (total > 0 ? fixo / total : 0) : Number(c.pct_alvo || 0);
+                const ajuste = temFixo ? fixo - Number(c.valor) : Number(c.ajuste_rs);
+                const tag = ajuste > 50 ? 'buy' : (!temFixo && ajuste < -50) ? 'sell' : 'hold';
+                const tagTxt = temFixo
+                  ? (ajuste > 50 ? `guardar ${brlShort(ajuste)}` : ajuste < -50 ? `sobra ${brlShort(-ajuste)}` : 'no alvo')
+                  : (ajuste > 50 ? `comprar ${brlShort(ajuste)}` : ajuste < -50 ? `acima ${brlShort(ajuste)}` : 'manter');
+                return (
+                  <div className="alloc-row" key={c.classe}>
+                    <div className="a-name">{c.classe}<span>{brl(Number(c.valor))}</span></div>
+                    <div className="a-bar">
+                      <div className="fill bar-grow-x" style={{ width: `${(real / maxPct) * 100}%`, background: tag === 'sell' ? 'var(--amber)' : 'var(--forest-2)', animationDelay: `${0.12 + i * 0.05}s` }} />
+                      <div className="ideal" style={{ left: `${(alvoPct / maxPct) * 100}%` }} />
+                    </div>
+                    <div className="a-act">
+                      <span className={`tag ${tag}`}>{tagTxt}</span>
+                      <span className="pct">{pct(real)} · alvo {temFixo ? brlShort(fixo) : pct(alvoPct)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+          </div>
+
+          <div className="so-mobile">
+            <AlocacaoDonut
+              total={total}
+              dados={classes.map((c) => {
+                const real = Number(c.pct_real);
+                const fixo = alvoFixoDe[c.classe];
+                const temFixo = fixo != null;
+                const alvo = temFixo ? (total > 0 ? fixo / total : 0) : Number(c.pct_alvo || 0);
+                const ajuste = temFixo ? fixo - Number(c.valor) : Number(c.ajuste_rs);
+                const tag = ajuste > 50 ? 'buy' : (!temFixo && ajuste < -50) ? 'sell' : 'hold';
+                const tagTxt = temFixo
+                  ? (ajuste > 50 ? `guardar ${brlShort(ajuste)}` : ajuste < -50 ? `sobra ${brlShort(-ajuste)}` : 'no alvo')
+                  : (ajuste > 50 ? `comprar ${brlShort(ajuste)}` : ajuste < -50 ? `acima ${brlShort(ajuste)}` : 'manter');
+                return { classe: c.classe, valor: Number(c.valor), real, alvo, temFixo, fixo, ajuste, tag, tagTxt };
+              })}
+            />
+          </div>
 
           <section className="card">
             <div className="card-h"><h2>Dividendos</h2></div>
