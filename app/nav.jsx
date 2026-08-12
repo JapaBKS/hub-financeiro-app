@@ -5,19 +5,22 @@ import { useState, useEffect } from 'react';
 import ThemeToggle from './theme-toggle';
 
 const links = [
-  { href: '/', label: 'Visão geral' },
-  { href: '/carteira', label: 'Carteira' },
-  { href: '/biblioteca', label: 'Biblioteca' },
-  { href: '/apuracao', label: 'Apuração' },
-  { href: '/recomendacoes', label: 'Recomendações' },
-  { href: '/alvos', label: 'Alvos' },
-  { href: '/negociacoes', label: 'Negociações' },
-  { href: '/cartoes', label: 'Cartões' },
-  { href: '/dividendos', label: 'Proventos' },
-  { href: '/caixa', label: 'Caixa' },
-  { href: '/saldos', label: 'Saldos' },
-  { href: '/meta', label: 'Meta' },
+  { href: '/', label: 'Visão geral', icone: '◎' },
+  { href: '/carteira', label: 'Carteira', icone: '▣' },
+  { href: '/biblioteca', label: 'Biblioteca', icone: '☰' },
+  { href: '/apuracao', label: 'Apuração', icone: '§' },
+  { href: '/recomendacoes', label: 'Recomendações', icone: '↗' },
+  { href: '/alvos', label: 'Alvos', icone: '◈' },
+  { href: '/negociacoes', label: 'Negociações', icone: '⇄' },
+  { href: '/cartoes', label: 'Cartões', icone: '▤' },
+  { href: '/dividendos', label: 'Proventos', icone: '❖' },
+  { href: '/caixa', label: 'Caixa', icone: '◐' },
+  { href: '/saldos', label: 'Saldos', icone: '≡' },
+  { href: '/meta', label: 'Meta', icone: '◇' },
 ];
+
+// no celular, esses 4 ficam na barra de baixo; o resto vai pro "Mais"
+const PRINCIPAIS = ['/', '/carteira', '/caixa', '/cartoes'];
 
 export default function Nav() {
   const path = usePathname();
@@ -27,20 +30,19 @@ export default function Nav() {
     const m = document.cookie.match(/(?:^|; )app_role=([^;]+)/);
     setRole(m ? decodeURIComponent(m[1]) : 'dono');
   }, []);
+  useEffect(() => { setAberto(false); }, [path]);
   if (path === '/login') return null;
 
   const visiveis = role === 'pai' ? links.filter((l) => l.href === '/caixa') : links;
+  const ehAtivo = (href) => (href === '/' ? path === '/' : path.startsWith(href));
+
+  const principais = visiveis.filter((l) => PRINCIPAIS.includes(l.href));
+  const secundarios = visiveis.filter((l) => !PRINCIPAIS.includes(l.href));
 
   async function sair() {
     try { await fetch('/api/logout', { method: 'POST' }); } catch {}
     window.location.href = '/login';
   }
-
-  const linkStyle = (ativo, bloco) => ({
-    fontSize: 13, fontWeight: 500, textDecoration: 'none',
-    padding: bloco ? '11px 14px' : '7px 14px', borderRadius: 9,
-    display: 'block',
-  });
 
   const acoes = (
     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -53,34 +55,61 @@ export default function Nav() {
   );
 
   return (
-    <nav style={{ maxWidth: 1160, margin: '0 auto 4px', padding: '0 4px 14px' }}>
-      {/* desktop: barra inline */}
-      <div className="nav-inline">
-        {visiveis.map((l) => {
-          const ativo = l.href === '/' ? path === '/' : path.startsWith(l.href);
-          return <Link key={l.href} href={l.href} className={ativo ? 'navlink active' : 'navlink'} style={linkStyle(ativo, false)}>{l.label}</Link>;
-        })}
-        <div style={{ marginLeft: 'auto' }}>{acoes}</div>
-      </div>
+    <>
+      {/* desktop: barra inline no topo */}
+      <nav className="nav-inline-wrap" style={{ maxWidth: 1160, margin: '0 auto 4px', padding: '0 4px 14px' }}>
+        <div className="nav-inline">
+          {visiveis.map((l) => (
+            <Link key={l.href} href={l.href} className={ehAtivo(l.href) ? 'navlink active' : 'navlink'}
+              style={{ fontSize: 13, fontWeight: 500, textDecoration: 'none', padding: '7px 14px', borderRadius: 9, display: 'block' }}>
+              {l.label}
+            </Link>
+          ))}
+          <div style={{ marginLeft: 'auto' }}>{acoes}</div>
+        </div>
+      </nav>
 
-      {/* celular: botão de menu + ações */}
-      <div className="nav-mobile">
-        <button onClick={() => setAberto((v) => !v)} aria-label="Menu" style={{
-          display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-          padding: '9px 14px', borderRadius: 9, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)',
-        }}>☰ Menu</button>
-        {acoes}
-      </div>
-
-      {/* celular: painel de links */}
+      {/* celular: folha do "Mais" */}
       {aberto && (
-        <div className="nav-mobile" style={{ flexDirection: 'column', gap: 4, marginTop: 8, alignItems: 'stretch' }}>
-          {visiveis.map((l) => {
-            const ativo = l.href === '/' ? path === '/' : path.startsWith(l.href);
-            return <Link key={l.href} href={l.href} onClick={() => setAberto(false)} className={ativo ? 'navlink active' : 'navlink'} style={linkStyle(ativo, true)}>{l.label}</Link>;
-          })}
+        <div className="nav-sheet-fundo" onClick={() => setAberto(false)}>
+          <div className="nav-sheet" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <b style={{ fontSize: 14 }}>Menu</b>
+              {acoes}
+            </div>
+            <div className="nav-sheet-grid">
+              {secundarios.map((l) => (
+                <Link key={l.href} href={l.href} onClick={() => setAberto(false)}
+                  className={ehAtivo(l.href) ? 'navlink active' : 'navlink'}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                    padding: '14px 6px', borderRadius: 12, textDecoration: 'none',
+                    fontSize: 12, fontWeight: 600, textAlign: 'center',
+                  }}>
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>{l.icone}</span>
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       )}
-    </nav>
+
+      {/* celular: barra fixa embaixo */}
+      <nav className="tabbar">
+        {principais.map((l) => (
+          <Link key={l.href} href={l.href} className={ehAtivo(l.href) ? 'tabitem ativo' : 'tabitem'}>
+            <span className="tabicone">{l.icone}</span>
+            <span className="tablabel">{l.label}</span>
+          </Link>
+        ))}
+        {secundarios.length > 0 && (
+          <button onClick={() => setAberto((v) => !v)} className={aberto ? 'tabitem ativo' : 'tabitem'} aria-label="Mais">
+            <span className="tabicone">⋯</span>
+            <span className="tablabel">Mais</span>
+          </button>
+        )}
+      </nav>
+    </>
   );
 }
