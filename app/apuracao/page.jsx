@@ -18,12 +18,13 @@ function categoria(ticker, classe) {
 
 export default async function Apuracao() {
   const sb = supabaseServer();
-  const [{ data: trades }, { data: darfsPagas }] = await Promise.all([
+  const [{ data: trades }, { data: darfsPagas }, { data: eventos }] = await Promise.all([
     sb.from('trades')
       .select('traded_at, side, quantity, price, assets(ticker, asset_classes(name))')
       .order('traded_at', { ascending: true })
       .order('id', { ascending: true }),
     sb.from('darf_payments').select('mes_apuracao, paid_at'),
+    sb.from('corporate_events').select('id, ticker, event_date, tipo, fator, nota').order('event_date'),
   ]);
   const pagos = {};
   (darfsPagas || []).forEach((d) => { pagos[d.mes_apuracao] = d.paid_at; });
@@ -44,16 +45,47 @@ export default async function Apuracao() {
     return meses[m];
   };
 
-  (trades || []).forEach((t) => {
-    const ticker = t.assets?.ticker;
-    if (!ticker) return;
-    const classe = t.assets?.asset_classes?.name;
-    const q = Number(t.quantity) || 0;
-    const p = Number(t.price) || 0;
-    if (!q || !p) return;
+  // Junta negociações e eventos societários numa linha do tempo só.
+  // Desdobramento/grupamento muda a QUANTIDADE sem mexer no custo total —
+  // sem isso, o preço médio fica errado e o resultado da venda sai distorcido.
+  const linha = [
+    ...(trades || []).map((t) => ({
+      kind: 'trade',
+      dia: (t.traded_at || '').slice(0, 10),
+      ticker: t.assets?.ticker,
+      classe: t.assets?.asset_classes?.name,
+      side: t.side,
+      q: Number(t.quantity) || 0,
+      p: Number(t.price) || 0,
+      traded_at: t.traded_at,
+    })),
+    ...(eventos || []).map((e) => ({
+      kind: 'evento',
+      dia: (e.event_date || '').slice(0, 10),
+      ticker: (e.ticker || '').toUpperCase(),
+      fator: Number(e.fator) || 1,
+      tipo: e.tipo,
+    })),
+  ].sort((a, b) => a.dia.localeCompare(b.dia) || (a.kind === 'evento' ? -1 : 1));
 
+  const negativos = new Set();
+
+  linha.forEach((t) => {
+    const ticker = t.ticker;
+    if (!ticker) return;
     if (!pos[ticker]) pos[ticker] = { qtd: 0, custo: 0 };
     const P = pos[ticker];
+
+    if (t.kind === 'evento') {
+      // muda a quantidade, mantém o custo total (PM se ajusta sozinho)
+      P.qtd = P.qtd * t.fator;
+      return;
+    }
+
+    const classe = t.classe;
+    const q = t.q;
+    const p = t.p;
+    if (!q || !p) return;
 
     if (t.side === 'compra') {
       P.qtd += q;
@@ -67,6 +99,7 @@ export default async function Apuracao() {
     const custoBaixado = pm * q;
     P.qtd -= q;
     P.custo -= custoBaixado;
+    if (P.qtd < -0.0001) negativos.add(ticker); // provável evento societário faltando
     if (P.qtd <= 0.0000001) { P.qtd = 0; P.custo = 0; }
 
     const m = (t.traded_at || '').slice(0, 7);
@@ -98,7 +131,7 @@ export default async function Apuracao() {
         </div>
         <a href="/biblioteca" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>biblioteca →</a>
       </header>
-      <ApuracaoLista meses={lista} pagos={pagos} />
+      <ApuracaoLista meses={lista} pagos={pagos} eventos={eventos || []} suspeitos={[...negativos].sort()} />
     </div>
   );
 }
