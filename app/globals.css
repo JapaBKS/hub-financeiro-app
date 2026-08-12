@@ -235,3 +235,11 @@ img, svg, table, pre { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .nav-sheet { animation: none; }
 }
+
+/* mesmo dado, apresentação diferente por tamanho de tela */
+.so-mobile { display: none; }
+.so-desktop { display: block; }
+@media (max-width: 720px) {
+  .so-desktop { display: none; }
+  .so-mobile { display: block; }
+}
