@@ -66,11 +66,6 @@ function parseNegociacoes(raw) {
   return out;
 }
 
-const ta = {
-  width: '100%', minHeight: 120, padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
-  fontSize: 12.5, fontFamily: 'monospace', boxSizing: 'border-box', background: 'var(--surface)',
-  color: 'var(--ink)', resize: 'vertical',
-};
 
 export default function ImportarNegociacoesB3({ assets = [], classes = [] }) {
   const [aberto, setAberto] = useState(false);
@@ -141,7 +136,7 @@ export default function ImportarNegociacoesB3({ assets = [], classes = [] }) {
           quanto na planilha baixada (uma linha por negócio). O sufixo “F” do fracionário é removido
           automaticamente e nada é duplicado.
         </p>
-        <textarea style={ta} value={texto} onChange={(e) => setTexto(e.target.value)}
+        <textarea className="campo campo-colagem" value={texto} onChange={(e) => setTexto(e.target.value)}
           placeholder={'2 de julho de 2026\nCompra\tMercado Fracionário\t-\tXP...\tALOS3F\t28\tR$ 27,97\tR$ 783,16'} />
 
         {itens.length > 0 && (
