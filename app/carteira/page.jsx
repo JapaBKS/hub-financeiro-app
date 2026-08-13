@@ -158,8 +158,9 @@ export default async function Carteira() {
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20, color: corLucro(totalComProventos) }}>
             {totalComProventos >= 0 ? '+' : ''}{brl(totalComProventos)} · {pct(rentComProventos)}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--brass)', marginTop: 2 }}>
-            {brl(totalProventos)} recebidos
+          <div style={{ fontSize: 11, color: 'var(--brass)', marginTop: 2 }}
+            title="Só os proventos dos ativos que você ainda tem. O acumulado da Visão geral inclui também os já vendidos.">
+            {brl(totalProventos)} destes ativos
           </div>
         </div>
       </section>
