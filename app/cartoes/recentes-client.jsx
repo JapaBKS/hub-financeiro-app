@@ -4,10 +4,6 @@ import { CATEGORIAS } from '../../lib/dominio/categorias';
 
 
 const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-const inp = {
-  padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%',
-};
 
 export default function Recentes({ purchases, cards }) {
   const [lista, setLista] = useState(purchases);
@@ -88,20 +84,20 @@ export default function Recentes({ purchases, cards }) {
         <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{filtrada.length} de {lista.length}</span>
       </div>
       <div style={{ padding: '8px 20px 0' }}>
-        <input style={inp} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por descrição, cartão ou categoria" />
+        <input className="campo" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por descrição, cartão ou categoria" />
       </div>
       <div style={{ marginTop: 6 }}>
         {filtrada.map((p) => {
           if (editId === p.id) {
             return (
               <div key={p.id} style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-soft)' }}>
-                <input style={{ ...inp, marginBottom: 8 }} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição" />
+                <input className="campo" style={{ marginBottom: 8 }} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição" />
                 <div className="grid2">
-                  <select style={inp} value={form.card_id} onChange={(e) => setForm({ ...form, card_id: e.target.value })}>
+                  <select className="campo" value={form.card_id} onChange={(e) => setForm({ ...form, card_id: e.target.value })}>
                     {cards.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
-                  <input style={inp} type="month" value={form.mes} onChange={(e) => setForm({ ...form, mes: e.target.value })} />
-                  <select style={inp} value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
+                  <input className="campo" type="month" value={form.mes} onChange={(e) => setForm({ ...form, mes: e.target.value })} />
+                  <select className="campo" value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
                     {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                   <div style={{ display: 'flex', gap: 4 }}>
@@ -113,11 +109,11 @@ export default function Recentes({ purchases, cards }) {
                       }}>{l}</button>
                     ))}
                   </div>
-                  <input style={inp} type="number" step="any" value={form.parcela} onChange={(e) => setForm({ ...form, parcela: e.target.value })} placeholder="Valor da parcela" />
-                  <input style={inp} type="number" min="1" value={form.installments_count} onChange={(e) => setForm({ ...form, installments_count: e.target.value })} placeholder="Parcelas" />
+                  <input className="campo" type="number" step="any" value={form.parcela} onChange={(e) => setForm({ ...form, parcela: e.target.value })} placeholder="Valor da parcela" />
+                  <input className="campo" type="number" min="1" value={form.installments_count} onChange={(e) => setForm({ ...form, installments_count: e.target.value })} placeholder="Parcelas" />
                 </div>
                 {form.pagador === 'dividido' && (
-                  <input style={{ ...inp, marginTop: 8 }} type="number" min="0" max="100" value={form.paiPct}
+                  <input className="campo" style={{ marginTop: 8 }} type="number" min="0" max="100" value={form.paiPct}
                     onChange={(e) => setForm({ ...form, paiPct: e.target.value })} placeholder="% que o pai paga" />
                 )}
                 <button type="button" onClick={dividirTotal} style={{
