@@ -8,10 +8,6 @@ const diaBR = (iso) => (iso || '').split('-').reverse().slice(0, 2).join('/');
 const LIMITE_ISENCAO = 20000;
 
 const CAT = { acao: 'ação', bdr: 'BDR', etf: 'ETF', fii: 'FII', cripto: 'cripto' };
-const campoEv = {
-  padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', color: 'var(--ink)',
-};
 
 export default function ApuracaoLista({ meses, pagos = {}, eventos = [], suspeitos = [] }) {
   const [novoEv, setNovoEv] = useState({ ticker: '', event_date: '', fator: '', tipo: 'desdobramento' });
@@ -205,18 +201,18 @@ export default function ApuracaoLista({ meses, pagos = {}, eventos = [], suspeit
             <div style={{ display: 'flex', gap: 7, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               <input placeholder="Ticker" value={novoEv.ticker}
                 onChange={(e) => setNovoEv((f) => ({ ...f, ticker: e.target.value.toUpperCase() }))}
-                style={{ ...campoEv, width: 96 }} />
+                className="campo campo-sm" style={{ width: 96 }} />
               <input type="date" value={novoEv.event_date}
                 onChange={(e) => setNovoEv((f) => ({ ...f, event_date: e.target.value }))}
-                style={{ ...campoEv, width: 150 }} />
-              <select value={novoEv.tipo} onChange={(e) => setNovoEv((f) => ({ ...f, tipo: e.target.value }))} style={{ ...campoEv, width: 150 }}>
+                className="campo campo-sm" style={{ width: 150 }} />
+              <select value={novoEv.tipo} onChange={(e) => setNovoEv((f) => ({ ...f, tipo: e.target.value }))} className="campo campo-sm" style={{ width: 150 }}>
                 <option value="desdobramento">desdobramento</option>
                 <option value="grupamento">grupamento</option>
                 <option value="bonificacao">bonificação</option>
               </select>
               <input placeholder="fator (ex.: 2)" value={novoEv.fator}
                 onChange={(e) => setNovoEv((f) => ({ ...f, fator: e.target.value }))}
-                style={{ ...campoEv, width: 110, textAlign: 'right' }} />
+                className="campo campo-sm" style={{ width: 110, textAlign: 'right' }} />
               <button onClick={salvarEvento} disabled={evBusy} style={{
                 padding: '9px 14px', borderRadius: 8, border: 0, cursor: 'pointer', fontSize: 13, fontWeight: 600,
                 background: 'var(--forest)', color: '#fff',
