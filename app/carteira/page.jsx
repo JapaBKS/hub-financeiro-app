@@ -9,11 +9,12 @@ const fmtNum = (n, d = 2) => Number(n).toLocaleString('pt-BR', { minimumFraction
 
 export default async function Carteira() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: manuais }, { data: precos }, { data: divs }] = await Promise.all([
+  const [{ data: pos }, { data: manuais }, { data: precos }, { data: divs }, { data: todasTrades }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('manual_prices').select('ticker, price'),
     sb.from('prices').select('ticker, updated_at'),
     sb.from('dividends').select('ticker, amount'),
+    sb.from('trades').select('side, quantity, price'),
   ]);
   const provDe = {};
   (divs || []).forEach((d) => {
@@ -52,6 +53,17 @@ export default async function Carteira() {
   const totalInvestido = totalCarteira - totalLucro;
   const rentTotal = totalInvestido > 0 ? totalLucro / totalInvestido : 0;
   const rentComProventos = totalInvestido > 0 ? totalComProventos / totalInvestido : 0;
+
+  // RESULTADO TOTAL desde o início: vendas + valor de hoje + proventos − compras.
+  // Inclui posições já encerradas, então responde "no fim das contas, estou no lucro?".
+  let compradoTudo = 0, vendidoTudo = 0;
+  (todasTrades || []).forEach((t) => {
+    const v = (Number(t.quantity) || 0) * (Number(t.price) || 0);
+    if (t.side === 'compra') compradoTudo += v; else vendidoTudo += v;
+  });
+  const proventosTudo = (divs || []).reduce((s2, d) => s2 + (Number(d.amount) || 0), 0);
+  const resultadoTotal = vendidoTudo + totalCarteira + proventosTudo - compradoTudo;
+  const rentTotalGeral = compradoTudo > 0 ? resultadoTotal / compradoTudo : 0;
   const aguardando = ativos.filter((p) => p.semCotacao).length;
 
   // agrupa por classe
@@ -162,6 +174,22 @@ export default async function Carteira() {
             title="Só os proventos dos ativos que você ainda tem. O acumulado da Visão geral inclui também os já vendidos.">
             {brl(totalProventos)} destes ativos
           </div>
+        </div>
+      </section>
+
+      <section className="card" style={{ padding: '18px 22px', marginBottom: 16, borderLeft: `3px solid ${resultadoTotal >= 0 ? 'var(--up)' : 'var(--down)'}` }}>
+        <div className="eyebrow" style={{ marginBottom: 3 }}>Resultado total desde o início</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 26, letterSpacing: '-.02em', color: corLucro(resultadoTotal) }}>
+          {resultadoTotal >= 0 ? '+' : ''}{brl(resultadoTotal)} · {pct(rentTotalGeral)}
+        </div>
+        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 10, fontSize: 11.5, color: 'var(--ink-faint)' }}>
+          <span>comprei <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-soft)' }}>{brl(compradoTudo)}</b></span>
+          <span>vendi <b style={{ fontFamily: 'var(--font-display)', color: 'var(--up)' }}>{brl(vendidoTudo)}</b></span>
+          <span>tenho hoje <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-soft)' }}>{brl(totalCarteira)}</b></span>
+          <span>proventos <b style={{ fontFamily: 'var(--font-display)', color: 'var(--brass)' }}>{brl(proventosTudo)}</b></span>
+        </div>
+        <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 8 }}>
+          Inclui posições já encerradas. Não considera corretagem, emolumentos nem imposto pago.
         </div>
       </section>
 
