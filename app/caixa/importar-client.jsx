@@ -45,7 +45,6 @@ function parse(raw) {
   return out;
 }
 
-const ta = { width: '100%', minHeight: 120, padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)', fontSize: 12.5, fontFamily: 'monospace', boxSizing: 'border-box', background: 'var(--surface)', resize: 'vertical' };
 
 export default function ImportarCaixa() {
   const [texto, setTexto] = useState('');
@@ -73,7 +72,7 @@ export default function ImportarCaixa() {
         <p style={{ fontSize: 12, color: 'var(--ink-faint)', margin: '0 0 8px' }}>
           Cole as linhas da planilha (com o cabeçalho). Colunas: Data · Detalhes · Categoria · Custo · Pago · Entrada/Saída. Só entra o que ainda não existe.
         </p>
-        <textarea style={ta} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Data&#9;Detalhes da despesa&#9;Categoria&#9;Custo&#9;Pago&#9;Entrada/Saída" />
+        <textarea className="campo campo-colagem" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Data&#9;Detalhes da despesa&#9;Categoria&#9;Custo&#9;Pago&#9;Entrada/Saída" />
         {itens.length > 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, padding: '10px 14px', borderRadius: 9, background: 'var(--up-bg)' }}>
             <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>Li <b>{itens.length}</b> lançamentos</span>
