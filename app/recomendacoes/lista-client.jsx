@@ -75,6 +75,9 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
                 : i.inteiro
                   ? `≈ ${i.qtd} cota${i.qtd === 1 ? '' : 's'} a ${brl(i.precoUnit)}`
                   : `≈ ${i.qtd.toLocaleString('pt-BR', { maximumFractionDigits: 6 })} un.`}
+              {i.precoVelho && (
+                <span title="cotação desatualizada — confira o preço antes de executar" style={{ color: 'var(--amber)' }}> ⚠</span>
+              )}
             </div>
           ) : (
             <div style={{ fontSize: 11, marginTop: 3 }} onClick={(e) => e.stopPropagation()}>
