@@ -2,10 +2,6 @@
 import { useState } from 'react';
 
 const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-const inp = {
-  padding: '9px 11px', borderRadius: 9, border: '1px solid var(--line)', fontSize: 14,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%',
-};
 
 export default function SaldosClient({ holdings, classes }) {
   const [lista, setLista] = useState(holdings);
@@ -71,7 +67,7 @@ export default function SaldosClient({ holdings, classes }) {
                 <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{h.classe}</div>
               </div>
               <input
-                style={{ ...inp, width: 130, textAlign: 'right', fontFamily: 'var(--font-display)' }}
+                className="campo" style={{ width: 130, textAlign: 'right', fontFamily: 'var(--font-display)' }}
                 type="number" step="any" value={vals[h.id] ?? ''}
                 onChange={(e) => setVals((v) => ({ ...v, [h.id]: e.target.value }))}
               />
@@ -92,11 +88,11 @@ export default function SaldosClient({ holdings, classes }) {
       <section className="card" style={{ padding: '18px 20px' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', marginBottom: 12 }}>+ Adicionar saldo</div>
         <div className="grid2">
-          <input style={inp} value={novo.label} onChange={(e) => setNovo({ ...novo, label: e.target.value })} placeholder="Nome (ex.: Mercado Pago)" />
-          <select style={inp} value={novo.class_id} onChange={(e) => setNovo({ ...novo, class_id: e.target.value })}>
+          <input className="campo" value={novo.label} onChange={(e) => setNovo({ ...novo, label: e.target.value })} placeholder="Nome (ex.: Mercado Pago)" />
+          <select className="campo" value={novo.class_id} onChange={(e) => setNovo({ ...novo, class_id: e.target.value })}>
             {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <input style={inp} type="number" step="any" value={novo.amount} onChange={(e) => setNovo({ ...novo, amount: e.target.value })} placeholder="Valor (R$)" />
+          <input className="campo" type="number" step="any" value={novo.amount} onChange={(e) => setNovo({ ...novo, amount: e.target.value })} placeholder="Valor (R$)" />
           <button onClick={adicionar} disabled={busy === 'novo'} style={{
             padding: '9px', borderRadius: 9, border: 0, cursor: 'pointer', background: 'var(--forest)', color: '#fff', fontSize: 14, fontWeight: 600,
           }}>{busy === 'novo' ? 'Adicionando…' : 'Adicionar'}</button>
