@@ -5,10 +5,6 @@ import { CATEGORIAS } from '../../lib/dominio/categorias';
 import { CORES, arcPath, fatiar } from '../ui/donut';
 import FormCartao from '../cartoes/form-client';
 
-const inpF = {
-  padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%',
-};
 
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -315,9 +311,9 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                 if (editando) {
                   return (
                     <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-soft)', background: 'var(--surface-2)' }}>
-                      <input style={{ ...inpF, marginBottom: 8 }} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="Descrição" />
+                      <input className="campo campo-sm" style={{ marginBottom: 8 }} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="Descrição" />
                       <div className="grid2">
-                        <select style={inpF} value={editForm.categoria} onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}>
+                        <select className="campo campo-sm" value={editForm.categoria} onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}>
                           {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
                         <div style={{ display: 'flex', gap: 4 }}>
@@ -330,9 +326,9 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                           ))}
                         </div>
                         {editForm.pagador === 'dividido' && (
-                          <input style={inpF} type="number" min="0" max="100" value={editForm.paiPct} onChange={(e) => setEditForm({ ...editForm, paiPct: e.target.value })} placeholder="% do pai" />
+                          <input className="campo campo-sm" type="number" min="0" max="100" value={editForm.paiPct} onChange={(e) => setEditForm({ ...editForm, paiPct: e.target.value })} placeholder="% do pai" />
                         )}
-                        <input style={inpF} type="number" step="any" value={editForm.valor} onChange={(e) => setEditForm({ ...editForm, valor: e.target.value })} placeholder="Valor desta parcela" />
+                        <input className="campo campo-sm" type="number" step="any" value={editForm.valor} onChange={(e) => setEditForm({ ...editForm, valor: e.target.value })} placeholder="Valor desta parcela" />
                       </div>
                       <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 6 }}>
                         Descrição, categoria e quem paga valem pra compra toda · o valor é só desta parcela ({it.parcela})
