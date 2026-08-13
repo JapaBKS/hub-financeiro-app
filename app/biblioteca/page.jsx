@@ -17,7 +17,7 @@ function categoria(ticker, classe) {
 
 export default async function Biblioteca() {
   const sb = supabaseServer();
-  const [{ data: trades }, { data: divs }, { data: pos }, { data: precos }, { data: manuais }] = await Promise.all([
+  const [{ data: trades }, { data: divs }, { data: pos }, { data: precos }, { data: manuais }, { data: eventos }] = await Promise.all([
     sb.from('trades')
       .select('id, traded_at, side, quantity, price, assets(ticker, asset_classes(name))')
       .order('traded_at', { ascending: true }),
@@ -25,6 +25,7 @@ export default async function Biblioteca() {
     sb.from('v_positions').select('ticker, quantidade, preco_medio, preco_atual, valor_carteira'),
     sb.from('prices').select('ticker, price, updated_at'),
     sb.from('manual_prices').select('ticker, price'),
+    sb.from('corporate_events').select('ticker, event_date, fator').order('event_date'),
   ]);
 
   // Aqui usamos o ÚLTIMO preço conhecido mesmo que antigo (a Biblioteca é histórico:
@@ -61,13 +62,26 @@ export default async function Biblioteca() {
     return mapa[ticker];
   };
 
+  // fator acumulado de desdobramentos APÓS cada data — usado pra converter
+  // quantidades antigas em cotas equivalentes de hoje
+  const evPorTicker = {};
+  (eventos || []).forEach((e) => {
+    const tk = (e.ticker || '').toUpperCase();
+    if (!evPorTicker[tk]) evPorTicker[tk] = [];
+    evPorTicker[tk].push({ dia: (e.event_date || '').slice(0, 10), fator: Number(e.fator) || 1 });
+  });
+  const fatorDepois = (ticker, dia) =>
+    (evPorTicker[ticker] || []).reduce((f, e) => (e.dia > dia ? f * e.fator : f), 1);
+
   (trades || []).forEach((t) => {
     const ticker = t.assets?.ticker;
     if (!ticker) return;
     const a = garante(ticker, t.assets?.asset_classes?.name);
-    const qtd = Number(t.quantity) || 0;
-    const valor = qtd * (Number(t.price) || 0);
     const dia = (t.traded_at || '').slice(0, 10);
+    const qtdBruta = Number(t.quantity) || 0;
+    const valor = qtdBruta * (Number(t.price) || 0);
+    // cotas equivalentes de hoje (ex.: 1 cota antes de um 1:10 = 10 cotas hoje)
+    const qtd = qtdBruta * fatorDepois(ticker, dia);
     a.nTrades++;
     if (t.side === 'compra') {
       a.qtdComprada += qtd; a.totalComprado += valor;
@@ -77,7 +91,7 @@ export default async function Biblioteca() {
       if (!a.ultimaVenda || dia > a.ultimaVenda) a.ultimaVenda = dia;
     }
     if (!a.ultimaMov || dia > a.ultimaMov) a.ultimaMov = dia;
-    a.movimentos.push({ dia, side: t.side, qtd, preco: Number(t.price) || 0, valor });
+    a.movimentos.push({ dia, side: t.side, qtd: qtdBruta, preco: Number(t.price) || 0, valor });
   });
 
   (divs || []).forEach((d) => {
