@@ -1,10 +1,8 @@
 'use client';
 import { useState } from 'react';
+import { Campo } from '../ui/campos';
+import { Botao } from '../ui/botoes';
 
-const inp = {
-  width: 78, padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 14,
-  fontFamily: 'var(--font-display)', boxSizing: 'border-box', background: 'var(--surface)', color: 'var(--ink)', textAlign: 'right',
-};
 const brl = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export default function MetasClasse({ classes }) {
@@ -73,7 +71,8 @@ export default function MetasClasse({ classes }) {
             }}>
               <span style={{ fontSize: 13.5, fontWeight: 500, flex: 1, minWidth: 90 }}>{c.name}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, opacity: off ? 0.4 : 1 }}>
-                <input style={inp} type="number" step="any" min="0" value={vals[c.id]} disabled={off}
+                <Campo tamanho="sm" numerico largura={78} type="number" step="any" min="0"
+                  value={vals[c.id]} disabled={off}
                   onChange={(e) => setVals((v) => ({ ...v, [c.id]: e.target.value }))} />
                 <span style={{ fontSize: 13, color: 'var(--ink-faint)' }}>%</span>
               </div>
@@ -85,7 +84,8 @@ export default function MetasClasse({ classes }) {
               </label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>R$</span>
-                <input style={{ ...inp, width: 96, borderColor: fixo ? 'var(--forest-2)' : 'var(--line)' }}
+                <Campo tamanho="sm" numerico largura={96}
+                  style={fixo ? { borderColor: 'var(--forest-2)' } : undefined}
                   type="number" step="any" min="0" placeholder="fixo" value={fixos[c.id]}
                   onChange={(e) => setFixos((f) => ({ ...f, [c.id]: e.target.value }))} />
               </div>
@@ -100,10 +100,10 @@ export default function MetasClasse({ classes }) {
             A soma das classes em % não fecha 100% — dá pra salvar assim, mas o ideal é fechar.
           </p>
         )}
-        <button onClick={salvar} disabled={estado === 'enviando'} style={{
-          width: '100%', marginTop: 12, padding: '11px', borderRadius: 9, border: 0, cursor: 'pointer',
-          background: 'var(--forest)', color: '#fff', fontSize: 14, fontWeight: 600,
-        }}>{estado === 'enviando' ? 'Salvando…' : 'Salvar metas por classe'}</button>
+        <Botao variante="primario" tamanho="lg" cheio style={{ marginTop: 12 }}
+          onClick={salvar} carregando={estado === 'enviando'}>
+          Salvar metas por classe
+        </Botao>
         {msg && <p style={{ marginTop: 10, fontSize: 13, fontWeight: 500, color: estado === 'ok' ? 'var(--up)' : 'var(--down)' }}>{msg}</p>}
       </div>
     </section>
