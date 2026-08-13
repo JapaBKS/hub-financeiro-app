@@ -188,7 +188,12 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
       const seu = Number(i.amount) - Number(i.amount_pai || 0);
       map[cat] = (map[cat] || 0) + seu;
     });
-    return Object.entries(map).map(([cat, val]) => ({ cat, val })).sort((a, b) => b.val - a.val);
+    // só entra no gráfico quem tem valor: categoria zerada (ex.: compra 100% do
+    // pai, onde a sua parte é zero) poluía a legenda com 0%
+    return Object.entries(map)
+      .map(([cat, val]) => ({ cat, val }))
+      .filter((c) => c.val > 0.005)
+      .sort((a, b) => b.val - a.val);
   })();
   const gastoMesSeu = gastosCategoria.reduce((s, c) => s + c.val, 0);
 
