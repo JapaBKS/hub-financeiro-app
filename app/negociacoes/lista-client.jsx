@@ -3,10 +3,6 @@ import { useState } from 'react';
 
 const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtData = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
-const inp = {
-  padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%',
-};
 
 export default function ListaNegociacoes({ trades }) {
   const [lista, setLista] = useState(trades);
@@ -58,8 +54,8 @@ export default function ListaNegociacoes({ trades }) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-        <input style={{ ...inp, flex: 1, minWidth: 150 }} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar ticker (ex.: PETR4)" />
-        <select style={{ ...inp, width: 120 }} value={tipo} onChange={(e) => setTipo(e.target.value)}>
+        <input className="campo" style={{ flex: 1, minWidth: 150 }} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar ticker (ex.: PETR4)" />
+        <select className="campo" style={{ width: 120 }} value={tipo} onChange={(e) => setTipo(e.target.value)}>
           <option value="todos">Todas</option>
           <option value="compra">Compras</option>
           <option value="venda">Vendas</option>
@@ -67,11 +63,11 @@ export default function ListaNegociacoes({ trades }) {
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <select style={{ ...inp, width: 110 }} value={ano} onChange={(e) => setAno(e.target.value)}>
+        <select className="campo" style={{ width: 110 }} value={ano} onChange={(e) => setAno(e.target.value)}>
           <option value="todos">Todo ano</option>
           {anos.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
-        <select style={{ ...inp, width: 130 }} value={mes} onChange={(e) => setMes(e.target.value)}>
+        <select className="campo" style={{ width: 130 }} value={mes} onChange={(e) => setMes(e.target.value)}>
           <option value="todos">Todo mês</option>
           {MESES.map((nome, i) => (
             <option key={nome} value={String(i + 1).padStart(2, '0')}>{nome}</option>
@@ -98,13 +94,13 @@ export default function ListaNegociacoes({ trades }) {
               <div key={t.id} style={{ padding: '12px 18px', borderBottom: '1px solid var(--line-soft)' }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: 8 }}>{t.ticker}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <input style={inp} type="date" value={form.traded_at} onChange={(e) => setForm({ ...form, traded_at: e.target.value })} />
-                  <select style={inp} value={form.side} onChange={(e) => setForm({ ...form, side: e.target.value })}>
+                  <input className="campo" type="date" value={form.traded_at} onChange={(e) => setForm({ ...form, traded_at: e.target.value })} />
+                  <select className="campo" value={form.side} onChange={(e) => setForm({ ...form, side: e.target.value })}>
                     <option value="compra">Compra</option>
                     <option value="venda">Venda</option>
                   </select>
-                  <input style={inp} type="number" step="any" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} placeholder="Qtd" />
-                  <input style={inp} type="number" step="any" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="Preço" />
+                  <input className="campo" type="number" step="any" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} placeholder="Qtd" />
+                  <input className="campo" type="number" step="any" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="Preço" />
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => salvar(t.id)} disabled={busy === t.id} style={{ flex: 1, padding: '8px', borderRadius: 8, border: 0, cursor: 'pointer', background: 'var(--forest)', color: '#fff', fontSize: 13, fontWeight: 600 }}>{busy === t.id ? 'Salvando…' : 'Salvar'}</button>
