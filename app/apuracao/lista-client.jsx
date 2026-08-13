@@ -7,7 +7,7 @@ const rotulo = (ym) => { const [a, m] = ym.split('-'); return `${MESES[Number(m)
 const diaBR = (iso) => (iso || '').split('-').reverse().slice(0, 2).join('/');
 const LIMITE_ISENCAO = 20000;
 
-const CAT = { acao: 'ação', bdr: 'BDR', etf: 'ETF', fii: 'FII' };
+const CAT = { acao: 'ação', bdr: 'BDR', etf: 'ETF', fii: 'FII', cripto: 'cripto' };
 const campoEv = {
   padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
   fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', color: 'var(--ink)',
@@ -337,6 +337,10 @@ export default function ApuracaoLista({ meses, pagos = {}, eventos = [], suspeit
                     <Bloco rot="resultado ações" val={brl(m.resAcao)} cor={m.resAcao >= 0 ? 'var(--up)' : 'var(--down)'} />
                     <Bloco rot="resultado BDR/ETF" val={brl(m.resBdrEtf)} sub="sem isenção" cor={m.resBdrEtf >= 0 ? 'var(--up)' : 'var(--down)'} />
                     <Bloco rot="resultado FIIs" val={brl(m.resFii)} sub="apura separado (20%)" cor={m.resFii >= 0 ? 'var(--up)' : 'var(--down)'} />
+                    {(m.vendasCripto > 0 || m.resCripto !== 0) && (
+                      <Bloco rot="resultado cripto" val={brl(m.resCripto || 0)} sub="regra própria — confira à parte"
+                        cor={(m.resCripto || 0) >= 0 ? 'var(--up)' : 'var(--down)'} />
+                    )}
                     <Bloco rot="imposto do mês" val={brl(info.impostoRV + info.impostoFii)}
                       sub={info.impostoRV + info.impostoFii > 0 ? 'DARF até o fim do mês seguinte' : 'sem imposto'}
                       cor={info.impostoRV + info.impostoFii > 0 ? 'var(--amber)' : 'var(--ink-faint)'} />
