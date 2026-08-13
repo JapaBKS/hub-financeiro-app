@@ -42,10 +42,10 @@ export default function GerenciarCartoes({ cards }) {
   const ativos = cards.filter((c) => c.ativo !== false);
   const inativos = cards.filter((c) => c.ativo === false);
 
-  const Linha = ({ c }) => {
+  const linhaCartao = (c) => {
     const editando = editId === c.id;
     return (
-      <div style={{
+      <div key={c.id} style={{
         display: 'flex', alignItems: 'center', gap: 8, padding: '11px 16px',
         borderBottom: '1px solid var(--line-soft)', flexWrap: 'wrap',
         opacity: c.ativo === false ? 0.6 : 1,
@@ -84,7 +84,7 @@ export default function GerenciarCartoes({ cards }) {
     <div style={{ maxWidth: 620 }}>
       <section className="card" style={{ marginBottom: 14 }}>
         <div className="card-h"><h2>Cartões cadastrados</h2></div>
-        {ativos.map((c) => <Linha key={c.id} c={c} />)}
+        {ativos.map((c) => linhaCartao(c))}
         {ativos.length === 0 && (
           <div style={{ padding: 16, fontSize: 13, color: 'var(--ink-faint)' }}>Nenhum cartão ativo.</div>
         )}
@@ -94,7 +94,7 @@ export default function GerenciarCartoes({ cards }) {
             <div style={{ padding: '10px 16px 4px', fontSize: 11, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.03em' }}>
               Guardados ({inativos.length})
             </div>
-            {inativos.map((c) => <Linha key={c.id} c={c} />)}
+            {inativos.map((c) => linhaCartao(c))}
           </>
         )}
       </section>
