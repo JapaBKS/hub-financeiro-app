@@ -156,11 +156,11 @@ export default function BibliotecaLista({ ativos }) {
                     <Dado rot="comprado" val={brl(a.totalComprado)} sub={`${num(a.qtdComprada, 6)} cotas`} />
                     <Dado rot="vendido" val={brl(a.totalVendido)} sub={a.qtdVendida > 0 ? `${num(a.qtdVendida, 6)} cotas` : '—'} />
                     <Dado rot="proventos" val={brl(a.dividendos)} sub={`${a.nDividendos} pagamento(s)`} cor="var(--brass)" />
-                    {a.nComPosicao > 0 && (
+                    {a.nComPosicao >= 3 && (
                       <Dado rot="por cota · média mensal" val={brl4(a.porCotaMes)}
                         sub={`${brl4(a.porCotaMedio)} por pagamento`} cor="var(--brass)" />
                     )}
-                    {a.aberto && a.rendaMensal > 0 && (
+                    {a.aberto && a.rendaMensal > 0 && a.nComPosicao >= 3 && (
                       <Dado rot="renda mensal estimada" val={brl(a.rendaMensal)}
                         sub={a.yieldMes > 0 ? `${(a.yieldMes * 100).toFixed(2).replace('.', ',')}% ao mês · ${((Math.pow(1 + a.yieldMes, 12) - 1) * 100).toFixed(2).replace('.', ',')}% ao ano` : `${a.mesesPagos} meses de histórico`}
                         cor="var(--brass)" />
@@ -184,10 +184,16 @@ export default function BibliotecaLista({ ativos }) {
                     <Dado rot={a.aberto ? 'última movimentação' : 'última venda'} val={dataBR(a.aberto ? a.ultimaMov : a.ultimaVenda)} />
                   </div>
 
-                  {a.nComPosicao > 0 && (
+                  {a.nComPosicao >= 3 && (
                     <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginBottom: 6 }}>
-                      Média por cota calculada sobre {a.nComPosicao} pagamento(s) entre {dataBR(a.primeiroPagamento)} e {dataBR(a.ultimoPagamento)},
-                      já convertida para cotas equivalentes de hoje (considera desdobramentos).
+                      Média mensal por cota sobre {a.nComPosicao} pagamentos, de {dataBR(a.primeiroPagamento)} até hoje
+                      ({a.mesesPagos} meses), convertida para cotas equivalentes de hoje.
+                    </div>
+                  )}
+                  {a.nComPosicao > 0 && a.nComPosicao < 3 && (
+                    <div style={{ fontSize: 10.5, color: 'var(--amber)', marginBottom: 6 }}>
+                      Só {a.nComPosicao} pagamento(s) no histórico ({dataBR(a.primeiroPagamento)}) — pouco para uma média mensal confiável,
+                      então ela não é exibida.
                     </div>
                   )}
                   <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginBottom: 6 }}>
