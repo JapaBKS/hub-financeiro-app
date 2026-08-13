@@ -22,7 +22,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
     setAberto(false);
   }
 
-  const Linha = ({ i }) => (
+  const linhaRec = (i) => (
     <div onClick={() => usarRecomendacao(i)} title="clique para registrar esta negociação"
       style={{
         display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', cursor: 'pointer',
@@ -92,9 +92,9 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
     </div>
   );
 
-  const LinhaComForm = ({ i }) => (
-    <div>
-      <Linha i={i} />
+  const linhaComForm = (i) => (
+    <div key={i.ticker}>
+      {linhaRec(i)}
       {abertoTicker === i.ticker && (
         <div style={{ padding: '4px 16px 16px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line-soft)' }}>
           <FormNegociacao assets={assets} classes={classes} preset={preset} />
@@ -117,7 +117,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
           {novasN > 0 && <span style={{ fontSize: 12, color: 'var(--up)', fontWeight: 600 }}>{novasN} {novasN === 1 ? 'nova' : 'novas'}</span>}
         </div>
         <div style={{ marginTop: 6 }}>
-          {comprar.map((i) => <LinhaComForm key={i.ticker} i={i} />)}
+          {comprar.map((i) => linhaComForm(i))}
           {comprar.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nada abaixo do alvo agora.</div>}
         </div>
       </section>
@@ -125,7 +125,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
       <section className="card" style={{ marginBottom: 16 }}>
         <div className="card-h"><h2>Reduzir ({reduzir.length})</h2></div>
         <div style={{ marginTop: 6 }}>
-          {reduzir.map((i) => <LinhaComForm key={i.ticker} i={i} />)}
+          {reduzir.map((i) => linhaComForm(i))}
           {reduzir.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nenhum ativo acima do alvo.</div>}
         </div>
       </section>
