@@ -243,3 +243,9 @@ img, svg, table, pre { max-width: 100%; }
   .so-desktop { display: none; }
   .so-mobile { display: block; }
 }
+
+/* esqueleto de carregamento (aparece na troca de abas) */
+@keyframes pulsar { 0%,100% { opacity: .55 } 50% { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) {
+  [style*="pulsar"] { animation: none !important; }
+}
