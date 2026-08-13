@@ -1,4 +1,5 @@
 import { supabaseServer } from '../../lib/supabase';
+import { calcularHistorico } from '../../lib/dominio/posicoes';
 import ListaNegociacoes from './lista-client';
 import RegistrarNegociacao from './registrar-client';
 import ImportarNegociacoesB3 from './importar-b3-client';
@@ -18,30 +19,8 @@ export default async function Negociacoes() {
     sb.from('corporate_events').select('ticker, event_date, fator').order('event_date'),
   ]);
 
-  // saldo de cada ativo APÓS cada negociação, aplicando desdobramentos/grupamentos
-  // na ordem cronológica (evento entra antes das negociações do mesmo dia)
-  const linha = [
-    ...(trades || []).map((t) => ({
-      kind: 'trade', dia: (t.traded_at || '').slice(0, 10), t,
-      ticker: t.assets?.ticker || '?',
-    })),
-    ...(eventos || []).map((e) => ({
-      kind: 'evento', dia: (e.event_date || '').slice(0, 10),
-      ticker: (e.ticker || '').toUpperCase(), fator: Number(e.fator) || 1,
-    })),
-  ].sort((a, b) => a.dia.localeCompare(b.dia)
-    || (a.kind === 'evento' ? -1 : b.kind === 'evento' ? 1 : (a.t.id - b.t.id)));
-
-  const saldo = {};
-  const saldoApos = {};
-  linha.forEach((x) => {
-    if (!x.ticker) return;
-    if (saldo[x.ticker] == null) saldo[x.ticker] = 0;
-    if (x.kind === 'evento') { saldo[x.ticker] *= x.fator; return; }
-    const q = Number(x.t.quantity) || 0;
-    saldo[x.ticker] += x.t.side === 'compra' ? q : -q;
-    saldoApos[x.t.id] = saldo[x.ticker];
-  });
+  // saldo após cada negociação (já com desdobramentos) vem do domínio
+  const { saldoApos } = calcularHistorico(trades, eventos);
 
   const flat = (trades || []).map((t) => ({
     id: t.id,
@@ -51,7 +30,7 @@ export default async function Negociacoes() {
     quantity: t.quantity,
     price: t.price,
     saldo: saldoApos[t.id] ?? null,
-  })).reverse(); // volta pra ordem mais recente primeiro
+  })).reverse();
 
   return (
     <div className="wrap" style={{ maxWidth: 640 }}>
