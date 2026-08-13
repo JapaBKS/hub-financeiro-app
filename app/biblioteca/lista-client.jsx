@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 
 const brl = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const brl4 = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 4, maximumFractionDigits: 4 });
 const pct = (n) => `${n >= 0 ? '+' : ''}${(n * 100).toFixed(2).replace('.', ',')}%`;
 const dataBR = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
 const num = (n, casas = 0) => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: casas });
@@ -155,6 +156,15 @@ export default function BibliotecaLista({ ativos }) {
                     <Dado rot="comprado" val={brl(a.totalComprado)} sub={`${num(a.qtdComprada, 6)} cotas`} />
                     <Dado rot="vendido" val={brl(a.totalVendido)} sub={a.qtdVendida > 0 ? `${num(a.qtdVendida, 6)} cotas` : '—'} />
                     <Dado rot="proventos" val={brl(a.dividendos)} sub={`${a.nDividendos} pagamento(s)`} cor="var(--brass)" />
+                    {a.nComPosicao > 0 && (
+                      <Dado rot="por cota · média mensal" val={brl4(a.porCotaMes)}
+                        sub={`${brl4(a.porCotaMedio)} por pagamento`} cor="var(--brass)" />
+                    )}
+                    {a.aberto && a.rendaMensal > 0 && (
+                      <Dado rot="renda mensal estimada" val={brl(a.rendaMensal)}
+                        sub={a.yieldMes > 0 ? `${(a.yieldMes * 100).toFixed(2).replace('.', ',')}% ao mês · ${((Math.pow(1 + a.yieldMes, 12) - 1) * 100).toFixed(2).replace('.', ',')}% ao ano` : `${a.mesesPagos} meses de histórico`}
+                        cor="var(--brass)" />
+                    )}
                     <Dado rot="preço médio" val={brl(a.pm)} sub={`${num(a.qtdComprada, 6)} cotas compradas`} />
                     {a.aberto && (
                       <Dado
@@ -174,6 +184,12 @@ export default function BibliotecaLista({ ativos }) {
                     <Dado rot={a.aberto ? 'última movimentação' : 'última venda'} val={dataBR(a.aberto ? a.ultimaMov : a.ultimaVenda)} />
                   </div>
 
+                  {a.nComPosicao > 0 && (
+                    <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginBottom: 6 }}>
+                      Média por cota calculada sobre {a.nComPosicao} pagamento(s) entre {dataBR(a.primeiroPagamento)} e {dataBR(a.ultimoPagamento)},
+                      já convertida para cotas equivalentes de hoje (considera desdobramentos).
+                    </div>
+                  )}
                   <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginBottom: 6 }}>
                     {a.aberto
                       ? 'Resultado considera o valor de hoje + vendas + proventos − compras.'
