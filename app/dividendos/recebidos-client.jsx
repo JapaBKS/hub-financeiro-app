@@ -1,12 +1,38 @@
 'use client';
 import { useState } from 'react';
-
-const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import { brl as fmt } from '../../lib/format';
+import { Botao } from '../ui/botoes';
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const rotulo = (ym) => { const [a, m] = ym.split('-'); return `${MESES[Number(m) - 1]}/${a}`; };
 const KIND = { dividendo: 'Dividendo', jcp: 'JCP', rendimento: 'Rendimento' };
 
 export default function RecebidosMes({ meses }) {
+  const [apagando, setApagando] = useState(null);
+
+  async function excluir(corpo, confirmacao, chave) {
+    if (!window.confirm(confirmacao)) return;
+    setApagando(chave);
+    const res = await fetch('/api/dividends-delete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo),
+    });
+    if (res.ok) { window.location.reload(); return; }
+    setApagando(null);
+    const d = await res.json().catch(() => ({}));
+    window.alert(d.erro || 'Não foi possível excluir.');
+  }
+
+  const excluirItem = (it) => excluir(
+    { id: it.id },
+    `Excluir ${it.ticker} de ${fmt(it.amount)}?`,
+    `item-${it.id}`,
+  );
+
+  const limparMes = (m) => excluir(
+    { month: m.mes },
+    `Limpar TODOS os proventos de ${rotulo(m.mes)}? Apaga ${m.itens.length} lançamento(s). Use para reimportar da B3.`,
+    `mes-${m.mes}`,
+  );
+
   // agrupa por ano (meses já vêm em ordem decrescente)
   const anos = [];
   const porAno = {};
@@ -82,6 +108,16 @@ export default function RecebidosMes({ meses }) {
 
                     {aberta && (
                       <div style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--line-soft)' }}>
+                        {!m.futuro && (
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 20px 2px' }}>
+                            <Botao variante="perigo" tamanho="sm"
+                              onClick={() => limparMes(m)}
+                              carregando={apagando === `mes-${m.mes}`}
+                              title="apagar tudo deste mês para reimportar da B3">
+                              limpar mês (reimportar B3)
+                            </Botao>
+                          </div>
+                        )}
                         {m.itens.map((it, i) => (
                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 20px 7px 48px', fontSize: 12.5 }}>
                             <b style={{ fontFamily: 'var(--font-display)' }}>{it.ticker}</b>
@@ -89,6 +125,12 @@ export default function RecebidosMes({ meses }) {
                             <span style={{ color: 'var(--ink-faint)' }}>{KIND[it.kind] || it.kind}</span>
                             <span style={{ color: 'var(--ink-faint)', fontSize: 11 }}>{((it.paid_at || it.pay_date) || '').split('-').reverse().slice(0, 2).join('/')}</span>
                             <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{fmt(it.amount)}</b>
+                            {!m.futuro && it.id != null && (
+                              <Botao variante="perigo" tamanho="sm"
+                                onClick={() => excluirItem(it)}
+                                carregando={apagando === `item-${it.id}`}
+                                title="excluir este provento">✕</Botao>
+                            )}
                           </div>
                         ))}
                       </div>
