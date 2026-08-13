@@ -8,8 +8,36 @@ const diaBR = (iso) => (iso || '').split('-').reverse().slice(0, 2).join('/');
 const LIMITE_ISENCAO = 20000;
 
 const CAT = { acao: 'ação', bdr: 'BDR', etf: 'ETF', fii: 'FII' };
+const campoEv = {
+  padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
+  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', color: 'var(--ink)',
+};
 
-export default function ApuracaoLista({ meses, pagos = {} }) {
+export default function ApuracaoLista({ meses, pagos = {}, eventos = [], suspeitos = [] }) {
+  const [novoEv, setNovoEv] = useState({ ticker: '', event_date: '', fator: '', tipo: 'desdobramento' });
+  const [evBusy, setEvBusy] = useState(false);
+  const [evMsg, setEvMsg] = useState('');
+  const [verEventos, setVerEventos] = useState(false);
+
+  async function salvarEvento() {
+    setEvBusy(true); setEvMsg('');
+    const res = await fetch('/api/eventos', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(novoEv),
+    });
+    const d = await res.json().catch(() => ({}));
+    setEvBusy(false);
+    if (res.ok && d.ok) window.location.reload();
+    else setEvMsg(d.erro || 'Não foi possível salvar.');
+  }
+  async function apagarEvento(id) {
+    if (!window.confirm('Remover este evento?')) return;
+    await fetch('/api/eventos', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }),
+    });
+    window.location.reload();
+  }
+
   const [aberto, setAberto] = useState(meses[0]?.mes || null);
   const [salvando, setSalvando] = useState(null);
 
@@ -124,6 +152,79 @@ export default function ApuracaoLista({ meses, pagos = {} }) {
           Conferência, não apuração oficial: não inclui corretagem/emolumentos, assume tudo swing trade
           e considera isenta a venda de ações até {brl(LIMITE_ISENCAO)}/mês. Confira com a corretora.
         </p>
+      </section>
+
+      {suspeitos.length > 0 && (
+        <section className="card" style={{ marginBottom: 14, padding: '12px 18px', borderLeft: '3px solid var(--amber)' }}>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--amber)', marginBottom: 4 }}>
+            ⚠ Possível desdobramento não cadastrado
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+            Em algum momento a quantidade destes ativos ficou negativa, o que costuma indicar
+            desdobramento/bonificação sem registro: <b>{suspeitos.join(', ')}</b>.
+            Cadastre o evento abaixo para o cálculo ficar correto.
+          </div>
+        </section>
+      )}
+
+      <section className="card" style={{ marginBottom: 14 }}>
+        <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
+          <h2>Eventos societários</h2>
+          <button onClick={() => setVerEventos((v) => !v)} style={{
+            fontSize: 12, fontWeight: 600, padding: '5px 11px', borderRadius: 8, cursor: 'pointer',
+            border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)',
+          }}>{verEventos ? 'fechar' : `${eventos.length} cadastrado(s)`}</button>
+        </div>
+
+        {verEventos && (
+          <div style={{ padding: '4px 18px 14px' }}>
+            <p style={{ fontSize: 11.5, color: 'var(--ink-faint)', lineHeight: 1.5, margin: '0 0 10px' }}>
+              Desdobramento e grupamento mudam a quantidade sem negociação — sem cadastrar,
+              o preço médio fica errado. Use o <b>fator</b>: desdobramento 1:2 → <b>2</b>;
+              grupamento 2:1 → <b>0,5</b>; bonificação de 10% → <b>1,1</b>.
+            </p>
+
+            {eventos.map((e) => (
+              <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--line-soft)', fontSize: 12.5, flexWrap: 'wrap' }}>
+                <b style={{ fontFamily: 'var(--font-display)', minWidth: 64 }}>{e.ticker}</b>
+                <span style={{ color: 'var(--ink-faint)', fontFamily: 'var(--font-display)' }}>
+                  {(e.event_date || '').split('-').reverse().join('/')}
+                </span>
+                <span style={{ fontSize: 10.5, color: 'var(--ink-faint)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px' }}>{e.tipo}</span>
+                <b style={{ fontFamily: 'var(--font-display)' }}>×{Number(e.fator)}</b>
+                <button onClick={() => apagarEvento(e.id)} style={{
+                  marginLeft: 'auto', border: 0, background: 'transparent', cursor: 'pointer',
+                  color: 'var(--down)', fontSize: 15,
+                }}>×</button>
+              </div>
+            ))}
+            {eventos.length === 0 && (
+              <div style={{ fontSize: 12.5, color: 'var(--ink-faint)', padding: '6px 0' }}>Nenhum evento cadastrado ainda.</div>
+            )}
+
+            <div style={{ display: 'flex', gap: 7, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+              <input placeholder="Ticker" value={novoEv.ticker}
+                onChange={(e) => setNovoEv((f) => ({ ...f, ticker: e.target.value.toUpperCase() }))}
+                style={{ ...campoEv, width: 96 }} />
+              <input type="date" value={novoEv.event_date}
+                onChange={(e) => setNovoEv((f) => ({ ...f, event_date: e.target.value }))}
+                style={{ ...campoEv, width: 150 }} />
+              <select value={novoEv.tipo} onChange={(e) => setNovoEv((f) => ({ ...f, tipo: e.target.value }))} style={{ ...campoEv, width: 150 }}>
+                <option value="desdobramento">desdobramento</option>
+                <option value="grupamento">grupamento</option>
+                <option value="bonificacao">bonificação</option>
+              </select>
+              <input placeholder="fator (ex.: 2)" value={novoEv.fator}
+                onChange={(e) => setNovoEv((f) => ({ ...f, fator: e.target.value }))}
+                style={{ ...campoEv, width: 110, textAlign: 'right' }} />
+              <button onClick={salvarEvento} disabled={evBusy} style={{
+                padding: '9px 14px', borderRadius: 8, border: 0, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                background: 'var(--forest)', color: '#fff',
+              }}>{evBusy ? '…' : '+ adicionar'}</button>
+            </div>
+            {evMsg && <p style={{ marginTop: 8, fontSize: 12.5, color: 'var(--down)' }}>{evMsg}</p>}
+          </div>
+        )}
       </section>
 
       <section className="card" style={{ marginBottom: 14 }}>
