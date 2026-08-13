@@ -1,62 +1,55 @@
-import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
+import { rota, ok, checar, ErroDeUso, id, numero, texto, data } from '../../../lib/api';
 
-export async function POST(req) {
-  const b = await req.json().catch(() => ({}));
-  const { card_id, description, purchased_at, installment_amount, installments_count, first_billed_month } = b;
+/** O pagador é DERIVADO do percentual — guardar os dois separados abriria espaço
+ *  para ficarem inconsistentes (ex.: pagador 'eu' com pai_pct 100). */
+const pagadorDe = (paiPct) => (paiPct <= 0 ? 'eu' : paiPct >= 100 ? 'pai' : 'dividido');
+const percentualPai = (v) => numero(v ?? 0, 'A parte do pai', { min: 0, max: 100 });
 
-  if (!card_id || !description || !purchased_at || !installment_amount || !installments_count || !first_billed_month) {
-    return NextResponse.json({ ok: false, erro: 'Preencha todos os campos.' }, { status: 400 });
-  }
+export const POST = rota(async (b) => {
+  const paiPct = percentualPai(b.pai_pct);
 
   const sb = supabaseServer();
-  const paiPct = Math.min(100, Math.max(0, Number(b.pai_pct) || 0));
-  const pagador = paiPct <= 0 ? 'eu' : paiPct >= 100 ? 'pai' : 'dividido';
-  const { error } = await sb.from('card_purchases').insert({
-    card_id: Number(card_id),
-    description: String(description).trim(),
+  checar(await sb.from('card_purchases').insert({
+    card_id: id(b.card_id, 'o cartão'),
+    description: texto(b.description, 'a descrição'),
     categoria: b.categoria || null,
-    pagador,
+    pagador: pagadorDe(paiPct),
     pai_pct: paiPct,
-    purchased_at,
-    installment_amount: Number(installment_amount),
-    installments_count: Number(installments_count),
-    first_billed_month,
-  });
+    purchased_at: data(b.purchased_at, 'A data da compra'),
+    installment_amount: numero(b.installment_amount, 'O valor da parcela', { min: 0.01 }),
+    installments_count: numero(b.installments_count, 'O número de parcelas', { min: 1, inteiro: true }),
+    first_billed_month: data(b.first_billed_month, 'O mês da primeira parcela'),
+  }));
+  return ok();
+});
 
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
-
-export async function DELETE(req) {
-  const { id } = await req.json().catch(() => ({}));
-  if (!id) return NextResponse.json({ ok: false, erro: 'id ausente' }, { status: 400 });
-  const sb = supabaseServer();
-  const { error } = await sb.from('card_purchases').delete().eq('id', id);
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
-
-export async function PATCH(req) {
-  const b = await req.json().catch(() => ({}));
-  const { id } = b;
-  if (!id) return NextResponse.json({ ok: false, erro: 'id ausente' }, { status: 400 });
-
+export const PATCH = rota(async (b) => {
+  const registro = id(b.id);
   const patch = {};
-  if (b.card_id) patch.card_id = Number(b.card_id);
-  if (b.description) patch.description = String(b.description).trim();
-  if (b.installment_amount != null && b.installment_amount !== '') patch.installment_amount = Number(b.installment_amount);
-  if (b.installments_count != null && b.installments_count !== '') patch.installments_count = Number(b.installments_count);
-  if (b.first_billed_month) patch.first_billed_month = b.first_billed_month;
+  if (b.card_id) patch.card_id = id(b.card_id, 'o cartão');
+  if (b.description) patch.description = texto(b.description, 'a descrição');
+  if (b.installment_amount != null && b.installment_amount !== '') {
+    patch.installment_amount = numero(b.installment_amount, 'O valor da parcela', { min: 0 });
+  }
+  if (b.installments_count != null && b.installments_count !== '') {
+    patch.installments_count = numero(b.installments_count, 'O número de parcelas', { min: 1, inteiro: true });
+  }
+  if (b.first_billed_month) patch.first_billed_month = data(b.first_billed_month, 'O mês da primeira parcela');
   if (b.categoria !== undefined) patch.categoria = b.categoria || null;
   if (b.pai_pct !== undefined && b.pai_pct !== '') {
-    const paiPct = Math.min(100, Math.max(0, Number(b.pai_pct) || 0));
-    patch.pai_pct = paiPct;
-    patch.pagador = paiPct <= 0 ? 'eu' : paiPct >= 100 ? 'pai' : 'dividido';
+    patch.pai_pct = percentualPai(b.pai_pct);
+    patch.pagador = pagadorDe(patch.pai_pct);
   }
+  if (Object.keys(patch).length === 0) throw new ErroDeUso('Nada para alterar.');
 
   const sb = supabaseServer();
-  const { error } = await sb.from('card_purchases').update(patch).eq('id', id);
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
+  checar(await sb.from('card_purchases').update(patch).eq('id', registro));
+  return ok();
+});
+
+export const DELETE = rota(async (b) => {
+  const sb = supabaseServer();
+  checar(await sb.from('card_purchases').delete().eq('id', id(b.id)));
+  return ok();
+});
