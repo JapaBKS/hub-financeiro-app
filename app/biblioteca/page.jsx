@@ -104,6 +104,7 @@ export default async function Biblioteca() {
     a.pagamentos.push({ dia: (d.paid_at || '').slice(0, 10), valor: v });
   });
 
+  const hojeISO = new Date().toISOString().slice(0, 10);
   const mesesEntre = (ini, fim) => {
     if (!ini || !fim) return 1;
     const [ay, am] = ini.slice(0, 7).split('-').map(Number);
@@ -132,7 +133,8 @@ export default async function Biblioteca() {
       if (posicao > 0.0000001) { somaPorCota += pg.valor / posicao; nComPosicao++; }
     });
     const porCotaMedio = nComPosicao > 0 ? somaPorCota / nComPosicao : 0;   // média por pagamento
-    const mesesPagos = pagos.length ? mesesEntre(pagos[0].dia, pagos[pagos.length - 1].dia) : 0;
+    // janela: do primeiro pagamento até hoje — se parou de pagar, a média cai (correto)
+    const mesesPagos = pagos.length ? mesesEntre(pagos[0].dia, hojeISO) : 0;
     const porCotaMes = mesesPagos > 0 ? somaPorCota / mesesPagos : 0;        // média mensal por cota
     const rendaMensal = porCotaMes * qtdAtual;
     const yieldMes = precoRef > 0 ? porCotaMes / precoRef : 0;
