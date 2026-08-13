@@ -54,10 +54,6 @@ function parseReceber(raw) {
   return out;
 }
 
-const ta = {
-  width: '100%', minHeight: 110, padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
-  fontSize: 12.5, fontFamily: 'monospace', boxSizing: 'border-box', background: 'var(--surface)', color: 'var(--ink)', resize: 'vertical',
-};
 
 export default function ImportarB3Receber() {
   const [texto, setTexto] = useState('');
@@ -90,7 +86,7 @@ export default function ImportarB3Receber() {
         <p style={{ fontSize: 12, color: 'var(--ink-faint)', margin: '0 0 8px' }}>
           Cole a aba “a receber” COMPLETA copiada do site da B3 (com o cabeçalho). A B3 é a fonte da verdade: isto substitui todos os “a receber” pelos da B3 (os já recebidos não são afetados).
         </p>
-        <textarea style={ta} value={texto} onChange={(e) => setTexto(e.target.value)}
+        <textarea className="campo campo-colagem" value={texto} onChange={(e) => setTexto(e.target.value)}
           placeholder="Produto&#9;Tipo&#9;Previsão de Pagamento&#9;Tipo de Evento&#9;Instituição&#9;Quantidade&#9;Preço Unitário&#9;Valor Líquido" />
 
         {itens.length > 0 && (
