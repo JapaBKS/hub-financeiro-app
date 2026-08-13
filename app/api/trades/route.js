@@ -1,67 +1,55 @@
-import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
+import { rota, ok, checar, ErroDeUso, id, numero, ticker, data } from '../../../lib/api';
 
-export async function POST(req) {
-  const b = await req.json().catch(() => ({}));
-  const { ticker, classId, side, traded_at, quantity, price } = b;
+const asSide = (v) => {
+  if (v !== 'compra' && v !== 'venda') throw new ErroDeUso('Informe se é compra ou venda.');
+  return v;
+};
 
-  if (!ticker || !side || !traded_at || !quantity || !price) {
-    return NextResponse.json({ ok: false, erro: 'Preencha todos os campos.' }, { status: 400 });
-  }
-
-  const sb = supabaseServer();
-  const tk = String(ticker).trim().toUpperCase();
-
-  // Acha o ativo; se não existir, cria (precisa da classe).
-  let { data: asset } = await sb.from('assets').select('id').eq('ticker', tk).maybeSingle();
-
-  if (!asset) {
-    if (!classId) {
-      return NextResponse.json({ ok: false, erro: 'Ativo novo: escolha a classe.' }, { status: 400 });
-    }
-    const { data: novo, error } = await sb
-      .from('assets')
-      .insert({ ticker: tk, class_id: Number(classId), is_active: true })
-      .select('id')
-      .single();
-    if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-    asset = novo;
-  }
-
-  const { error: e2 } = await sb.from('trades').insert({
-    asset_id: asset.id,
-    traded_at,
-    side,
-    quantity: Number(quantity),
-    price: Number(price),
-  });
-  if (e2) return NextResponse.json({ ok: false, erro: e2.message }, { status: 500 });
-
-  return NextResponse.json({ ok: true });
+/** Acha o ativo pelo ticker; se não existir, cria (exige a classe). */
+async function acharOuCriarAtivo(sb, tk, classId) {
+  const { data: existente } = await sb.from('assets').select('id').eq('ticker', tk).maybeSingle();
+  if (existente) return existente.id;
+  if (!classId) throw new ErroDeUso(`${tk} ainda não está cadastrado: escolha a classe.`);
+  const novo = checar(await sb.from('assets')
+    .insert({ ticker: tk, class_id: id(classId, 'a classe'), is_active: true })
+    .select('id')
+    .single());
+  return novo.id;
 }
 
-export async function DELETE(req) {
-  const { id } = await req.json().catch(() => ({}));
-  if (!id) return NextResponse.json({ ok: false, erro: 'id ausente' }, { status: 400 });
+export const POST = rota(async (b) => {
+  const tk = ticker(b.ticker);
+  const lado = asSide(b.side);
+  const quando = data(b.traded_at, 'A data da negociação');
+  const quantidade = numero(b.quantity, 'A quantidade', { min: 0.00000001 });
+  const preco = numero(b.price, 'O preço', { min: 0.000001 });
 
   const sb = supabaseServer();
-  const { error } = await sb.from('trades').delete().eq('id', id);
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
+  const assetId = await acharOuCriarAtivo(sb, tk, b.classId);
 
-export async function PATCH(req) {
-  const { id, traded_at, side, quantity, price } = await req.json().catch(() => ({}));
-  if (!id) return NextResponse.json({ ok: false, erro: 'id ausente' }, { status: 400 });
+  checar(await sb.from('trades').insert({
+    asset_id: assetId, traded_at: quando, side: lado, quantity: quantidade, price: preco,
+  }));
+  return ok();
+});
 
+export const PATCH = rota(async (b) => {
+  const registro = id(b.id);
   const patch = {};
-  if (traded_at) patch.traded_at = traded_at;
-  if (side) patch.side = side;
-  if (quantity != null) patch.quantity = Number(quantity);
-  if (price != null) patch.price = Number(price);
+  if (b.traded_at) patch.traded_at = data(b.traded_at, 'A data da negociação');
+  if (b.side) patch.side = asSide(b.side);
+  if (b.quantity != null) patch.quantity = numero(b.quantity, 'A quantidade', { min: 0.00000001 });
+  if (b.price != null) patch.price = numero(b.price, 'O preço', { min: 0.000001 });
+  if (Object.keys(patch).length === 0) throw new ErroDeUso('Nada para alterar.');
 
   const sb = supabaseServer();
-  const { error } = await sb.from('trades').update(patch).eq('id', id);
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
+  checar(await sb.from('trades').update(patch).eq('id', registro));
+  return ok();
+});
+
+export const DELETE = rota(async (b) => {
+  const sb = supabaseServer();
+  checar(await sb.from('trades').delete().eq('id', id(b.id)));
+  return ok();
+});
