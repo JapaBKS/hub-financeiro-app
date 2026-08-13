@@ -1,10 +1,6 @@
 'use client';
 import { useState } from 'react';
 
-const inp = {
-  width: '100%', padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
-  fontSize: 14, boxSizing: 'border-box', fontFamily: 'var(--font-body)', background: 'var(--surface)',
-};
 const lab = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '12px 0 6px' };
 
 export default function MetaForm({ goal }) {
@@ -47,11 +43,11 @@ export default function MetaForm({ goal }) {
       <div className="card-h" style={{ marginBottom: 4 }}><h2>Ajustar meta</h2></div>
 
       <div className="grid2">
-        <div><label style={lab}>Valor-alvo (R$)</label><input style={inp} type="number" step="any" value={target} onChange={(e) => setTarget(e.target.value)} /></div>
-        <div><label style={lab}>Aporte mensal (R$)</label><input style={inp} type="number" step="any" value={monthly} onChange={(e) => setMonthly(e.target.value)} /></div>
-        <div><label style={lab}>Retorno anual (%)</label><input style={inp} type="number" step="any" value={ret} onChange={(e) => setRet(e.target.value)} /></div>
-        <div><label style={lab}>Início</label><input style={inp} type="date" value={started} onChange={(e) => setStarted(e.target.value)} /></div>
-        <div><label style={lab}>Valor inicial (R$)</label><input style={inp} type="number" step="any" value={startVal} onChange={(e) => setStartVal(e.target.value)} /></div>
+        <div><label style={lab}>Valor-alvo (R$)</label><input className="campo" type="number" step="any" value={target} onChange={(e) => setTarget(e.target.value)} /></div>
+        <div><label style={lab}>Aporte mensal (R$)</label><input className="campo" type="number" step="any" value={monthly} onChange={(e) => setMonthly(e.target.value)} /></div>
+        <div><label style={lab}>Retorno anual (%)</label><input className="campo" type="number" step="any" value={ret} onChange={(e) => setRet(e.target.value)} /></div>
+        <div><label style={lab}>Início</label><input className="campo" type="date" value={started} onChange={(e) => setStarted(e.target.value)} /></div>
+        <div><label style={lab}>Valor inicial (R$)</label><input className="campo" type="number" step="any" value={startVal} onChange={(e) => setStartVal(e.target.value)} /></div>
       </div>
 
       <button type="submit" disabled={estado === 'enviando'} style={{
