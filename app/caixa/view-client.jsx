@@ -1,7 +1,8 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { brl as fmt } from '../../lib/format';
+import { CORES, arcPath, fatiar } from '../ui/donut';
 
-const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const rotulo = (ym) => { const [a, m] = ym.split('-'); return `${MESES[Number(m) - 1]}/${a}`; };
 const hojeISO = () => new Date().toISOString().slice(0, 10);
@@ -10,14 +11,6 @@ const brDate = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
 
 const inp = { padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5, fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%' };
 
-const CORES = ['#2E5E4E', '#B98A3C', '#6FA287', '#C9A24B', '#3E7C63', '#8C6BB1', '#D98C5F', '#5B8DB8', '#A8B545', '#9C5A5A', '#7A7A7A'];
-function arcPath(a0, a1, cx, cy, R, r) {
-  const p = (ang, rad) => [cx + rad * Math.cos(ang), cy + rad * Math.sin(ang)];
-  const large = a1 - a0 > Math.PI ? 1 : 0;
-  const [x0, y0] = p(a0, R), [x1, y1] = p(a1, R);
-  const [x2, y2] = p(a1, r), [x3, y3] = p(a0, r);
-  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} A ${r} ${r} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)} Z`;
-}
 
 export default function CaixaView({ resumo, categorias, bills = [] }) {
   const mesAtual = mesDe(hojeISO());
@@ -181,14 +174,7 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
       .sort((a, b) => b.val - a.val);
   })();
   const gastoTotal = gastosCategoria.reduce((s, c) => s + c.val, 0);
-  const fatias = (() => {
-    let ang = -Math.PI / 2;
-    return gastosCategoria.map((g, idx) => {
-      const frac = gastoTotal > 0 ? g.val / gastoTotal : 0;
-      const a0 = ang; const a1 = ang + frac * 2 * Math.PI; ang = a1;
-      return { ...g, frac, color: CORES[idx % CORES.length], a0, a1 };
-    });
-  })();
+  const fatias = fatiar(gastosCategoria);
 
   return (
     <div>
