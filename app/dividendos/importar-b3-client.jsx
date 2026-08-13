@@ -39,10 +39,6 @@ function parseB3(raw) {
   return out;
 }
 
-const ta = {
-  width: '100%', minHeight: 110, padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
-  fontSize: 12.5, fontFamily: 'monospace', boxSizing: 'border-box', background: 'var(--surface)', resize: 'vertical',
-};
 
 export default function ImportarB3() {
   const [texto, setTexto] = useState('');
@@ -75,7 +71,7 @@ export default function ImportarB3() {
         <p style={{ fontSize: 12, color: 'var(--ink-faint)', margin: '0 0 8px' }}>
           Cole o relatório de proventos recebidos copiado do site da B3 (com o cabeçalho). Só entra o que ainda não existe.
         </p>
-        <textarea style={ta} value={texto} onChange={(e) => setTexto(e.target.value)}
+        <textarea className="campo campo-colagem" value={texto} onChange={(e) => setTexto(e.target.value)}
           placeholder="Produto&#9;Pagamento&#9;Tipo de Evento&#9;Instituição&#9;Quantidade&#9;Preço unitário&#9;Valor líquido" />
 
         {itens.length > 0 && (
