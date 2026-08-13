@@ -3,10 +3,6 @@ import { useState } from 'react';
 
 const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtData = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
-const inp = {
-  padding: '7px 9px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%',
-};
 
 export default function Recentes({ trades }) {
   const [lista, setLista] = useState(trades);
@@ -54,13 +50,13 @@ export default function Recentes({ trades }) {
               <div key={t.id} style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-soft)' }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: 8 }}>{t.ticker}</div>
                 <div className="grid2">
-                  <input style={inp} type="date" value={form.traded_at} onChange={(e) => setForm({ ...form, traded_at: e.target.value })} />
-                  <select style={inp} value={form.side} onChange={(e) => setForm({ ...form, side: e.target.value })}>
+                  <input className="campo" type="date" value={form.traded_at} onChange={(e) => setForm({ ...form, traded_at: e.target.value })} />
+                  <select className="campo" value={form.side} onChange={(e) => setForm({ ...form, side: e.target.value })}>
                     <option value="compra">Compra</option>
                     <option value="venda">Venda</option>
                   </select>
-                  <input style={inp} type="number" step="any" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} placeholder="Qtd" />
-                  <input style={inp} type="number" step="any" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="Preço" />
+                  <input className="campo" type="number" step="any" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} placeholder="Qtd" />
+                  <input className="campo" type="number" step="any" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="Preço" />
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => salvar(t.id)} disabled={busy === t.id} style={{
