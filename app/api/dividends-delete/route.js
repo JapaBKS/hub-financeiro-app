@@ -1,28 +1,29 @@
-import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
+import { rota, ok, checar, ErroDeUso, id, mes } from '../../../lib/api';
+
+/** Primeiro dia do mês seguinte — evita datas inválidas como "31 de setembro". */
+function inicioDoProximoMes(ym) {
+  const [ano, m] = ym.split('-').map(Number);
+  return m === 12 ? `${ano + 1}-01-01` : `${ano}-${String(m + 1).padStart(2, '0')}-01`;
+}
 
 // POST { id }              -> exclui um provento
-// POST { month:'YYYY-MM' } -> exclui todos os proventos daquele mês (pra reimportar da B3)
-export async function POST(req) {
-  const b = await req.json().catch(() => ({}));
+// POST { month:'AAAA-MM' } -> limpa o mês inteiro (para reimportar da B3)
+export const POST = rota(async (b) => {
   const sb = supabaseServer();
 
   if (b.id != null) {
-    const { error } = await sb.from('dividends').delete().eq('id', b.id);
-    if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
+    checar(await sb.from('dividends').delete().eq('id', id(b.id)));
+    return ok();
   }
 
-  if (b.month && /^\d{4}-\d{2}$/.test(b.month)) {
-    const [y, m] = b.month.split('-').map(Number);
-    const inicio = `${b.month}-01`;
-    // primeiro dia do mês seguinte (data sempre válida, evita "31 de setembro")
-    const proximo = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
-    const { error } = await sb.from('dividends').delete()
-      .gte('paid_at', inicio).lt('paid_at', proximo);
-    if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
+  if (b.month != null) {
+    const ym = mes(b.month, 'O mês');
+    checar(await sb.from('dividends').delete()
+      .gte('paid_at', `${ym}-01`)
+      .lt('paid_at', inicioDoProximoMes(ym)));
+    return ok();
   }
 
-  return NextResponse.json({ ok: false, erro: 'Informe id ou month.' }, { status: 400 });
-}
+  throw new ErroDeUso('Informe id ou month.');
+});
