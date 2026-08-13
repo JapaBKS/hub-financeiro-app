@@ -9,11 +9,18 @@ const fmtNum = (n, d = 2) => Number(n).toLocaleString('pt-BR', { minimumFraction
 
 export default async function Carteira() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: manuais }, { data: precos }] = await Promise.all([
+  const [{ data: pos }, { data: manuais }, { data: precos }, { data: divs }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('manual_prices').select('ticker, price'),
     sb.from('prices').select('ticker, updated_at'),
+    sb.from('dividends').select('ticker, amount'),
   ]);
+  const provDe = {};
+  (divs || []).forEach((d) => {
+    if (!d.ticker) return;
+    provDe[d.ticker] = (provDe[d.ticker] || 0) + (Number(d.amount) || 0);
+  });
+
   const manualDe = {};
   (manuais || []).forEach((m) => { manualDe[m.ticker] = Number(m.price); });
   // cotação parada há 2+ dias é tratada como "sem cotação" (ex.: BDRs que a brapi parou de devolver)
@@ -34,13 +41,17 @@ export default async function Carteira() {
     const precoRef = !semAuto ? Number(p.preco_atual) : (usouManual ? manual : Number(p.preco_medio));
     const valor = Number(p.quantidade) * precoRef;
     const lucro = !semAuto ? Number(p.lucro_rs) : (usouManual ? valor - Number(p.quantidade) * Number(p.preco_medio) : 0);
-    return { ...p, semAuto, semCotacao, usouManual, manual, precoRef, valor, lucro };
+    const proventos = provDe[p.ticker] || 0;
+    return { ...p, semAuto, semCotacao, usouManual, manual, precoRef, valor, lucro, proventos, lucroTotal: lucro + proventos };
   });
 
   const totalCarteira = ativos.reduce((s, p) => s + p.valor, 0);
   const totalLucro = ativos.reduce((s, p) => s + p.lucro, 0);
+  const totalProventos = ativos.reduce((s, p) => s + p.proventos, 0);
+  const totalComProventos = totalLucro + totalProventos;
   const totalInvestido = totalCarteira - totalLucro;
   const rentTotal = totalInvestido > 0 ? totalLucro / totalInvestido : 0;
+  const rentComProventos = totalInvestido > 0 ? totalComProventos / totalInvestido : 0;
   const aguardando = ativos.filter((p) => p.semCotacao).length;
 
   // agrupa por classe
@@ -53,7 +64,7 @@ export default async function Carteira() {
   };
 
   // Renda Variável = Ações BR + BDRs (duas listas, total somado, como na Rico)
-  const RV = ['Ações BR', 'Global'];
+  const RV = ['Ações BR', 'BDRS'];
   const blocos = [];
   const rvSubs = RV.filter((c) => porClasse[c]).map(subgrupo);
   if (rvSubs.length) {
@@ -106,6 +117,12 @@ export default async function Carteira() {
               {p.lucro >= 0 ? '+' : ''}{pct(rent)}
             </div>
           )}
+          {p.proventos > 0 && (
+            <div title="valorização + proventos recebidos"
+              style={{ fontSize: 10.5, fontFamily: 'var(--font-display)', color: corLucro(p.lucroTotal), marginTop: 1 }}>
+              c/ prov. {p.lucroTotal >= 0 ? '+' : ''}{brl(p.lucroTotal)}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -131,9 +148,18 @@ export default async function Carteira() {
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20 }}>{brl(totalInvestido)}</div>
         </div>
         <div>
-          <div className="eyebrow" style={{ marginBottom: 3 }}>Lucro</div>
+          <div className="eyebrow" style={{ marginBottom: 3 }}>Lucro · valorização</div>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20, color: corLucro(totalLucro) }}>
             {totalLucro >= 0 ? '+' : ''}{brl(totalLucro)} · {pct(rentTotal)}
+          </div>
+        </div>
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 3 }}>Com proventos</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20, color: corLucro(totalComProventos) }}>
+            {totalComProventos >= 0 ? '+' : ''}{brl(totalComProventos)} · {pct(rentComProventos)}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--brass)', marginTop: 2 }}>
+            {brl(totalProventos)} recebidos
           </div>
         </div>
       </section>
