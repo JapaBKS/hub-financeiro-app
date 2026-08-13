@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { CATEGORIAS } from '../../lib/dominio/categorias';
 
-const CATEGORIAS = ['Comida', 'Mercado', 'Lazer', 'Transporte', 'Saúde', 'Casa', 'Assinaturas', 'Roupas', 'Educação', 'Presentes', 'Outros'];
 
 const inputStyle = {
   width: '100%', padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
