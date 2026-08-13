@@ -7,10 +7,6 @@ const pct = (n) => `${n >= 0 ? '+' : ''}${(n * 100).toFixed(2).replace('.', ',')
 const dataBR = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
 const num = (n, casas = 0) => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: casas });
 
-const inp = {
-  padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)', fontSize: 14,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', color: 'var(--ink)', width: '100%',
-};
 
 export default function BibliotecaLista({ ativos }) {
   const [busca, setBusca] = useState('');
@@ -64,7 +60,7 @@ export default function BibliotecaLista({ ativos }) {
   return (
     <div>
       <section className="card" style={{ padding: 14, marginBottom: 14 }}>
-        <input style={inp} value={busca} onChange={(e) => setBusca(e.target.value)}
+        <input className="campo" value={busca} onChange={(e) => setBusca(e.target.value)}
           placeholder="Pesquisar ticker ou classe (ex.: PETR4, FIIS)" />
         <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
           {btn('todos', `Todos (${ativos.length})`)}
@@ -84,9 +80,7 @@ export default function BibliotecaLista({ ativos }) {
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select value={classe} onChange={(e) => setClasse(e.target.value)} style={{
-            ...inp, width: 'auto', minWidth: 150, padding: '7px 10px', fontSize: 12.5,
-          }}>
+          <select value={classe} onChange={(e) => setClasse(e.target.value)} className="campo" style={{ width: 'auto', minWidth: 150, padding: '7px 10px', fontSize: 12.5 }}>
             <option value="todas">Todas as classes</option>
             {classesDisponiveis.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
