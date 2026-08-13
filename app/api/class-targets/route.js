@@ -1,20 +1,20 @@
-import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
+import { rota, ok, checar, lista, numero, id } from '../../../lib/api';
 
-export async function POST(req) {
-  const b = await req.json().catch(() => ({}));
-  const targets = Array.isArray(b.targets) ? b.targets : null;
-  if (!targets) return NextResponse.json({ ok: false, erro: 'Lista inválida.' }, { status: 400 });
-
+export const POST = rota(async (b) => {
+  const alvos = lista(b.targets, 'A lista de metas');
   const sb = supabaseServer();
-  for (const t of targets) {
+
+  for (const t of alvos) {
     if (t.id == null) continue;
-    const frac = Math.max(0, Number(t.target_pct) || 0);
-    const fixo = t.alvo_valor == null || t.alvo_valor === '' ? null : Math.max(0, Number(t.alvo_valor) || 0);
-    const { error } = await sb.from('asset_classes')
-      .update({ target_pct: frac, alvo_valor: fixo, fora_rateio: !!t.fora_rateio })
-      .eq('id', Number(t.id));
-    if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
+    const fracao = Math.max(0, numero(t.target_pct ?? 0, 'A meta'));
+    const fixo = t.alvo_valor == null || t.alvo_valor === ''
+      ? null
+      : Math.max(0, numero(t.alvo_valor, 'O valor fixo', { min: 0 }));
+
+    checar(await sb.from('asset_classes')
+      .update({ target_pct: fracao, alvo_valor: fixo, fora_rateio: !!t.fora_rateio })
+      .eq('id', id(t.id)));
   }
-  return NextResponse.json({ ok: true });
-}
+  return ok();
+});
