@@ -1,35 +1,37 @@
-import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
+import { rota, ok, checar, ErroDeUso, id, numero, texto } from '../../../lib/api';
 
-// Recebe a lista completa de um grupo e reconcilia:
-// cria/atualiza o peso (target_pct) de cada ativo e zera os que saíram.
-export async function POST(req) {
-  const { class_id, itens } = await req.json().catch(() => ({}));
-  if (!class_id || !Array.isArray(itens)) {
-    return NextResponse.json({ ok: false, erro: 'Dados inválidos.' }, { status: 400 });
-  }
+// Recebe a lista completa de um grupo e reconcilia: cria/atualiza o peso de
+// cada ativo e zera o alvo de quem saiu da lista.
+export const POST = rota(async (b) => {
+  const classe = id(b.class_id, 'a classe');
+  if (!Array.isArray(b.itens)) throw new ErroDeUso('A lista de ativos é inválida.');
 
   const sb = supabaseServer();
   const tickers = [];
 
-  for (const it of itens) {
-    const tk = String(it.ticker || '').trim().toUpperCase();
+  for (const it of b.itens) {
+    const tk = texto(it.ticker, 'o ticker', { obrigatorio: false }).toUpperCase();
     if (!tk) continue;
-    const pct = Number(it.pct); // fração (0-1)
+    const peso = numero(it.pct ?? 0, 'O peso', { min: 0 });  // fração (0-1)
     const congelado = !!it.congelado;
     tickers.push(tk);
-    const { data: ex } = await sb.from('assets').select('id').eq('ticker', tk).maybeSingle();
-    if (ex) {
-      await sb.from('assets').update({ target_pct: pct, class_id: Number(class_id), is_active: true, congelado }).eq('id', ex.id);
+
+    const { data: existente } = await sb.from('assets').select('id').eq('ticker', tk).maybeSingle();
+    if (existente) {
+      checar(await sb.from('assets')
+        .update({ target_pct: peso, class_id: classe, is_active: true, congelado })
+        .eq('id', existente.id));
     } else {
-      await sb.from('assets').insert({ ticker: tk, class_id: Number(class_id), target_pct: pct, is_active: true, congelado });
+      checar(await sb.from('assets')
+        .insert({ ticker: tk, class_id: classe, target_pct: peso, is_active: true, congelado }));
     }
   }
 
-  // zera o alvo de quem era recomendado nesse grupo mas saiu da lista
-  const { data: doGrupo } = await sb.from('assets').select('id, ticker').eq('class_id', class_id).not('target_pct', 'is', null);
+  const doGrupo = checar(await sb.from('assets')
+    .select('id, ticker').eq('class_id', classe).not('target_pct', 'is', null));
   const remover = (doGrupo || []).filter((a) => !tickers.includes(a.ticker)).map((a) => a.id);
-  if (remover.length) await sb.from('assets').update({ target_pct: null }).in('id', remover);
+  if (remover.length) checar(await sb.from('assets').update({ target_pct: null }).in('id', remover));
 
-  return NextResponse.json({ ok: true });
-}
+  return ok();
+});
