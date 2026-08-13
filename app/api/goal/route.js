@@ -1,18 +1,15 @@
-import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
+import { rota, ok, checar, numero, data } from '../../../lib/api';
 
-export async function POST(req) {
-  const b = await req.json().catch(() => ({}));
-  const sb = supabaseServer();
-
+export const POST = rota(async (b) => {
   const patch = { id: 1 };
-  if (b.target_value !== undefined) patch.target_value = Number(b.target_value);
-  if (b.monthly_contribution !== undefined) patch.monthly_contribution = Number(b.monthly_contribution);
-  if (b.assumed_annual_return !== undefined) patch.assumed_annual_return = Number(b.assumed_annual_return);
-  if (b.started_at) patch.started_at = b.started_at;
-  if (b.starting_value !== undefined) patch.starting_value = Number(b.starting_value);
+  if (b.target_value !== undefined) patch.target_value = numero(b.target_value, 'A meta', { min: 0 });
+  if (b.monthly_contribution !== undefined) patch.monthly_contribution = numero(b.monthly_contribution, 'O aporte mensal', { min: 0 });
+  if (b.assumed_annual_return !== undefined) patch.assumed_annual_return = numero(b.assumed_annual_return, 'O retorno anual');
+  if (b.started_at) patch.started_at = data(b.started_at, 'A data de início');
+  if (b.starting_value !== undefined) patch.starting_value = numero(b.starting_value, 'O valor inicial', { min: 0 });
 
-  const { error } = await sb.from('goal_config').upsert(patch, { onConflict: 'id' });
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
+  const sb = supabaseServer();
+  checar(await sb.from('goal_config').upsert(patch, { onConflict: 'id' }));
+  return ok();
+});
