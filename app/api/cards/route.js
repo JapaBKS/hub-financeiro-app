@@ -1,81 +1,64 @@
-import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
+import { rota, ok, checar, ErroDeUso, texto, numero, id } from '../../../lib/api';
 
-const validaDia = (d) => Number.isInteger(Number(d)) && Number(d) >= 1 && Number(d) <= 31;
+const diaVencimento = (v) => numero(v, 'O dia de vencimento', { min: 1, max: 31, inteiro: true });
 
-// POST   { name, due_day }              -> cria
-// PATCH  { id, name?, due_day?, ativo? } -> edita
-// DELETE { id }                          -> exclui (só se não tiver histórico)
-
-export async function POST(req) {
-  const b = await req.json().catch(() => ({}));
-  const name = String(b.name || '').trim();
-  if (!name) return NextResponse.json({ ok: false, erro: 'Informe o nome do cartão.' }, { status: 400 });
-  if (!validaDia(b.due_day)) return NextResponse.json({ ok: false, erro: 'Dia de vencimento deve ser entre 1 e 31.' }, { status: 400 });
-
-  const sb = supabaseServer();
-  const { data: ja } = await sb.from('cards').select('id').ilike('name', name).maybeSingle();
-  if (ja) return NextResponse.json({ ok: false, erro: `Já existe um cartão "${name}".` }, { status: 400 });
-
-  const { error } = await sb.from('cards').insert({ name, due_day: Number(b.due_day), ativo: true });
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+async function nomeLivre(sb, nome, exceto = null) {
+  const { data } = await sb.from('cards').select('id').ilike('name', nome).maybeSingle();
+  if (data && Number(data.id) !== exceto) throw new ErroDeUso(`Já existe um cartão "${nome}".`);
 }
 
-export async function PATCH(req) {
-  const b = await req.json().catch(() => ({}));
-  const id = Number(b.id);
-  if (!id) return NextResponse.json({ ok: false, erro: 'Id ausente.' }, { status: 400 });
+export const POST = rota(async (b) => {
+  const nome = texto(b.name, 'o nome do cartão');
+  const dia = diaVencimento(b.due_day);
 
+  const sb = supabaseServer();
+  await nomeLivre(sb, nome);
+  checar(await sb.from('cards').insert({ name: nome, due_day: dia, ativo: true }));
+  return ok();
+});
+
+export const PATCH = rota(async (b) => {
+  const cartaoId = id(b.id);
+  const sb = supabaseServer();
   const patch = {};
+
   if (b.name !== undefined) {
-    const name = String(b.name || '').trim();
-    if (!name) return NextResponse.json({ ok: false, erro: 'Nome não pode ficar vazio.' }, { status: 400 });
-    patch.name = name;
+    patch.name = texto(b.name, 'o nome do cartão');
+    await nomeLivre(sb, patch.name, cartaoId);
   }
-  if (b.due_day !== undefined) {
-    if (!validaDia(b.due_day)) return NextResponse.json({ ok: false, erro: 'Dia de vencimento deve ser entre 1 e 31.' }, { status: 400 });
-    patch.due_day = Number(b.due_day);
-  }
+  if (b.due_day !== undefined) patch.due_day = diaVencimento(b.due_day);
   if (b.ativo !== undefined) patch.ativo = !!b.ativo;
-  if (!Object.keys(patch).length) return NextResponse.json({ ok: false, erro: 'Nada para alterar.' }, { status: 400 });
+  if (Object.keys(patch).length === 0) throw new ErroDeUso('Nada para alterar.');
 
+  checar(await sb.from('cards').update(patch).eq('id', cartaoId));
+  return ok();
+});
+
+// Cartão com histórico não é apagado: quebraria as faturas antigas.
+const VINCULOS = [
+  ['card_purchases', 'compras lançadas'],
+  ['invoice_payments', 'pagamentos de fatura'],
+  ['recurring_bills', 'contas fixas'],
+  ['cashbook', 'lançamentos no caixa'],
+];
+
+export const DELETE = rota(async (b) => {
+  const cartaoId = id(b.id);
   const sb = supabaseServer();
-  if (patch.name) {
-    const { data: ja } = await sb.from('cards').select('id').ilike('name', patch.name).maybeSingle();
-    if (ja && Number(ja.id) !== id) {
-      return NextResponse.json({ ok: false, erro: `Já existe um cartão "${patch.name}".` }, { status: 400 });
-    }
-  }
-  const { error } = await sb.from('cards').update(patch).eq('id', id);
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
 
-export async function DELETE(req) {
-  const b = await req.json().catch(() => ({}));
-  const id = Number(b.id);
-  if (!id) return NextResponse.json({ ok: false, erro: 'Id ausente.' }, { status: 400 });
-
-  const sb = supabaseServer();
-  const checar = [
-    ['card_purchases', 'compras lançadas'],
-    ['invoice_payments', 'pagamentos de fatura'],
-    ['recurring_bills', 'contas fixas'],
-    ['cashbook', 'lançamentos no caixa'],
-  ];
-  for (const [tabela, rotulo] of checar) {
-    const { count, error } = await sb.from(tabela).select('id', { count: 'exact', head: true }).eq('card_id', id);
+  for (const [tabela, rotulo] of VINCULOS) {
+    const { count, error } = await sb.from(tabela)
+      .select('id', { count: 'exact', head: true })
+      .eq('card_id', cartaoId);
     if (error) continue; // tabela pode não ter card_id
-    if (count && count > 0) {
-      return NextResponse.json({
-        ok: false,
-        erro: `Esse cartão tem ${count} ${rotulo}. Em vez de excluir, desative — o histórico é preservado.`,
-      }, { status: 400 });
+    if (count) {
+      throw new ErroDeUso(
+        `Esse cartão tem ${count} ${rotulo}. Em vez de excluir, desative — o histórico é preservado.`,
+      );
     }
   }
 
-  const { error } = await sb.from('cards').delete().eq('id', id);
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
+  checar(await sb.from('cards').delete().eq('id', cartaoId));
+  return ok();
+});
