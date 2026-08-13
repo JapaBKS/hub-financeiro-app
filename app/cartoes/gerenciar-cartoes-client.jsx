@@ -1,10 +1,6 @@
 'use client';
 import { useState } from 'react';
 
-const inp = {
-  padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', color: 'var(--ink)',
-};
 
 export default function GerenciarCartoes({ cards }) {
   const [novo, setNovo] = useState({ name: '', due_day: '' });
@@ -52,10 +48,10 @@ export default function GerenciarCartoes({ cards }) {
       }}>
         {editando ? (
           <>
-            <input style={{ ...inp, flex: 1, minWidth: 120 }} value={edit.name}
+            <input className="campo" style={{ flex: 1, minWidth: 120 }} value={edit.name}
               onChange={(e) => setEdit((f) => ({ ...f, name: e.target.value }))} />
             <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>vence dia</span>
-            <input style={{ ...inp, width: 66, textAlign: 'right' }} type="number" min="1" max="31" value={edit.due_day}
+            <input className="campo" style={{ width: 66, textAlign: 'right' }} type="number" min="1" max="31" value={edit.due_day}
               onChange={(e) => setEdit((f) => ({ ...f, due_day: e.target.value }))} />
             <button onClick={() => salvar(c.id)} disabled={busy} style={btn({ background: 'var(--forest)', color: '#fff', border: 0 })}>salvar</button>
             <button onClick={() => setEditId(null)} style={btn()}>cancelar</button>
@@ -102,10 +98,10 @@ export default function GerenciarCartoes({ cards }) {
       <section className="card" style={{ padding: '4px 0 16px' }}>
         <div className="card-h"><h2>Adicionar cartão</h2></div>
         <div style={{ display: 'flex', gap: 8, padding: '10px 16px 0', alignItems: 'center', flexWrap: 'wrap' }}>
-          <input style={{ ...inp, flex: 1, minWidth: 150 }} value={novo.name}
+          <input className="campo" style={{ flex: 1, minWidth: 150 }} value={novo.name}
             onChange={(e) => setNovo((f) => ({ ...f, name: e.target.value }))} placeholder="Nome (ex.: Nubank)" />
           <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>vence dia</span>
-          <input style={{ ...inp, width: 70, textAlign: 'right' }} type="number" min="1" max="31" value={novo.due_day}
+          <input className="campo" style={{ width: 70, textAlign: 'right' }} type="number" min="1" max="31" value={novo.due_day}
             onChange={(e) => setNovo((f) => ({ ...f, due_day: e.target.value }))} placeholder="15" />
           <button onClick={criar} disabled={busy || !novo.name.trim() || !novo.due_day} style={{
             padding: '9px 15px', borderRadius: 9, border: 0, cursor: 'pointer', fontSize: 13.5, fontWeight: 600,
