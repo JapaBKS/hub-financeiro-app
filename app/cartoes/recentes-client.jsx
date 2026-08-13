@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { CATEGORIAS } from '../../lib/dominio/categorias';
 
-const CATEGORIAS = ['Comida', 'Mercado', 'Lazer', 'Transporte', 'Saúde', 'Casa', 'Assinaturas', 'Roupas', 'Educação', 'Presentes', 'Outros'];
 
 const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const inp = {
