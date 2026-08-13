@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from 'react';
 
 const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
-const inp = { padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5, fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%' };
 
 const vazio = { name: '', category: '', amount: '', schedule_kind: 'dia_mes', day_of_month: '10', weekday: '5', is_variable: false, card_id: '' };
 
@@ -74,10 +73,10 @@ export default function FixasClient({ bills, categorias, cards = [] }) {
 
       {form && (
         <section ref={formRef} className="card" style={{ padding: 16, marginBottom: 14 }}>
-          <input style={{ ...inp, marginBottom: 8 }} placeholder="Nome (ex.: PUC, Vivo+Copel)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <input className="campo" style={{ marginBottom: 8 }} placeholder="Nome (ex.: PUC, Vivo+Copel)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <div className="grid2" style={{ marginBottom: 8 }}>
-            <input style={inp} placeholder="Categoria" list="cats-fixas" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
-            <input style={inp} type="number" step="0.01" placeholder="Valor sugerido" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+            <input className="campo" placeholder="Categoria" list="cats-fixas" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            <input className="campo" type="number" step="0.01" placeholder="Valor sugerido" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
           </div>
           <datalist id="cats-fixas">{categorias.map((c) => <option key={c} value={c} />)}</datalist>
 
@@ -89,12 +88,12 @@ export default function FixasClient({ bills, categorias, cards = [] }) {
           {form.schedule_kind === 'dia_mes' ? (
             <label style={{ display: 'block', fontSize: 12.5, color: 'var(--ink-soft)', marginBottom: 12 }}>
               Dia do mês (se cair no fim de semana, vai pro próximo dia útil)
-              <input style={{ ...inp, marginTop: 4 }} type="number" min="1" max="31" value={form.day_of_month} onChange={(e) => setForm({ ...form, day_of_month: e.target.value })} />
+              <input className="campo" style={{ marginTop: 4 }} type="number" min="1" max="31" value={form.day_of_month} onChange={(e) => setForm({ ...form, day_of_month: e.target.value })} />
             </label>
           ) : (
             <label style={{ display: 'block', fontSize: 12.5, color: 'var(--ink-soft)', marginBottom: 12 }}>
               Dia da semana (gera uma ocorrência por semana no mês)
-              <select style={{ ...inp, marginTop: 4 }} value={form.weekday} onChange={(e) => setForm({ ...form, weekday: e.target.value })}>
+              <select className="campo" style={{ marginTop: 4 }} value={form.weekday} onChange={(e) => setForm({ ...form, weekday: e.target.value })}>
                 {DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}
               </select>
             </label>
@@ -108,7 +107,7 @@ export default function FixasClient({ bills, categorias, cards = [] }) {
           {cards.length > 0 && (
             <label style={{ display: 'block', fontSize: 12.5, color: 'var(--ink-soft)', marginBottom: 12 }}>
               É um cartão do Hub? (puxa a parte do pai da fatura como valor sugerido)
-              <select style={{ ...inp, marginTop: 4 }} value={form.card_id} onChange={(e) => setForm({ ...form, card_id: e.target.value, is_variable: e.target.value ? true : form.is_variable })}>
+              <select className="campo" style={{ marginTop: 4 }} value={form.card_id} onChange={(e) => setForm({ ...form, card_id: e.target.value, is_variable: e.target.value ? true : form.is_variable })}>
                 <option value="">Não é cartão</option>
                 {cards.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
