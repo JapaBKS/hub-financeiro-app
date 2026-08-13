@@ -1,34 +1,27 @@
-import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
+import { rota, ok, checar, ticker, data, numero, id, texto } from '../../../lib/api';
 
 // POST   { ticker, event_date, tipo, fator, nota }
 // DELETE { id }
-export async function POST(req) {
-  const b = await req.json().catch(() => ({}));
-  const ticker = String(b.ticker || '').toUpperCase().trim();
-  const event_date = String(b.event_date || '').slice(0, 10);
-  const fator = Number(String(b.fator).replace(',', '.'));
-
-  if (!ticker) return NextResponse.json({ ok: false, erro: 'Informe o ticker.' }, { status: 400 });
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(event_date)) return NextResponse.json({ ok: false, erro: 'Data inválida.' }, { status: 400 });
-  if (!(fator > 0)) return NextResponse.json({ ok: false, erro: 'Fator deve ser maior que zero.' }, { status: 400 });
+export const POST = rota(async (b) => {
+  const tk = ticker(b.ticker);
+  const quando = data(b.event_date, 'A data do evento');
+  // fator multiplica a quantidade: 1:2 -> 2 | 2:1 -> 0,5 | bonificação 10% -> 1,1
+  const fator = numero(b.fator, 'O fator', { min: 0.000001 });
 
   const sb = supabaseServer();
-  const { error } = await sb.from('corporate_events').insert({
-    ticker, event_date, fator,
-    tipo: String(b.tipo || 'desdobramento'),
-    nota: b.nota ? String(b.nota) : null,
-  });
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
+  checar(await sb.from('corporate_events').insert({
+    ticker: tk,
+    event_date: quando,
+    fator,
+    tipo: texto(b.tipo, 'o tipo', { obrigatorio: false }) || 'desdobramento',
+    nota: texto(b.nota, 'a nota', { obrigatorio: false }) || null,
+  }));
+  return ok();
+});
 
-export async function DELETE(req) {
-  const b = await req.json().catch(() => ({}));
-  const id = Number(b.id);
-  if (!id) return NextResponse.json({ ok: false, erro: 'Id ausente.' }, { status: 400 });
+export const DELETE = rota(async (b) => {
   const sb = supabaseServer();
-  const { error } = await sb.from('corporate_events').delete().eq('id', id);
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
+  checar(await sb.from('corporate_events').delete().eq('id', id(b.id)));
+  return ok();
+});
