@@ -124,6 +124,20 @@ export default function ListaNegociacoes({ trades }) {
                 </span>
                 <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-faint)' }}>
                   {Number(t.quantity).toLocaleString('pt-BR')} × {fmt(t.price)}
+                  {t.saldo != null && (
+                    <>
+                      {' · '}
+                      <span
+                        title="quantidade do ativo depois desta negociação (já com desdobramentos)"
+                        style={{
+                          fontWeight: 600,
+                          color: t.saldo < 0 ? 'var(--down)' : 'var(--ink-soft)',
+                        }}>
+                        saldo {Number(t.saldo).toLocaleString('pt-BR', { maximumFractionDigits: 6 })}
+                        {t.saldo < 0 ? ' ⚠' : ''}
+                      </span>
+                    </>
+                  )}
                 </span>
               </span>
               <button onClick={() => abrirEdicao(t)} title="Editar" style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 14, padding: '0 2px' }}>✎</button>
