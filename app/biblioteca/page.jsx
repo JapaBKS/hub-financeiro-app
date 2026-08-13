@@ -55,7 +55,7 @@ export default async function Biblioteca() {
         ticker, classe: classe || '—',
         qtdComprada: 0, qtdVendida: 0, totalComprado: 0, totalVendido: 0,
         primeiraCompra: null, ultimaVenda: null, ultimaMov: null,
-        nTrades: 0, dividendos: 0, nDividendos: 0, movimentos: [],
+        nTrades: 0, dividendos: 0, nDividendos: 0, movimentos: [], deltas: [], pagamentos: [],
       };
     }
     if (classe && mapa[ticker].classe === '—') mapa[ticker].classe = classe;
@@ -92,14 +92,24 @@ export default async function Biblioteca() {
     }
     if (!a.ultimaMov || dia > a.ultimaMov) a.ultimaMov = dia;
     a.movimentos.push({ dia, side: t.side, qtd: qtdBruta, preco: Number(t.price) || 0, valor });
+    a.deltas.push({ dia, delta: t.side === 'compra' ? qtd : -qtd });
   });
 
   (divs || []).forEach((d) => {
     if (!d.ticker) return;
     const a = garante(d.ticker, null);
-    a.dividendos += Number(d.amount) || 0;
+    const v = Number(d.amount) || 0;
+    a.dividendos += v;
     a.nDividendos++;
+    a.pagamentos.push({ dia: (d.paid_at || '').slice(0, 10), valor: v });
   });
+
+  const mesesEntre = (ini, fim) => {
+    if (!ini || !fim) return 1;
+    const [ay, am] = ini.slice(0, 7).split('-').map(Number);
+    const [by, bm] = fim.slice(0, 7).split('-').map(Number);
+    return Math.max(1, (by - ay) * 12 + (bm - am) + 1);
+  };
 
   const ativos = Object.values(mapa).map((a) => {
     const p = posDe[a.ticker];
@@ -113,11 +123,27 @@ export default async function Biblioteca() {
       : (manualDe[a.ticker] != null ? 'manual' : 'pm');
     const precoEm = precoAuto != null && attDe[a.ticker] ? String(attDe[a.ticker]).slice(0, 10) : null;
     const valorAtual = aberto ? qtdAtual * precoRef : 0;
+    // dividendo por cota: usa a posição (em cotas de hoje) na data de cada pagamento
+    const deltas = [...a.deltas].sort((x, y) => x.dia.localeCompare(y.dia));
+    const pagos = [...a.pagamentos].filter((x) => x.dia).sort((x, y) => x.dia.localeCompare(y.dia));
+    let iDelta = 0, posicao = 0, somaPorCota = 0, nComPosicao = 0;
+    pagos.forEach((pg) => {
+      while (iDelta < deltas.length && deltas[iDelta].dia <= pg.dia) { posicao += deltas[iDelta].delta; iDelta++; }
+      if (posicao > 0.0000001) { somaPorCota += pg.valor / posicao; nComPosicao++; }
+    });
+    const porCotaMedio = nComPosicao > 0 ? somaPorCota / nComPosicao : 0;   // média por pagamento
+    const mesesPagos = pagos.length ? mesesEntre(pagos[0].dia, pagos[pagos.length - 1].dia) : 0;
+    const porCotaMes = mesesPagos > 0 ? somaPorCota / mesesPagos : 0;        // média mensal por cota
+    const rendaMensal = porCotaMes * qtdAtual;
+    const yieldMes = precoRef > 0 ? porCotaMes / precoRef : 0;
+
     // retorno total: o que saiu de volta + o que ainda vale + proventos − o que entrou
     const retorno = a.totalVendido + valorAtual + a.dividendos - a.totalComprado;
     const retornoPct = a.totalComprado > 0 ? retorno / a.totalComprado : 0;
     return {
       ...a, qtdAtual, aberto, pm, precoRef, origemPreco, precoEm, valorAtual, retorno, retornoPct,
+      porCotaMedio, porCotaMes, rendaMensal, yieldMes, mesesPagos, nComPosicao,
+      primeiroPagamento: pagos[0]?.dia || null, ultimoPagamento: pagos[pagos.length - 1]?.dia || null,
       cat: categoria(a.ticker, a.classe),
       movimentos: a.movimentos.sort((x, y) => y.dia.localeCompare(x.dia)),
     };
