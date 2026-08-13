@@ -1,10 +1,6 @@
 'use client';
 import { useState } from 'react';
 
-const inp = {
-  padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 14,
-  fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', color: 'var(--ink)',
-};
 
 export default function AlvosClient({ grupos: gruposIniciais }) {
   const [grupos, setGrupos] = useState(gruposIniciais);
@@ -104,7 +100,7 @@ export default function AlvosClient({ grupos: gruposIniciais }) {
       </div>
 
       <section className="card" style={{ marginBottom: 12, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <input style={{ ...inp, flex: 1, minWidth: 140 }} value={novaAba} onChange={(e) => setNovaAba(e.target.value)}
+        <input className="campo" style={{ flex: 1, minWidth: 140 }} value={novaAba} onChange={(e) => setNovaAba(e.target.value)}
           placeholder="Nome da nova aba (ex.: Cripto)" />
         <button onClick={criarAba} disabled={criando || !novaAba.trim()} style={{
           padding: '8px 14px', borderRadius: 8, border: 0, cursor: 'pointer', fontSize: 13, fontWeight: 600,
@@ -134,7 +130,7 @@ export default function AlvosClient({ grupos: gruposIniciais }) {
             {g.itens.map((it, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: '1px solid var(--line-soft)', flexWrap: 'wrap' }}>
                 <b style={{ fontFamily: 'var(--font-display)', flex: 1, minWidth: 70 }}>{it.ticker}</b>
-                <input style={{ ...inp, width: 90, textAlign: 'right' }} type="number" step="any" value={it.pct}
+                <input className="campo" style={{ width: 90, textAlign: 'right' }} type="number" step="any" value={it.pct}
                   onChange={(e) => mudarPct(idx, e.target.value)} />
                 <span style={{ color: 'var(--ink-faint)', fontSize: 13 }}>%</span>
                 <label title="congelado: nunca sugerir comprar ou vender esse ativo" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: it.congelado ? 'var(--forest-2)' : 'var(--ink-faint)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -147,8 +143,8 @@ export default function AlvosClient({ grupos: gruposIniciais }) {
             {g.itens.length === 0 && <div style={{ padding: 16, fontSize: 13, color: 'var(--ink-faint)' }}>Nenhum ativo nesta aba. Adicione abaixo.</div>}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: 'var(--surface-2)', flexWrap: 'wrap' }}>
-              <input style={{ ...inp, flex: 1, minWidth: 120 }} value={novoTicker} onChange={(e) => setNovoTicker(e.target.value)} placeholder="Ticker (ex.: VWRA11)" />
-              <input style={{ ...inp, width: 90, textAlign: 'right' }} type="number" step="any" value={novoPct} onChange={(e) => setNovoPct(e.target.value)} placeholder="%" />
+              <input className="campo" style={{ flex: 1, minWidth: 120 }} value={novoTicker} onChange={(e) => setNovoTicker(e.target.value)} placeholder="Ticker (ex.: VWRA11)" />
+              <input className="campo" style={{ width: 90, textAlign: 'right' }} type="number" step="any" value={novoPct} onChange={(e) => setNovoPct(e.target.value)} placeholder="%" />
               <button onClick={adicionar} style={{ padding: '8px 12px', borderRadius: 8, border: 0, background: 'var(--forest-2)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+</button>
             </div>
           </section>
