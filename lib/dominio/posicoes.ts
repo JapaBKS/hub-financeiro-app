@@ -7,7 +7,7 @@
 // ============================================================================
 
 /** Categoria tributária — define a regra de imposto, não a aparência. */
-export type Categoria = 'acao' | 'bdr' | 'etf' | 'fii';
+export type Categoria = 'acao' | 'bdr' | 'etf' | 'fii' | 'cripto';
 export type Lado = 'compra' | 'venda';
 
 /** Formato que vem do Supabase (join aninhado). Só o adaptador conhece isto. */
@@ -60,12 +60,32 @@ export interface Venda {
   resultado: number;    // (preço − custo médio) × quantidade
 }
 
+export interface Movimento {
+  dia: string;
+  side: Lado;
+  qtd: number;            // quantidade da nota (como foi executada)
+  qtdHoje: number;        // equivalente em cotas de hoje (pós-desdobramentos)
+  preco: number;
+  valor: number;
+}
+
 export interface Posicao {
   ticker: string;
   classe: string | null;
+  cat: Categoria;
   quantidade: number;
   custoTotal: number;
   precoMedio: number;
+  // agregados de toda a história do ativo
+  qtdComprada: number;
+  qtdVendida: number;
+  totalComprado: number;
+  totalVendido: number;
+  primeiraCompra: string | null;
+  ultimaVenda: string | null;
+  ultimaMov: string | null;
+  nTrades: number;
+  movimentos: Movimento[];
 }
 
 export interface Historico {
@@ -75,9 +95,13 @@ export interface Historico {
   negativos: string[];                // quantidade ficou negativa: falta dado
 }
 
+const CLASSES_CRIPTO = ['BTC', 'SOLANA', 'PENDLE', 'CRIPTO'];
+
 export function categoria(ticker: string, classe?: string | null): Categoria {
   const t = (ticker || '').toUpperCase();
-  if ((classe || '').toUpperCase() === 'FIIS') return 'fii';
+  const c = (classe || '').toUpperCase();
+  if (CLASSES_CRIPTO.includes(c)) return 'cripto';
+  if (c === 'FIIS') return 'fii';
   if (/^[A-Z0-9]{4}3[2-9]$/.test(t)) return 'bdr';
   if (/11$/.test(t)) return 'etf';
   return 'acao';
@@ -139,13 +163,27 @@ export function calcularHistorico(
   const trades = normalizarTrades(tradesBrutos);
   const eventos = normalizarEventos(eventosBrutos);
 
-  const estado: Record<string, { qtd: number; custo: number; classe: string | null }> = {};
+  const fator = fatorDesde(eventosBrutos);
+  interface Estado {
+    qtd: number; custo: number; classe: string | null;
+    qtdComprada: number; qtdVendida: number;
+    totalComprado: number; totalVendido: number;
+    primeiraCompra: string | null; ultimaVenda: string | null; ultimaMov: string | null;
+    nTrades: number; movimentos: Movimento[];
+  }
+  const novoEstado = (): Estado => ({
+    qtd: 0, custo: 0, classe: null,
+    qtdComprada: 0, qtdVendida: 0, totalComprado: 0, totalVendido: 0,
+    primeiraCompra: null, ultimaVenda: null, ultimaMov: null,
+    nTrades: 0, movimentos: [],
+  });
+  const estado: Record<string, Estado> = {};
   const vendas: Venda[] = [];
   const saldoApos: Record<number, number> = {};
   const negativos = new Set<string>();
 
   for (const reg of linhaDoTempo(trades, eventos)) {
-    const P = (estado[reg.ticker] ||= { qtd: 0, custo: 0, classe: null });
+    const P = (estado[reg.ticker] ||= novoEstado());
 
     if (reg.tipoRegistro === 'evento') {
       P.qtd *= reg.fator;
@@ -156,10 +194,23 @@ export function calcularHistorico(
     const { quantidade: q, preco: p } = reg;
     if (!q || !p) continue;
 
+    P.nTrades++;
+    if (!P.ultimaMov || reg.dia > P.ultimaMov) P.ultimaMov = reg.dia;
+    P.movimentos.push({
+      dia: reg.dia, side: reg.side, qtd: q,
+      qtdHoje: q * fator(reg.ticker, reg.dia), preco: p, valor: q * p,
+    });
+
     if (reg.side === 'compra') {
       P.qtd += q;
       P.custo += q * p;
+      P.qtdComprada += q;
+      P.totalComprado += q * p;
+      if (!P.primeiraCompra || reg.dia < P.primeiraCompra) P.primeiraCompra = reg.dia;
     } else {
+      P.qtdVendida += q;
+      P.totalVendido += q * p;
+      if (!P.ultimaVenda || reg.dia > P.ultimaVenda) P.ultimaVenda = reg.dia;
       const pm = P.qtd > 0 ? P.custo / P.qtd : 0;
       P.custo -= pm * (P.qtd > 0 ? Math.min(q, P.qtd) : q);
       P.qtd -= q;
@@ -189,9 +240,19 @@ export function calcularHistorico(
     posicoes[ticker] = {
       ticker,
       classe: P.classe,
+      cat: categoria(ticker, P.classe),
       quantidade: P.qtd,
       custoTotal: P.custo,
       precoMedio: P.qtd > 0 ? P.custo / P.qtd : 0,
+      qtdComprada: P.qtdComprada,
+      qtdVendida: P.qtdVendida,
+      totalComprado: P.totalComprado,
+      totalVendido: P.totalVendido,
+      primeiraCompra: P.primeiraCompra,
+      ultimaVenda: P.ultimaVenda,
+      ultimaMov: P.ultimaMov,
+      nTrades: P.nTrades,
+      movimentos: P.movimentos.sort((a, b) => b.dia.localeCompare(a.dia)),
     };
   }
 
