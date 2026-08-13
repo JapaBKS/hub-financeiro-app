@@ -1,45 +1,42 @@
-import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
+import { rota, ok, checar, ErroDeUso, id, numero, texto, data } from '../../../lib/api';
 
-export async function POST(req) {
-  const b = await req.json().catch(() => ({}));
-  const row = {
-    entry_date: b.entry_date,
-    details: (b.details || '').trim(),
-    category: (b.category || 'Outros').trim() || 'Outros',
-    amount: Math.abs(Number(b.amount) || 0),
-    kind: b.kind === 'entrada' ? 'entrada' : 'saida',
+const asKind = (v) => (v === 'entrada' ? 'entrada' : 'saida');
+
+export const POST = rota(async (b) => {
+  const linha = {
+    entry_date: data(b.entry_date, 'A data'),
+    details: texto(b.details, 'a descrição', { obrigatorio: false }),
+    category: texto(b.category, 'a categoria', { obrigatorio: false }) || 'Outros',
+    amount: Math.abs(numero(b.amount, 'O valor', { min: 0.000001 })),
+    kind: asKind(b.kind),
     paid: b.paid !== false,
   };
-  if (!row.entry_date || !row.amount) return NextResponse.json({ ok: false, erro: 'Data e valor são obrigatórios.' }, { status: 400 });
-  const sb = supabaseServer();
-  const { error } = await sb.from('cashbook').insert(row);
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
 
-export async function PATCH(req) {
-  const b = await req.json().catch(() => ({}));
-  if (!b.id) return NextResponse.json({ ok: false, erro: 'id ausente.' }, { status: 400 });
+  const sb = supabaseServer();
+  checar(await sb.from('cashbook').insert(linha));
+  return ok();
+});
+
+export const PATCH = rota(async (b) => {
+  const registro = id(b.id);
   const patch = {};
-  if (b.entry_date != null) patch.entry_date = b.entry_date;
-  if (b.details != null) patch.details = String(b.details).trim();
-  if (b.category != null) patch.category = String(b.category).trim() || 'Outros';
-  if (b.amount != null) patch.amount = Math.abs(Number(b.amount) || 0);
-  if (b.kind != null) patch.kind = b.kind === 'entrada' ? 'entrada' : 'saida';
+  if (b.entry_date != null) patch.entry_date = data(b.entry_date, 'A data');
+  if (b.details != null) patch.details = texto(b.details, 'a descrição', { obrigatorio: false });
+  if (b.category != null) patch.category = texto(b.category, 'a categoria', { obrigatorio: false }) || 'Outros';
+  if (b.amount != null) patch.amount = Math.abs(numero(b.amount, 'O valor', { min: 0 }));
+  if (b.kind != null) patch.kind = asKind(b.kind);
   if (b.paid != null) patch.paid = !!b.paid;
   if (b.needs_review != null) patch.needs_review = !!b.needs_review;
-  const sb = supabaseServer();
-  const { error } = await sb.from('cashbook').update(patch).eq('id', b.id);
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
+  if (Object.keys(patch).length === 0) throw new ErroDeUso('Nada para alterar.');
 
-export async function DELETE(req) {
-  const b = await req.json().catch(() => ({}));
-  if (!b.id) return NextResponse.json({ ok: false, erro: 'id ausente.' }, { status: 400 });
   const sb = supabaseServer();
-  const { error } = await sb.from('cashbook').delete().eq('id', b.id);
-  if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
-}
+  checar(await sb.from('cashbook').update(patch).eq('id', registro));
+  return ok();
+});
+
+export const DELETE = rota(async (b) => {
+  const sb = supabaseServer();
+  checar(await sb.from('cashbook').delete().eq('id', id(b.id)));
+  return ok();
+});
