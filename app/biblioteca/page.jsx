@@ -82,7 +82,8 @@ export default async function Biblioteca() {
     const valorAtual = aberto ? qtdAtual * precoRef : 0;
 
     // dividendo por cota: posição (em cotas de hoje) na data de cada pagamento
-    const deltas = P.movimentos
+    const movimentos = P.movimentos || [];
+    const deltas = movimentos
       .map((m) => ({ dia: m.dia, delta: m.side === 'compra' ? m.qtdHoje : -m.qtdHoje }))
       .sort((a, b) => a.dia.localeCompare(b.dia));
     const pagos = prov.pagamentos.filter((x) => x.dia).sort((a, b) => a.dia.localeCompare(b.dia));
@@ -114,7 +115,7 @@ export default async function Biblioteca() {
       ultimaVenda: P.ultimaVenda,
       ultimaMov: P.ultimaMov,
       nTrades: P.nTrades,
-      movimentos: P.movimentos,
+      movimentos,
       dividendos: prov.total,
       nDividendos: prov.n,
       qtdAtual, aberto, pm, precoRef, origemPreco, precoEm, valorAtual, retorno, retornoPct,
