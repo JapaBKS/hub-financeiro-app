@@ -33,8 +33,8 @@ export default function AlocacaoDonut({ dados, total }) {
   const alvos = fatias(dados, 'alvo', 60, 40);
   const escolhido = sel != null ? dados.find((d) => d.classe === sel) : null;
 
-  const Anel = ({ f, opacidade }) => (
-    <g onMouseEnter={() => setSel(f.classe)} onClick={() => setSel(sel === f.classe ? null : f.classe)} style={{ cursor: 'pointer' }}>
+  const anel = (f, opacidade, chave) => (
+    <g key={chave} onMouseEnter={() => setSel(f.classe)} onClick={() => setSel(sel === f.classe ? null : f.classe)} style={{ cursor: 'pointer' }}>
       {f.cheio ? (
         <circle cx="100" cy="100" r={(f.R + f.r) / 2} fill="none" stroke={f.cor} strokeWidth={f.R - f.r}
           opacity={sel && sel !== f.classe ? 0.3 : opacidade} />
@@ -51,8 +51,8 @@ export default function AlocacaoDonut({ dados, total }) {
 
       <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', padding: '10px 16px 4px', justifyContent: 'center' }}>
         <svg viewBox="0 0 200 200" style={{ width: 190, height: 190, flex: 'none' }} onMouseLeave={() => setSel(null)}>
-          {alvos.map((f) => <Anel key={`a-${f.classe}`} f={f} opacidade={0.42} />)}
-          {reais.map((f) => <Anel key={`r-${f.classe}`} f={f} opacidade={1} />)}
+          {alvos.map((f) => anel(f, 0.42, `a-${f.classe}`))}
+          {reais.map((f) => anel(f, 1, `r-${f.classe}`))}
           <text x="100" y="95" textAnchor="middle" fontSize="9" fill="var(--ink-faint)">
             {escolhido ? escolhido.classe : 'patrimônio'}
           </text>
