@@ -13,7 +13,7 @@ export default async function Carteira() {
   const [{ data: pos }, { data: manuais }, { data: precos }, { data: divs }, { data: todasTrades }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('manual_prices').select('ticker, price'),
-    sb.from('prices').select('ticker, updated_at'),
+    sb.from('prices').select('ticker, price, updated_at'),
     sb.from('dividends').select('ticker, amount'),
     sb.from('trades').select('side, quantity, price'),
   ]);
