@@ -1,5 +1,6 @@
 import { supabaseServer } from '../../lib/supabase';
 import { brl, pct } from '../../lib/format';
+import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import PrecoManual from '../preco-manual-client';
 
 export const dynamic = 'force-dynamic';
@@ -22,24 +23,16 @@ export default async function Carteira() {
     provDe[d.ticker] = (provDe[d.ticker] || 0) + (Number(d.amount) || 0);
   });
 
-  const manualDe = {};
-  (manuais || []).forEach((m) => { manualDe[m.ticker] = Number(m.price); });
-  // cotação parada há 2+ dias é tratada como "sem cotação" (ex.: BDRs que a brapi parou de devolver)
-  const FRESCO_MS = 48 * 3600 * 1000;
-  const AGORA = Date.now();
-  const staleDe = {};
-  (precos || []).forEach((p) => {
-    const idade = p.updated_at ? (AGORA - new Date(p.updated_at).getTime()) : Infinity;
-    staleDe[p.ticker] = idade >= FRESCO_MS;
-  });
+  const precoDe = criarResolvedorDePreco(precos, manuais);
 
   // inclui todos; quem não tem cotação usa o PM como valor provisório
   const ativos = (pos || []).map((p) => {
-    const semAuto = p.preco_atual == null || staleDe[p.ticker] === true;
-    const manual = semAuto ? (manualDe[p.ticker] ?? null) : null;
-    const usouManual = semAuto && manual != null;
-    const semCotacao = semAuto && manual == null;
-    const precoRef = !semAuto ? Number(p.preco_atual) : (usouManual ? manual : Number(p.preco_medio));
+    const resolvido = precoDe(p.ticker, Number(p.preco_medio) || 0);
+    const semAuto = resolvido.origem !== 'auto';
+    const usouManual = resolvido.origem === 'manual';
+    const manual = usouManual ? resolvido.preco : null;
+    const semCotacao = resolvido.origem === 'pm' || resolvido.origem === 'nenhum';
+    const precoRef = resolvido.preco;
     const valor = Number(p.quantidade) * precoRef;
     const lucro = !semAuto ? Number(p.lucro_rs) : (usouManual ? valor - Number(p.quantidade) * Number(p.preco_medio) : 0);
     const proventos = provDe[p.ticker] || 0;
