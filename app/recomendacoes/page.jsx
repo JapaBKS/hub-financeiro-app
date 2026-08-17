@@ -1,5 +1,6 @@
 import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
+import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import RecomendacoesLista from './lista-client';
 
 export const dynamic = 'force-dynamic';
@@ -22,19 +23,9 @@ export default async function Recomendacoes() {
     sb.from('assets').select('ticker, congelado'),
   ]);
 
-  const FRESCO_MS = 48 * 3600 * 1000; // 2 dias
-  const AGORA = Date.now();
-  const precoDe = {};
-  const staleDe = {};
-  (precos || []).forEach((p) => {
-    const idade = p.updated_at ? (AGORA - new Date(p.updated_at).getTime()) : Infinity;
-    staleDe[p.ticker] = idade >= FRESCO_MS;
-    if (Number(p.price) > 0) precoDe[p.ticker] = Number(p.price); // guarda o último conhecido
-  });
+  const precoDe = criarResolvedorDePreco(precos, manuais);
   const pmDe = {};
   (pos || []).forEach((p) => { if (Number(p.preco_medio) > 0) pmDe[p.ticker] = Number(p.preco_medio); });
-  const manualDe = {};
-  (manuais || []).forEach((m) => { manualDe[m.ticker] = Number(m.price); });
   const congeladoDe = {};
   (congelados || []).forEach((a) => { congeladoDe[a.ticker] = !!a.congelado; });
 
@@ -128,14 +119,11 @@ export default async function Recomendacoes() {
     }
 
     // preço unitário: cotação atual, senão do mapa de preços, senão PM (de qualquer posição)
-    const precoAtualFresco = (held && p.preco_atual != null) ? Number(p.preco_atual) : null;
-    const precoUnit = precoAtualFresco
-      ?? (precoDe[u.ticker] > 0 ? precoDe[u.ticker] : null)
-      ?? (manualDe[u.ticker] > 0 ? manualDe[u.ticker] : null)
-      ?? (pmDe[u.ticker] > 0 ? pmDe[u.ticker] : null);
-    const semCotacaoAuto = precoAtualFresco == null && !(precoDe[u.ticker] > 0);
-    const precoManual = manualDe[u.ticker] ?? null;
-    const precoVelho = !semCotacaoAuto && staleDe[u.ticker] === true;
+    const resolvido = precoDe(u.ticker, pmDe[u.ticker] || 0);
+    const precoUnit = resolvido.preco;
+    const semCotacaoAuto = resolvido.origem === 'pm' || resolvido.origem === 'nenhum';
+    const precoManual = resolvido.origem === 'manual' ? resolvido.preco : null;
+    const precoVelho = resolvido.origem === 'auto-velho';
     const inteiro = !classesFracionadas.has(u.classe); // só cripto é fracionário
     const rs = Math.abs(sugestaoRs);
     let qtd = null, umaCotaPassa = false;
