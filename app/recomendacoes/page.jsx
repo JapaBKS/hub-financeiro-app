@@ -55,7 +55,10 @@ export default async function Recomendacoes() {
 
   const posMap = {};
   (pos || []).forEach((p) => {
-    if (p.preco_atual != null && !classesValorFixo.has(p.classe)) posMap[p.ticker] = p;
+    // Antes exigia `preco_atual != null`: um ativo que você TEM mas que está sem
+    // cotação automática ficava de fora e aparecia como "nova posição".
+    // O preço agora vem do resolvedor (cotação, manual ou PM), então basta ter posição.
+    if (!classesValorFixo.has(p.classe)) posMap[p.ticker] = p;
   });
 
   // A view calcula o valor com a cotação da tabela `prices`. Quando vale o preço
