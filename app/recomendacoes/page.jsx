@@ -1,6 +1,7 @@
 import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
 import { criarResolvedorDePreco } from '../../lib/dominio/precos';
+import { detectarPadraoPagamento } from '../../lib/dominio/proventos';
 import RecomendacoesLista from './lista-client';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,7 @@ const TOL = 0.03;
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }, { data: manuais }, { data: congelados }] = await Promise.all([
+  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }, { data: manuais }, { data: congelados }, { data: recebidos }, { data: pendentes }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('assets').select('ticker, target_pct, asset_classes(name, target_pct)').gt('target_pct', 0),
     sb.from('v_class_allocation').select('valor'),
@@ -21,11 +22,34 @@ export default async function Recomendacoes() {
     sb.from('asset_classes').select('id, name').order('name'),
     sb.from('manual_prices').select('ticker, price'),
     sb.from('assets').select('ticker, congelado'),
+    sb.from('dividends').select('ticker, paid_at'),
+    sb.from('dividends_pending').select('ticker, pay_date, amount'),
   ]);
 
   const precoDe = criarResolvedorDePreco(precos, manuais);
   const pmDe = {};
   (pos || []).forEach((p) => { if (Number(p.preco_medio) > 0) pmDe[p.ticker] = Number(p.preco_medio); });
+  // padrão de pagamento, a partir do histórico de proventos recebidos
+  const datasDe = {};
+  (recebidos || []).forEach((d) => {
+    if (!d.ticker || !d.paid_at) return;
+    (datasDe[d.ticker.toUpperCase()] ||= []).push(d.paid_at.slice(0, 10));
+  });
+  const padraoDe = {};
+  for (const [tk, datas] of Object.entries(datasDe)) padraoDe[tk] = detectarPadraoPagamento(datas);
+
+  // provento JÁ DECLARADO: a data-com passou, então vender depois não faz perdê-lo
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const aReceberDe = {};
+  (pendentes || []).forEach((p) => {
+    const tk = (p.ticker || '').toUpperCase();
+    const dia = (p.pay_date || '').slice(0, 10);
+    if (!tk || dia < hojeISO) return;
+    const atual = aReceberDe[tk];
+    if (!atual || dia < atual.dia) aReceberDe[tk] = { dia, valor: Number(p.amount) || 0 };
+    else if (dia === atual.dia) atual.valor += Number(p.amount) || 0;
+  });
+
   const congeladoDe = {};
   (congelados || []).forEach((a) => { congeladoDe[a.ticker] = !!a.congelado; });
 
@@ -162,7 +186,8 @@ export default async function Recomendacoes() {
       }
     }
 
-    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto: d, acao, tom, motivo, forca, nova, atencao, p, precoUnit, qtd, inteiro, umaCotaPassa, semCotacaoAuto, precoManual, precoVelho, origemPreco: resolvido.origem });
+    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto: d, acao, tom, motivo, forca, nova, atencao, p, precoUnit, qtd, inteiro, umaCotaPassa, semCotacaoAuto, precoManual, precoVelho, origemPreco: resolvido.origem,
+      padraoPagamento: padraoDe[u.ticker] || null, aReceber: aReceberDe[u.ticker] || null });
   }
 
   // novas primeiro, depois clean vs atenção; dentro de cada grupo, MAIOR valor no topo
