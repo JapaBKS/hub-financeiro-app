@@ -47,6 +47,13 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
         <div style={{ fontSize: 12, marginTop: 2, color: i.atencao ? 'var(--amber)' : 'var(--ink-soft)' }}>
           {i.atencao ? '⚠ ' : ''}{i.motivo}
         </div>
+        {i.held && (i.aReceber || (i.padraoPagamento && i.padraoPagamento.tipo !== 'irregular')) && (
+          <div style={{ fontSize: 10.5, marginTop: 3, color: 'var(--brass)' }}>
+            {i.aReceber
+              ? `paga ${i.aReceber.dia.split('-').reverse().slice(0, 2).join('/')} · ${brl(i.aReceber.valor)}`
+              : `paga ${i.padraoPagamento.descricao}`}
+          </div>
+        )}
         {i.held && i.p && (
           <div style={{ fontSize: 11.5, marginTop: 3, color: 'var(--ink-faint)', fontFamily: 'var(--font-display)' }}>
             PM {brl(Number(i.p.preco_medio))}
