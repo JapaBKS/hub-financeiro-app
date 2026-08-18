@@ -78,7 +78,7 @@ export default async function Municao() {
           <span style={{ color: 'var(--ink-faint)' }}> · {fmt(alvo.falta)} abaixo do alvo</span>
           {gaps[1] && (
             <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 3 }}>
-              depois: {gaps[1].ticker || gaps[1].nome} ({fmt(gaps[1].falta)})
+              depois: {gaps[1].ticker || gaps[1].nome} · faltam {fmt(gaps[1].falta)}
             </div>
           )}
         </div>
