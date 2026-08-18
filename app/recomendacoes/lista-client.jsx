@@ -50,9 +50,15 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
         {i.held && i.p && (
           <div style={{ fontSize: 11.5, marginTop: 3, color: 'var(--ink-faint)', fontFamily: 'var(--font-display)' }}>
             PM {brl(Number(i.p.preco_medio))}
-            {i.p.preco_atual != null && (
+            {i.precoUnit > 0 && (
               <>
-                {' · agora '}{brl(Number(i.p.preco_atual))}
+                {' · agora '}{brl(i.precoUnit)}
+                {i.origemPreco === 'manual' && (
+                  <span title="preço informado por você" style={{ color: 'var(--forest-2)' }}> (manual)</span>
+                )}
+                {i.origemPreco === 'auto-velho' && (
+                  <span title="cotação desatualizada" style={{ color: 'var(--amber)' }}> (antiga)</span>
+                )}
                 {i.desconto != null && (
                   <b style={{ color: i.desconto <= 0 ? 'var(--up)' : 'var(--down)', marginLeft: 4 }}>
                     ({i.desconto > 0 ? '+' : ''}{pct(i.desconto)})
