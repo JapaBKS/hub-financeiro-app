@@ -1,5 +1,6 @@
 import { supabaseServer } from '../../lib/supabase';
 import { calcularHistorico, fatorDesde } from '../../lib/dominio/posicoes';
+import { detectarPadraoPagamento } from '../../lib/dominio/proventos';
 import BibliotecaLista from './lista-client';
 
 export const dynamic = 'force-dynamic';
@@ -93,6 +94,8 @@ export default async function Biblioteca() {
       while (i < deltas.length && deltas[i].dia <= pg.dia) { posicao += deltas[i].delta; i++; }
       if (posicao > 0.0000001) { somaPorCota += pg.valor / posicao; nComPosicao++; }
     }
+    const padrao = detectarPadraoPagamento(pagos.map((p) => p.dia));
+
     const porCotaMedio = nComPosicao > 0 ? somaPorCota / nComPosicao : 0;
     const mesesPagos = pagos.length ? mesesEntre(pagos[0].dia, hoje) : 0;
     const porCotaMes = mesesPagos > 0 ? somaPorCota / mesesPagos : 0;
@@ -119,7 +122,7 @@ export default async function Biblioteca() {
       dividendos: prov.total,
       nDividendos: prov.n,
       qtdAtual, aberto, pm, precoRef, origemPreco, precoEm, valorAtual, retorno, retornoPct,
-      porCotaMedio, porCotaMes, rendaMensal, yieldMes, mesesPagos, nComPosicao,
+      porCotaMedio, porCotaMes, rendaMensal, yieldMes, mesesPagos, nComPosicao, padrao,
       primeiroPagamento: pagos[0]?.dia || null,
       ultimoPagamento: pagos[pagos.length - 1]?.dia || null,
     };
