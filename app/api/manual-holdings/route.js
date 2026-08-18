@@ -19,6 +19,7 @@ export const PATCH = rota(async (b) => {
   const patch = { updated_at: new Date().toISOString() };
   if (b.label) patch.label = texto(b.label, 'o nome');
   if (b.amount != null && b.amount !== '') patch.amount = numero(b.amount, 'O valor');
+  if (b.class_id != null && b.class_id !== '') patch.class_id = id(b.class_id, 'a classe');
   if (Object.keys(patch).length === 1) throw new ErroDeUso('Nada para alterar.');
 
   const sb = supabaseServer();
