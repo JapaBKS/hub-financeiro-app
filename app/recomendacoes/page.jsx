@@ -49,13 +49,28 @@ export default async function Recomendacoes() {
   );
 
   // os 100% se distribuem só sobre o que é investimento rebalanceável
-  const total = (alloc || [])
+  const totalDaView = (alloc || [])
     .filter((c) => !classesValorFixo.has(c.classe))
-    .reduce((s, c) => s + Number(c.valor), 0) || 1;
+    .reduce((s, c) => s + Number(c.valor), 0);
+
   const posMap = {};
   (pos || []).forEach((p) => {
     if (p.preco_atual != null && !classesValorFixo.has(p.classe)) posMap[p.ticker] = p;
   });
+
+  // A view calcula o valor com a cotação da tabela `prices`. Quando vale o preço
+  // manual, esse valor fica defasado — e aí o peso usaria um preço enquanto a
+  // quantidade a negociar usaria outro (era o que mandava vender mais cotas do
+  // que se tem). Reavaliamos aqui com o mesmo preço que será usado na sugestão.
+  const valorDe = {};
+  let ajuste = 0;
+  for (const p of Object.values(posMap)) {
+    const preco = precoDe(p.ticker, Number(p.preco_medio) || 0).preco;
+    const reavaliado = (Number(p.quantidade) || 0) * preco;
+    valorDe[p.ticker] = reavaliado;
+    ajuste += reavaliado - (Number(p.valor_carteira) || 0);
+  }
+  const total = (totalDaView + ajuste) || 1;
 
   const universo = new Map();
   (alvoAssets || []).forEach((a) => universo.set(a.ticker, {
@@ -77,7 +92,7 @@ export default async function Recomendacoes() {
   for (const u of universo.values()) {
     const p = posMap[u.ticker];
     const held = !!p;
-    const pesoReal = held ? Number(p.valor_carteira) / total : 0;
+    const pesoReal = held ? (valorDe[u.ticker] ?? Number(p.valor_carteira)) / total : 0;
     const gap = u.target - pesoReal; // >0 = abaixo do alvo
     const sugestaoRs = gap * total;
     const resolvido = precoDe(u.ticker, pmDe[u.ticker] || 0);
@@ -136,6 +151,11 @@ export default async function Recomendacoes() {
         umaCotaPassa = qtd < 1 && precoUnit > rs;
       } else {
         qtd = rs / precoUnit; // cripto: fracionário
+      }
+      // trava de segurança: não dá para vender mais cotas do que se tem
+      if (acao === 'reduzir' && held) {
+        const disponivel = Number(p.quantidade) || 0;
+        if (qtd > disponivel) qtd = inteiro ? Math.floor(disponivel) : disponivel;
       }
     }
 
