@@ -80,8 +80,16 @@ export default async function Recomendacoes() {
     const pesoReal = held ? Number(p.valor_carteira) / total : 0;
     const gap = u.target - pesoReal; // >0 = abaixo do alvo
     const sugestaoRs = gap * total;
-    const d = held && Number(p.preco_medio) > 0
-      ? (Number(p.preco_atual) - Number(p.preco_medio)) / Number(p.preco_medio)
+    const resolvido = precoDe(u.ticker, pmDe[u.ticker] || 0);
+    const precoUnit = resolvido.preco;
+    const semCotacaoAuto = resolvido.origem === 'pm' || resolvido.origem === 'nenhum';
+    const precoManual = resolvido.origem === 'manual' ? resolvido.preco : null;
+    const precoVelho = resolvido.origem === 'auto-velho';
+
+    // o desconto compara o preço QUE VAI SER USADO com o preço médio —
+    // usar a cotação velha aqui contradiz o cálculo das cotas logo abaixo
+    const d = held && Number(p.preco_medio) > 0 && precoUnit > 0
+      ? (precoUnit - Number(p.preco_medio)) / Number(p.preco_medio)
       : null;
     const dPct = d != null ? Math.round(Math.abs(d) * 100) : null;
 
@@ -119,11 +127,6 @@ export default async function Recomendacoes() {
     }
 
     // preço unitário: cotação atual, senão do mapa de preços, senão PM (de qualquer posição)
-    const resolvido = precoDe(u.ticker, pmDe[u.ticker] || 0);
-    const precoUnit = resolvido.preco;
-    const semCotacaoAuto = resolvido.origem === 'pm' || resolvido.origem === 'nenhum';
-    const precoManual = resolvido.origem === 'manual' ? resolvido.preco : null;
-    const precoVelho = resolvido.origem === 'auto-velho';
     const inteiro = !classesFracionadas.has(u.classe); // só cripto é fracionário
     const rs = Math.abs(sugestaoRs);
     let qtd = null, umaCotaPassa = false;
@@ -136,7 +139,7 @@ export default async function Recomendacoes() {
       }
     }
 
-    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto: d, acao, tom, motivo, forca, nova, atencao, p, precoUnit, qtd, inteiro, umaCotaPassa, semCotacaoAuto, precoManual, precoVelho });
+    itens.push({ ...u, held, pesoReal, gap, sugestaoRs, desconto: d, acao, tom, motivo, forca, nova, atencao, p, precoUnit, qtd, inteiro, umaCotaPassa, semCotacaoAuto, precoManual, precoVelho, origemPreco: resolvido.origem });
   }
 
   // novas primeiro, depois clean vs atenção; dentro de cada grupo, MAIOR valor no topo
