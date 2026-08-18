@@ -7,10 +7,24 @@ export default function SaldosClient({ holdings, classes }) {
   const [lista, setLista] = useState(holdings);
   const [vals, setVals] = useState(() => Object.fromEntries(holdings.map((h) => [h.id, String(h.amount)])));
   const [busy, setBusy] = useState(null);
+  const [editId, setEditId] = useState(null);
+  const [edit, setEdit] = useState({});
   const [novo, setNovo] = useState({ label: '', class_id: classes[0]?.id ? String(classes[0].id) : '', amount: '' });
   const [addMsg, setAddMsg] = useState('');
 
   const total = lista.reduce((s, h) => s + Number(vals[h.id] ?? h.amount ?? 0), 0);
+
+  async function salvarEdicao(h) {
+    setBusy(h.id);
+    const res = await fetch('/api/manual-holdings', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: h.id, label: edit.label, class_id: edit.class_id, amount: edit.amount }),
+    });
+    setBusy(null);
+    if (res.ok) { window.location.reload(); return; }
+    const d = await res.json().catch(() => ({}));
+    window.alert(d.erro || 'Não foi possível salvar.');
+  }
 
   async function salvar(id) {
     setBusy(id);
@@ -61,7 +75,29 @@ export default function SaldosClient({ holdings, classes }) {
         {lista.map((h) => {
           const mudou = String(vals[h.id]) !== String(h.amount);
           return (
-            <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px', borderBottom: '1px solid var(--line-soft)' }}>
+            <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px', borderBottom: '1px solid var(--line-soft)', flexWrap: 'wrap' }}>
+              {editId === h.id ? (
+                <>
+                  <input className="campo" style={{ flex: 1, minWidth: 130 }} value={edit.label}
+                    onChange={(e) => setEdit((f) => ({ ...f, label: e.target.value }))} />
+                  <select className="campo" style={{ width: 'auto', minWidth: 140 }} value={edit.class_id}
+                    onChange={(e) => setEdit((f) => ({ ...f, class_id: e.target.value }))}>
+                    {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <input className="campo" style={{ width: 120, textAlign: 'right', fontFamily: 'var(--font-display)' }}
+                    type="number" step="any" value={edit.amount}
+                    onChange={(e) => setEdit((f) => ({ ...f, amount: e.target.value }))} />
+                  <button onClick={() => salvarEdicao(h)} disabled={busy === h.id} style={{
+                    padding: '9px 13px', borderRadius: 9, border: 0, cursor: 'pointer',
+                    background: 'var(--forest)', color: '#fff', fontSize: 13, fontWeight: 600,
+                  }}>{busy === h.id ? '…' : 'Salvar'}</button>
+                  <button onClick={() => setEditId(null)} style={{
+                    padding: '9px 13px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                    border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)',
+                  }}>Cancelar</button>
+                </>
+              ) : (
+              <>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{h.label}</div>
                 <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{h.classe}</div>
@@ -76,9 +112,16 @@ export default function SaldosClient({ holdings, classes }) {
                 background: mudou ? 'var(--forest)' : 'var(--track)', color: mudou ? '#fff' : 'var(--ink-faint)',
                 fontSize: 13, fontWeight: 600,
               }}>{busy === h.id ? '…' : 'Salvar'}</button>
+              <button onClick={() => { setEditId(h.id); setEdit({ label: h.label, class_id: String(h.class_id), amount: String(h.amount) }); }}
+                title="Editar nome e classe" style={{
+                  fontSize: 11.5, fontWeight: 600, padding: '6px 11px', borderRadius: 8, cursor: 'pointer',
+                  border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)',
+                }}>editar</button>
               <button onClick={() => apagar(h.id)} disabled={busy === h.id} title="Remover" style={{
                 border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 18, padding: '0 2px',
               }}>×</button>
+              </>
+              )}
             </div>
           );
         })}
