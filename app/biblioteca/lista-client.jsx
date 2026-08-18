@@ -13,6 +13,7 @@ export default function BibliotecaLista({ ativos }) {
   const [filtro, setFiltro] = useState('todos');
   const [cat, setCat] = useState('todas');
   const [classe, setClasse] = useState('todas');
+  const [ordem, setOrdem] = useState('valor');
   const [aberto, setAberto] = useState(null);
 
   const lista = useMemo(() => {
@@ -26,6 +27,16 @@ export default function BibliotecaLista({ ativos }) {
       return a.ticker.includes(q) || (a.classe || '').toUpperCase().includes(q);
     });
   }, [ativos, busca, filtro, cat, classe]);
+
+  const listaOrdenada = useMemo(() => {
+    if (ordem !== 'pagamento') return lista;
+    // quem não tem padrão de pagamento vai para o fim
+    return [...lista].sort((a, b) => {
+      const da = a.padrao?.diaTipico || 99;
+      const db = b.padrao?.diaTipico || 99;
+      return da - db || a.ticker.localeCompare(b.ticker);
+    });
+  }, [lista, ordem]);
 
   const classesDisponiveis = useMemo(
     () => [...new Set(ativos.map((a) => a.classe).filter((c) => c && c !== '—'))].sort(),
@@ -84,6 +95,10 @@ export default function BibliotecaLista({ ativos }) {
             <option value="todas">Todas as classes</option>
             {classesDisponiveis.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
+          <select value={ordem} onChange={(e) => setOrdem(e.target.value)} className="campo campo-sm" style={{ width: 'auto', minWidth: 172 }}>
+            <option value="valor">Ordenar por valor</option>
+            <option value="pagamento">Ordenar por dia de pagamento</option>
+          </select>
           {temFiltro && (
             <button onClick={() => { setBusca(''); setFiltro('todos'); setCat('todas'); setClasse('todas'); }} style={{
               padding: '7px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
@@ -112,7 +127,7 @@ export default function BibliotecaLista({ ativos }) {
       </section>
 
       <section className="card">
-        {lista.map((a) => {
+        {listaOrdenada.map((a) => {
           const exp = aberto === a.ticker;
           return (
             <div key={a.ticker}>
@@ -129,6 +144,11 @@ export default function BibliotecaLista({ ativos }) {
                       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.04em', color: 'var(--ink-faint)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 5px' }}>ENCERRADO</span>
                     )}
                   </div>
+                  {a.padrao && a.padrao.tipo !== 'irregular' && (
+                    <div style={{ fontSize: 10.5, color: 'var(--brass)', marginTop: 2 }}>
+                      paga {a.padrao.descricao}
+                    </div>
+                  )}
                   <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 2, fontFamily: 'var(--font-display)' }}>
                     {a.aberto
                       ? `${num(a.qtdAtual, 6)} × ${brl(a.precoRef)} · ${brl(a.valorAtual)}`
@@ -150,6 +170,13 @@ export default function BibliotecaLista({ ativos }) {
                     <Dado rot="comprado" val={brl(a.totalComprado)} sub={`${num(a.qtdComprada, 6)} cotas`} />
                     <Dado rot="vendido" val={brl(a.totalVendido)} sub={a.qtdVendida > 0 ? `${num(a.qtdVendida, 6)} cotas` : '—'} />
                     <Dado rot="proventos" val={brl(a.dividendos)} sub={`${a.nDividendos} pagamento(s)`} cor="var(--brass)" />
+                    {a.padrao && a.padrao.amostras >= 3 && (
+                      <Dado rot="quando paga" val={a.padrao.descricao}
+                        sub={a.padrao.tipo === 'irregular'
+                          ? `${a.padrao.amostras} pagamentos, sem regra clara`
+                          : `${(a.padrao.confianca * 100).toFixed(0)}% dos ${a.padrao.amostras} pagamentos`}
+                        cor="var(--brass)" />
+                    )}
                     {a.nComPosicao >= 3 && (
                       <Dado rot="por cota · média mensal" val={brl4(a.porCotaMes)}
                         sub={`${brl4(a.porCotaMedio)} por pagamento`} cor="var(--brass)" />
