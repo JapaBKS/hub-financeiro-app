@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
+import { hojeISO } from '../../../lib/dominio/datas';
 
 // Importa a aba "a receber" da B3 -> dividends_pending.
 // A B3 é a fonte da verdade do que está POR VIR: substitui todos os pendentes
@@ -15,7 +16,7 @@ export async function POST(req) {
   const idDe = {};
   (assets || []).forEach((a) => { idDe[a.ticker] = a.id; });
 
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeISO();
   const linhas = itens
     .filter((it) => it.ticker && it.pay_date)
     .map((it) => ({
