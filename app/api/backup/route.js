@@ -1,5 +1,6 @@
 import { supabaseServer } from '../../../lib/supabase';
 import zlib from 'zlib';
+import { hojeISO } from '../../../lib/dominio/datas';
 
 const CRC = (() => {
   const t = new Uint32Array(256);
@@ -83,7 +84,7 @@ export async function GET() {
   files.push({ name: 'LEIA-ME.txt', data: Buffer.from(resumo, 'utf8') });
 
   const zip = zipFiles(files);
-  const nome = `hub-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+  const nome = `hub-backup-${hojeISO()}.zip`;
   return new Response(zip, {
     headers: {
       'Content-Type': 'application/zip',
