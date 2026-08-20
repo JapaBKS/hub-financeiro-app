@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
+import { hojeISO } from '../../lib/dominio/datas';
 
 
 const inputStyle = {
@@ -10,7 +11,7 @@ const inputStyle = {
 const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '14px 0 6px' };
 
 export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }) {
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeISO();
   const mesAtual = hoje.slice(0, 7); // YYYY-MM
 
   const [cardId, setCardId] = useState(defaultCardId != null ? String(defaultCardId) : (cards[0]?.id ? String(cards[0].id) : ''));
