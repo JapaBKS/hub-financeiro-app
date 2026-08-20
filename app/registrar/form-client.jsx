@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { hojeISO } from '../../lib/dominio/datas';
 
 const inputStyle = {
   width: '100%', padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
@@ -8,7 +9,7 @@ const inputStyle = {
 const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '14px 0 6px' };
 
 export default function FormNegociacao({ assets, classes }) {
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeISO();
   const [ticker, setTicker] = useState('');
   const [novoTicker, setNovoTicker] = useState('');
   const [classId, setClassId] = useState('');
