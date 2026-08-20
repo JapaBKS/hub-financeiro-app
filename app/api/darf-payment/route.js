@@ -1,5 +1,6 @@
 import { supabaseServer } from '../../../lib/supabase';
 import { rota, ok, checar, mes } from '../../../lib/api';
+import { hojeISO } from '../../../lib/dominio/datas';
 
 // POST   { mes:'AAAA-MM', valor } -> marca a guia como paga
 // DELETE { mes:'AAAA-MM' }        -> desfaz
@@ -9,7 +10,7 @@ export const POST = rota(async (b) => {
   checar(await sb.from('darf_payments').upsert(
     {
       mes_apuracao: ym,
-      paid_at: new Date().toISOString().slice(0, 10),
+      paid_at: hojeISO(),
       valor: Number(b.valor) || null,
     },
     { onConflict: 'mes_apuracao' },
