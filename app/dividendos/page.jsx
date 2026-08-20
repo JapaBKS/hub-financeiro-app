@@ -3,6 +3,7 @@ import RecebidosMes from './recebidos-client';
 import ImportarB3 from './importar-b3-client';
 import ImportarB3Receber from './importar-b3-receber-client';
 import EvolucaoProventos from './evolucao-client';
+import { hojeISO } from '../../lib/dominio/datas';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,7 +15,6 @@ export default async function Dividendos() {
     sb.from('dividends').select('id, ticker, paid_at, kind, amount, assets(asset_classes(name))').order('paid_at', { ascending: false }),
   ]);
 
-  const hojeISO = new Date().toISOString().slice(0, 10);
   const futuros = (pend || []).filter((p) => (p.pay_date || '').slice(0, 10) >= hojeISO);
 
   // recebidos por mês (todo o histórico), com split ações/fiis e detalhe por ativo
