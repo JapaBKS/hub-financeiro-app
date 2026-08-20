@@ -6,6 +6,7 @@ import NumeroAnimado from './numero-animado';
 import CoberturaEmergencia from './cobertura-emergencia';
 import Municao from './municao';
 import AlocacaoDonut from './alocacao-donut';
+import { hojeISO } from '../lib/dominio/datas';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -41,7 +42,6 @@ export default async function Home() {
 
   // dividendos: ano, total, por ano
   const anoAtual = new Date().getFullYear();
-  const hojeISO = new Date().toISOString().slice(0, 10);
 
   // provisionados já vencidos contam como recebidos; futuros, como a receber
   const pendentes = pend.data || [];
