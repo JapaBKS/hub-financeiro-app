@@ -45,8 +45,9 @@ export default async function Home() {
 
   // provisionados já vencidos contam como recebidos; futuros, como a receber
   const pendentes = pend.data || [];
-  const jaVencidos = pendentes.filter((p) => (p.pay_date || '').slice(0, 10) < hojeISO);
-  const aReceberLista = pendentes.filter((p) => (p.pay_date || '').slice(0, 10) >= hojeISO);
+  const dataHoje = hojeISO();
+  const jaVencidos = pendentes.filter((p) => (p.pay_date || '').slice(0, 10) < dataHoje);
+  const aReceberLista = pendentes.filter((p) => (p.pay_date || '').slice(0, 10) >= dataHoje);
 
   const recebidos = [
     ...(divs.data || []),
