@@ -2,13 +2,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { brl as fmt } from '../../lib/format';
 import { CORES, arcPath, fatiar } from '../ui/donut';
+import { hojeISO } from '../../lib/dominio/datas';
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const rotulo = (ym) => { const [a, m] = ym.split('-'); return `${MESES[Number(m) - 1]}/${a}`; };
-const hojeISO = () => new Date().toISOString().slice(0, 10);
 const mesDe = (iso) => (iso || '').slice(0, 7);
 const brDate = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
 
+const inp = { padding: '9px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 13.5, fontFamily: 'var(--font-body)', boxSizing: 'border-box', background: 'var(--surface)', width: '100%' };
 
 
 export default function CaixaView({ resumo, categorias, bills = [] }) {
@@ -294,11 +295,11 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
                 <button onClick={() => setF({ ...f, kind: 'saida' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, border: '1px solid var(--line)', background: f.kind === 'saida' ? 'var(--down-bg)' : 'var(--surface)', color: f.kind === 'saida' ? 'var(--down)' : 'var(--ink-soft)' }}>Saída</button>
               </div>
               <div className="grid2" style={{ marginBottom: 8 }}>
-                <input className="campo" type="date" value={f.entry_date} onChange={(e) => setF({ ...f, entry_date: e.target.value })} />
-                <input className="campo" type="number" step="0.01" placeholder="Valor" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} />
+                <input style={inp} type="date" value={f.entry_date} onChange={(e) => setF({ ...f, entry_date: e.target.value })} />
+                <input style={inp} type="number" step="0.01" placeholder="Valor" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} />
               </div>
-              <input className="campo" style={{ marginBottom: 8 }} placeholder="Detalhes" value={f.details} onChange={(e) => setF({ ...f, details: e.target.value })} />
-              <input className="campo" style={{ marginBottom: 8 }} placeholder="Categoria" list="cats-caixa" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} />
+              <input style={{ ...inp, marginBottom: 8 }} placeholder="Detalhes" value={f.details} onChange={(e) => setF({ ...f, details: e.target.value })} />
+              <input style={{ ...inp, marginBottom: 8 }} placeholder="Categoria" list="cats-caixa" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} />
               <datalist id="cats-caixa">{categorias.map((c) => <option key={c} value={c} />)}</datalist>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-soft)', marginBottom: 12, cursor: 'pointer' }}>
                 <input type="checkbox" checked={f.paid} onChange={(e) => setF({ ...f, paid: e.target.checked })} /> já {f.kind === 'entrada' ? 'recebido' : 'pago'}
