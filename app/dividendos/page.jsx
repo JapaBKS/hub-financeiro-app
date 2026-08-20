@@ -15,7 +15,8 @@ export default async function Dividendos() {
     sb.from('dividends').select('id, ticker, paid_at, kind, amount, assets(asset_classes(name))').order('paid_at', { ascending: false }),
   ]);
 
-  const futuros = (pend || []).filter((p) => (p.pay_date || '').slice(0, 10) >= hojeISO);
+  const hoje = hojeISO();
+  const futuros = (pend || []).filter((p) => (p.pay_date || '').slice(0, 10) >= hoje);
 
   // recebidos por mês (todo o histórico), com split ações/fiis e detalhe por ativo
   const mapMes = {};
@@ -42,7 +43,7 @@ export default async function Dividendos() {
   futuros.forEach((p) => { const k = (p.pay_date || '').slice(0, 7); if (k) pendPorMes[k] = (pendPorMes[k] || 0) + Number(p.amount); });
 
   // meses SEGUINTES (a receber): estritamente após o mês atual, marcados como futuro
-  const mesAtualKey = hojeISO.slice(0, 7);
+  const mesAtualKey = hoje.slice(0, 7);
   const futMap = {};
   futuros.forEach((p) => {
     const k = (p.pay_date || '').slice(0, 7);
