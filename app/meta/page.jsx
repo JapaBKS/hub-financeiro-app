@@ -2,6 +2,7 @@ import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
 import MetaForm from './meta-client';
 import MetaChart from './meta-chart';
+import { hojeISO } from '../../lib/dominio/datas';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -35,7 +36,7 @@ export default async function Meta() {
         <div className="card" style={{ padding: 20, marginBottom: 16, fontSize: 13, color: 'var(--ink-soft)' }}>
           Defina sua meta para ver a projeção. Patrimônio atual: <b>{brl(realNow)}</b>.
         </div>
-        <MetaForm goal={{ target_value: realNow * 2, monthly_contribution: 1000, assumed_annual_return: 0.1, started_at: new Date().toISOString().slice(0, 10), starting_value: realNow }} />
+        <MetaForm goal={{ target_value: realNow * 2, monthly_contribution: 1000, assumed_annual_return: 0.1, started_at: hojeISO(), starting_value: realNow }} />
       </div>
     );
   }
