@@ -2,7 +2,7 @@ import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
 import MetaForm from './meta-client';
 import MetaChart from './meta-chart';
-import { hojeISO } from '../../lib/dominio/datas';
+import { medirDesempenho, mesQueAlcanca } from '../../lib/dominio/projecao';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -20,7 +20,7 @@ export default async function Meta() {
   const sb = supabaseServer();
   const [{ data: goal }, { data: snaps }, { data: alloc }] = await Promise.all([
     sb.from('goal_config').select('*').eq('id', 1).maybeSingle(),
-    sb.from('portfolio_snapshots').select('snapshot_month, value, asset_classes(name)'),
+    sb.from('portfolio_snapshots').select('snapshot_month, value, aporte_acumulado, asset_classes(name)'),
     sb.from('v_class_allocation').select('classe, valor'),
   ]);
 
@@ -36,7 +36,7 @@ export default async function Meta() {
         <div className="card" style={{ padding: 20, marginBottom: 16, fontSize: 13, color: 'var(--ink-soft)' }}>
           Defina sua meta para ver a projeção. Patrimônio atual: <b>{brl(realNow)}</b>.
         </div>
-        <MetaForm goal={{ target_value: realNow * 2, monthly_contribution: 1000, assumed_annual_return: 0.1, started_at: hojeISO(), starting_value: realNow }} />
+        <MetaForm goal={{ target_value: realNow * 2, monthly_contribution: 1000, assumed_annual_return: 0.1, started_at: new Date().toISOString().slice(0, 10), starting_value: realNow }} />
       </div>
     );
   }
@@ -100,11 +100,30 @@ export default async function Meta() {
     return p ? p.idx : proj[proj.length - 1].idx;
   };
 
-  // marcos: no seu ritmo (partindo de hoje) vs pela projeção pura
+  // ---- desempenho REAL, medido dos snapshots ----
+  // Um snapshot por mês: soma o valor de todas as classes e pega o aporte
+  // acumulado (que o job grava). Daí saem o aporte médio e a rentabilidade
+  // que de fato aconteceram — sem premissa nenhuma.
+  const porMes = {};
+  (snaps || []).forEach((s2) => {
+    const k = ymIndex(s2.snapshot_month);
+    if (!porMes[k]) porMes[k] = { idx: k, patrimonio: 0, aporteAcumulado: null };
+    porMes[k].patrimonio += Number(s2.value) || 0;
+    if (s2.aporte_acumulado != null) {
+      porMes[k].aporteAcumulado = Math.max(porMes[k].aporteAcumulado ?? 0, Number(s2.aporte_acumulado));
+    }
+  });
+  const serieSnapshots = Object.values(porMes).sort((a, b) => a.idx - b.idx);
+  const real = medirDesempenho(serieSnapshots);
+
+  // marcos: ritmo real x fórmula partindo de hoje x plano original
   const MARCOS = [100000, 500000, 1000000];
   const marcos = MARCOS.map((alvo) => ({
     alvo,
     atingido: realNow >= alvo,
+    ritmoReal: real.confiavel
+      ? mesQueAlcanca(realNow, todayIdx, alvo, real.aporteMensal, real.taxaMensal)
+      : null,
     seuRitmo: alcancaIdx(realNow, todayIdx, alvo),
     pelaProj: projAlcancaIdx(alvo),
   }));
@@ -246,14 +265,18 @@ export default async function Meta() {
         <div style={{ padding: '4px 0 8px' }}>
           <div style={{ display: 'flex', padding: '6px 20px', fontSize: 11, color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>
             <span style={{ flex: 1 }}>Marco</span>
-            <span style={{ flex: 1, textAlign: 'right' }}>No seu ritmo</span>
-            <span style={{ flex: 1, textAlign: 'right' }}>Pela projeção</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>Ritmo real</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>Pela fórmula</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>Plano original</span>
           </div>
           {marcos.map((m) => (
             <div key={m.alvo} style={{ display: 'flex', alignItems: 'center', padding: '9px 20px', fontSize: 13, borderBottom: '1px solid var(--line-soft)' }}>
               <span style={{ flex: 1, fontWeight: 600 }}>{brl(m.alvo)}</span>
               <span style={{ flex: 1, textAlign: 'right', fontWeight: 600, color: m.atingido ? 'var(--up)' : 'var(--forest-2)', textTransform: 'capitalize' }}>
-                {m.atingido ? '✓ atingido' : mesLabel(m.seuRitmo)}
+                {m.atingido ? '✓ atingido' : (m.ritmoReal != null ? mesLabel(m.ritmoReal) : '—')}
+              </span>
+              <span style={{ flex: 1, textAlign: 'right', color: 'var(--ink-faint)', textTransform: 'capitalize' }}>
+                {m.atingido ? '—' : mesLabel(m.seuRitmo)}
               </span>
               <span style={{ flex: 1, textAlign: 'right', color: 'var(--brass)', textTransform: 'capitalize' }}>
                 {mesLabel(m.pelaProj)}
@@ -261,8 +284,21 @@ export default async function Meta() {
             </div>
           ))}
         </div>
-        <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>
-          "No seu ritmo" parte do seu valor de hoje seguindo a mesma fórmula. "Pela projeção" é o plano puro desde jul/2024.
+        <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)', lineHeight: 1.6 }}>
+          {real.confiavel ? (
+            <>
+              <b style={{ color: 'var(--forest-2)' }}>Ritmo real</b>: medido dos seus {real.meses} meses de histórico —
+              aporte de <b>{brl(real.aporteMensal)}/mês</b> e rentabilidade de{' '}
+              <b>{(real.taxaAnual * 100).toFixed(1).replace('.', ',')}% ao ano</b>.{' '}
+            </>
+          ) : (
+            <>
+              <b style={{ color: 'var(--amber)' }}>Ritmo real</b>: ainda não dá para medir ({real.motivo}) — precisa de
+              alguns meses de snapshots com aporte registrado.{' '}
+            </>
+          )}
+          <b>Pela fórmula</b> parte do seu valor de hoje com as premissas fixas do plano.{' '}
+          <b>Plano original</b> é a projeção pura desde jul/2024.
         </p>
       </section>
 
