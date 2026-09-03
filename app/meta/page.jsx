@@ -18,9 +18,10 @@ const valor = (v) => (v ? Number(v).toLocaleString('pt-BR', { minimumFractionDig
 
 export default async function Meta() {
   const sb = supabaseServer();
-  const [{ data: goal }, { data: snaps }, { data: alloc }] = await Promise.all([
+  const [{ data: goal }, { data: snaps }, { data: alloc }, { data: trades }] = await Promise.all([
     sb.from('goal_config').select('*').eq('id', 1).maybeSingle(),
     sb.from('portfolio_snapshots').select('snapshot_month, value, aporte_acumulado, asset_classes(name)'),
+    sb.from('trades').select('traded_at, side, quantity, price'),
     sb.from('v_class_allocation').select('classe, valor'),
   ]);
 
@@ -104,6 +105,16 @@ export default async function Meta() {
   // Um snapshot por mês: soma o valor de todas as classes e pega o aporte
   // acumulado (que o job grava). Daí saem o aporte médio e a rentabilidade
   // que de fato aconteceram — sem premissa nenhuma.
+  // Aporte de cada mês derivado das NEGOCIAÇÕES (compras − vendas), que é o
+  // mesmo critério do job. Assim medimos aporte e rentabilidade separados
+  // usando todo o histórico, não só os meses em que o job gravou o acumulado.
+  const aportePorMes = {};
+  (trades || []).forEach((t) => {
+    const k = ymIndex(t.traded_at);
+    const v = (Number(t.quantity) || 0) * (Number(t.price) || 0);
+    aportePorMes[k] = (aportePorMes[k] || 0) + (t.side === 'compra' ? v : -v);
+  });
+
   const porMes = {};
   (snaps || []).forEach((s2) => {
     const k = ymIndex(s2.snapshot_month);
@@ -113,6 +124,20 @@ export default async function Meta() {
       porMes[k].aporteAcumulado = Math.max(porMes[k].aporteAcumulado ?? 0, Number(s2.aporte_acumulado));
     }
   });
+
+  // completa o aporte acumulado dos meses antigos somando as negociações
+  {
+    const chaves = Object.keys(porMes).map(Number).sort((a, b) => a - b);
+    let acumulado = 0;
+    const menor = chaves.length ? chaves[0] : 0;
+    for (const k of Object.keys(aportePorMes).map(Number).sort((a, b) => a - b)) {
+      if (k < menor) acumulado += aportePorMes[k];   // o que veio antes do 1º snapshot
+    }
+    for (const k of chaves) {
+      acumulado += aportePorMes[k] || 0;
+      if (porMes[k].aporteAcumulado == null) porMes[k].aporteAcumulado = acumulado;
+    }
+  }
   const serieSnapshots = Object.values(porMes).sort((a, b) => a.idx - b.idx);
   const real = medirDesempenho(serieSnapshots);
 
@@ -288,8 +313,14 @@ export default async function Meta() {
           {real.confiavel ? (
             <>
               <b style={{ color: 'var(--forest-2)' }}>Ritmo real</b>: medido dos seus {real.meses} meses de histórico —
-              aporte de <b>{brl(real.aporteMensal)}/mês</b> e rentabilidade de{' '}
-              <b>{(real.taxaAnual * 100).toFixed(1).replace('.', ',')}% ao ano</b>.{' '}
+              {real.modo === 'aporte-e-taxa' ? (
+                <> aporte de <b>{brl(real.aporteMensal)}/mês</b> e rentabilidade de{' '}
+                  <b>{(real.taxaAnual * 100).toFixed(1).replace('.', ',')}% ao ano</b>.
+                  O aporte vem das negociações, então movimentações em saldos manuais aparecem como rentabilidade.{' '}</>
+              ) : (
+                <> patrimônio crescendo <b>{(real.crescimentoMensal * 100).toFixed(2).replace('.', ',')}% ao mês</b>{' '}
+                  (aporte e rentabilidade juntos — projeção otimista para prazos longos).{' '}</>
+              )}
             </>
           ) : (
             <>
