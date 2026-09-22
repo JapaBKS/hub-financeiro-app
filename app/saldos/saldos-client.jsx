@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 
-const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import { brl as fmt } from '../../lib/format';
 
 export default function SaldosClient({ holdings, classes }) {
   const [lista, setLista] = useState(holdings);
