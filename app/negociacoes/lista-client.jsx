@@ -31,23 +31,37 @@ export default function ListaNegociacoes({ trades }) {
   const totV = filtradas.filter((t) => t.side === 'venda').reduce((s, t) => s + Number(t.quantity) * Number(t.price), 0);
   const temFiltro = tipo !== 'todos' || busca || ano !== 'todos' || mes !== 'todos';
 
-  async function apagar(id) {
-    if (!confirm('Apagar este lançamento? Isso recalcula sua carteira.')) return;
-    setBusy(id);
-    const res = await fetch('/api/trades', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-    if (res.ok) setLista((l) => l.filter((t) => t.id !== id));
-    setBusy(null);
-  }
+
   function abrirEdicao(t) {
     setEditId(t.id);
     setForm({ traded_at: (t.traded_at || '').slice(0, 10), side: t.side, quantity: t.quantity, price: t.price });
   }
+async function apagar(id) {
+    if (!confirm('Apagar este lançamento? Isso recalcula sua carteira.')) return;
+    setBusy(id);
+    
+    // Chama a função do servidor diretamente!
+    const res = await apagarNegociacao(id);
+    
+    if (res.ok) {
+      setLista((l) => l.filter((t) => t.id !== id));
+    } else {
+      alert(res.erro || 'Falha ao apagar.');
+    }
+    setBusy(null);
+  }
+
   async function salvar(id) {
     setBusy(id);
-    const res = await fetch('/api/trades', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...form }) });
+    
+    // Chama a função do servidor diretamente!
+    const res = await atualizarNegociacao(id, form);
+    
     if (res.ok) {
       setLista((l) => l.map((t) => (t.id === id ? { ...t, ...form } : t)));
       setEditId(null);
+    } else {
+      alert(res.erro || 'Falha ao salvar.');
     }
     setBusy(null);
   }
