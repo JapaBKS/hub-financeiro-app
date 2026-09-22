@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
-
+import { apagarNegociacao, atualizarNegociacao } from './actions';
 import { brl as fmt } from '../../lib/format';
+
 const fmtData = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
 
 export default function ListaNegociacoes({ trades }) {
