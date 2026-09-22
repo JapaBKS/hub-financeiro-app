@@ -1,9 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
-
-
-const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import { brl as fmt } from '../../lib/format';
 
 export default function Recentes({ purchases, cards }) {
   const [lista, setLista] = useState(purchases);
