@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 
-const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import { brl as fmt } from '../../lib/format';
 const fmtData = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
 
 export default function Recentes({ trades }) {
