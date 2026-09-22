@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 
-const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import { brl as fmt } from '../../../lib/format';
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 const vazio = { name: '', category: '', amount: '', schedule_kind: 'dia_mes', day_of_month: '10', weekday: '5', is_variable: false, card_id: '' };
