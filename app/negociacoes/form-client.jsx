@@ -63,4 +63,4 @@ export default function FormNegociacao({ assets, classes, preset }) {
     }
   }
 
-  return (
+  return }
