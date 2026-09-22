@@ -35,18 +35,32 @@ export default function FormNegociacao({ assets, classes, preset }) {
   const tickerFinal = ehNovo ? novoTicker : ticker;
   const total = (Number(quantity) || 0) * (Number(price) || 0);
 
-  async function salvar(e) {
+async function salvar(e) {
     e.preventDefault();
     setEstado('enviando');
     setMsg('');
-    const res = await fetch('/api/trades', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ticker: tickerFinal, classId: ehNovo ? classId : null,
-        side, traded_at: tradedAt, quantity, price,
-      }),
+    
+    // Chamada direta à Server Action
+    const res = await criarNegociacao({
+      ticker: tickerFinal,
+      ehNovo,
+      classId,
+      side,
+      traded_at: tradedAt,
+      quantity,
+      price
     });
+
+    if (res.ok) {
+      setEstado('ok');
+      setMsg(`\({side === 'compra' ? 'Compra' : 'Venda'} de\){tickerFinal.toUpperCase()} registada!`);
+      setTicker(''); setNovoTicker(''); setClassId(''); setQuantity(''); setPrice('');
+      // Já não precisamos do setTimeout nem do window.location.reload()!
+    } else {
+      setEstado('erro');
+      setMsg(res.erro || 'Não foi possível salvar.');
+    }
+  }
     const data = await res.json().catch(() => ({}));
     if (res.ok && data.ok) {
       setEstado('ok');
