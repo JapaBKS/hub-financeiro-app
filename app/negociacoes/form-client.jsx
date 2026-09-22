@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { hojeISO } from '../../lib/dominio/datas';
+import { criarNegociacao } from './actions';
 
 const inputStyle = {
   width: '100%', padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)',
