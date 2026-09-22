@@ -1,7 +1,7 @@
 import { supabaseServer } from '../lib/supabase';
 import { hojeISO } from '../lib/dominio/datas';
 
-const fmt = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import { brl as fmt } from '../lib/format';
 const brDia = (iso) => (iso || '').slice(0, 10).split('-').reverse().slice(0, 2).join('/');
 
 // Alerta de saídas do Caixa não pagas: vencidas + hoje + próximos N dias.
