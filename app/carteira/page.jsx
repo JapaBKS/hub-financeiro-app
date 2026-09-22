@@ -10,12 +10,12 @@ const fmtNum = (n, d = 2) => Number(n).toLocaleString('pt-BR', { minimumFraction
 
 export default async function Carteira() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: manuais }, { data: precos }, { data: divs }, { data: todasTrades }] = await Promise.all([
+  const [{ data: pos }, { data: manuais }, { data: precos }, { data: divs }, { data: resumoTrades }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('manual_prices').select('ticker, price'),
     sb.from('prices').select('ticker, price, updated_at'),
     sb.from('dividends').select('ticker, amount'),
-    sb.from('trades').select('side, quantity, price'),
+    sb.from('v_resumo_trades').select('*').single(),
   ]);
   const provDe = {};
   (divs || []).forEach((d) => {
@@ -47,13 +47,10 @@ export default async function Carteira() {
   const rentTotal = totalInvestido > 0 ? totalLucro / totalInvestido : 0;
   const rentComProventos = totalInvestido > 0 ? totalComProventos / totalInvestido : 0;
 
-  // RESULTADO TOTAL desde o início: vendas + valor de hoje + proventos − compras.
-  // Inclui posições já encerradas, então responde "no fim das contas, estou no lucro?".
-  let compradoTudo = 0, vendidoTudo = 0;
-  (todasTrades || []).forEach((t) => {
-    const v = (Number(t.quantity) || 0) * (Number(t.price) || 0);
-    if (t.side === 'compra') compradoTudo += v; else vendidoTudo += v;
-  });
+  // RESULTADO TOTAL desde o in cio: vendas + valor de hoje + proventos   compras.
+  // Inclui posi es j  encerradas, ent o responde "no fim das contas, estou no lucro?".
+  const compradoTudo = resumoTrades?.comprado_tudo || 0;
+  const vendidoTudo = resumoTrades?.vendido_tudo || 0;
   const proventosTudo = (divs || []).reduce((s2, d) => s2 + (Number(d.amount) || 0), 0);
   const resultadoTotal = vendidoTudo + totalCarteira + proventosTudo - compradoTudo;
   const rentTotalGeral = compradoTudo > 0 ? resultadoTotal / compradoTudo : 0;
