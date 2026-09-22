@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 
-const fmt = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import { brl as fmt } from '../../lib/format';
 
 function parseValor(s) {
   if (!s) return 0;
