@@ -9,7 +9,6 @@ export async function apagarNegociacao(id) {
   
   if (error) return { ok: false, erro: error.message };
   
-  // Avisa o Next.js para atualizar os dados destas páginas em cache
   revalidatePath('/negociacoes');
   revalidatePath('/carteira');
   revalidatePath('/apuracao');
@@ -37,28 +36,28 @@ export async function atualizarNegociacao(id, form) {
 
 export async function criarNegociacao(dados) {
   const sb = supabaseServer();
-  let assetId = null;
+  const tk = (dados.ticker || '').trim().toUpperCase();
+  
+  if (!tk) return { ok: false, erro: 'Informe o ticker.' };
 
-  // Lógica para encontrar ou criar a ação/fundo caso seja um ticker novo
-  if (dados.ehNovo) {
-    const { data: existente } = await sb.from('assets').select('id').eq('ticker', dados.ticker).maybeSingle();
-    if (existente) {
-      assetId = existente.id;
-    } else {
-      const { data: novo, error: errNovo } = await sb.from('assets')
-        .insert({ ticker: dados.ticker, class_id: Number(dados.classId), is_active: true })
-        .select('id')
-        .single();
-      if (errNovo) return { ok: false, erro: 'Falha ao criar ativo.' };
-      assetId = novo.id;
+  // 1. Achar ou criar o ativo (equivalente à rota original robusta)
+  const { data: existente } = await sb.from('assets').select('id').eq('ticker', tk).maybeSingle();
+  let assetId = existente ? existente.id : null;
+
+  if (!assetId) {
+    if (!dados.classId) {
+      return { ok: false, erro: `${tk} ainda não está cadastrado: escolha a classe.` };
     }
-  } else {
-    const { data: existente } = await sb.from('assets').select('id').eq('ticker', dados.ticker).maybeSingle();
-    if (!existente) return { ok: false, erro: 'Ativo não encontrado.' };
-    assetId = existente.id;
+    const { data: novo, error: errNovo } = await sb.from('assets')
+      .insert({ ticker: tk, class_id: Number(dados.classId), is_active: true })
+      .select('id')
+      .single();
+      
+    if (errNovo) return { ok: false, erro: `Erro ao cadastrar ativo: ${errNovo.message}` };
+    assetId = novo.id;
   }
 
-  // Inserir a negociação
+  // 2. Inserir a negociação na tabela trades
   const { error } = await sb.from('trades').insert({
     asset_id: assetId,
     traded_at: dados.traded_at,
@@ -69,10 +68,11 @@ export async function criarNegociacao(dados) {
 
   if (error) return { ok: false, erro: error.message };
 
-  // Atualiza as caches
+  // 3. Atualizar as caches das páginas afetadas
   revalidatePath('/negociacoes');
   revalidatePath('/carteira');
   revalidatePath('/apuracao');
+  revalidatePath('/recomendacoes');
   
   return { ok: true };
 }
