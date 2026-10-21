@@ -2,6 +2,7 @@ import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
 import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import { detectarPadraoPagamento } from '../../lib/dominio/proventos';
+import { distribuirAporte } from '../../lib/dominio/aporte';
 import RecomendacoesLista from './lista-client';
 
 export const dynamic = 'force-dynamic';
@@ -12,10 +13,11 @@ const TOL = 0.03;
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }, { data: manuais }, { data: congelados }, { data: recebidos }, { data: pendentes }] = await Promise.all([
+  const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: allocPorClasse }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }, { data: manuais }, { data: congelados }, { data: recebidos }, { data: pendentes }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('assets').select('ticker, target_pct, asset_classes(name, target_pct)').gt('target_pct', 0),
     sb.from('v_class_allocation').select('valor'),
+    sb.from('v_class_allocation').select('classe, valor'),
     sb.from('asset_classes').select('name, target_pct, alvo_valor, fora_rateio'),
     sb.from('prices').select('ticker, price, updated_at'),
     sb.from('assets').select('ticker').order('ticker'),
@@ -190,6 +192,38 @@ export default async function Recomendacoes() {
       padraoPagamento: padraoDe[u.ticker] || null, aReceber: aReceberDe[u.ticker] || null });
   }
 
+  // ── Aporte: reparte o "Disponível para investir" pelo tamanho do buraco ──
+  // Mesma definição da "munição" do painel: classes marcadas como fora do rateio
+  // e sem alvo em R$ (ex.: "A investir"). Sem saldo, cada linha segue mostrando o
+  // buraco inteiro, como antes. O ⚠ de preço não tira ninguém da divisão: ele
+  // continua aparecendo como aviso, mas a fatia é pelo tamanho do buraco.
+  const valorClasse = {};
+  (allocPorClasse || []).forEach((a) => { valorClasse[a.classe] = Number(a.valor || 0); });
+  const municao = (classes || [])
+    .filter((c) => c.fora_rateio && !(c.alvo_valor != null && Number(c.alvo_valor) > 0))
+    .reduce((s, c) => s + (valorClasse[c.name] || 0), 0);
+
+  if (municao > 0) {
+    const compraveis = itens.filter((i) => i.acao === 'comprar' && i.sugestaoRs > 0);
+    const fatias = distribuirAporte(
+      compraveis.map((i) => ({ ticker: i.ticker, buraco: i.sugestaoRs, preco: i.precoUnit, inteiro: i.inteiro })),
+      municao,
+    );
+    for (const i of compraveis) {
+      i.buraco = i.sugestaoRs;
+      i.sugestaoRs = fatias[i.ticker] || 0;
+      if (i.precoUnit > 0) {
+        if (i.inteiro) {
+          i.qtd = Math.floor(i.sugestaoRs / i.precoUnit);
+          i.umaCotaPassa = i.qtd < 1 && i.precoUnit > i.sugestaoRs;
+        } else {
+          i.qtd = i.sugestaoRs / i.precoUnit;
+          i.umaCotaPassa = false;
+        }
+      }
+    }
+  }
+
   // novas primeiro, depois clean vs atenção; dentro de cada grupo, MAIOR valor no topo
   // se nem 1 cota cabe no ajuste, não conta como compra
   const comprar = itens.filter((i) => i.acao === 'comprar' && !i.umaCotaPassa)
@@ -214,6 +248,7 @@ export default async function Recomendacoes() {
         reduzir={reduzir}
         manterN={manter.length}
         novasN={novasN}
+        municao={municao}
         tol={TOL}
         assets={listaAssets || []}
         classes={listaClasses || []}

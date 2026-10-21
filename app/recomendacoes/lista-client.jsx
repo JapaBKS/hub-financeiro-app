@@ -4,7 +4,7 @@ import { brl, pct } from '../../lib/format';
 import FormNegociacao from '../negociacoes/form-client';
 import PrecoManual from '../preco-manual-client';
 
-export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, tol, assets, classes }) {
+export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, municao = 0, tol, assets, classes }) {
   const [preset, setPreset] = useState(null);
   const [abertoTicker, setAbertoTicker] = useState(null); // abre inline sob a linha
   const [aberto, setAberto] = useState(false);            // form avulso no rodapé
@@ -98,6 +98,11 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
             </div>
           )
         )}
+        {i.buraco != null && (
+          <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>
+            faltam {brl(i.buraco)} até o alvo
+          </div>
+        )}
         <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>
           {pct(i.pesoReal)} de {pct(i.target)}
         </div>
@@ -129,9 +134,15 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
           <h2>Comprar ({comprar.length})</h2>
           {novasN > 0 && <span style={{ fontSize: 12, color: 'var(--up)', fontWeight: 600 }}>{novasN} {novasN === 1 ? 'nova' : 'novas'}</span>}
         </div>
+        {municao > 0 && (
+          <div style={{ padding: '8px 20px 0', fontSize: 12, color: 'var(--ink-soft)' }}>
+            Distribuindo <b style={{ fontFamily: 'var(--font-display)', color: 'var(--forest-2)' }}>{brl(municao)}</b> disponíveis
+            {' '}na proporção do buraco de cada ativo.
+          </div>
+        )}
         <div style={{ marginTop: 6 }}>
           {comprar.map((i) => linhaComForm(i))}
-          {comprar.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nada abaixo do alvo agora.</div>}
+          {comprar.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>{municao > 0 ? 'O valor disponível não paga nem 1 cota de nenhum ativo abaixo do alvo.' : 'Nada abaixo do alvo agora.'}</div>}
         </div>
       </section>
 
