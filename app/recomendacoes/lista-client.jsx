@@ -101,7 +101,9 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
         )}
         {i.buraco != null && (
           <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>
-            faltam {brl(i.buraco)} até o alvo
+            {i.reserva
+              ? `tem ${brl(i.saldo)} de ${brl(i.alvoRs)} · faltam ${brl(i.buraco)}`
+              : `faltam ${brl(i.buraco)} até o alvo`}
           </div>
         )}
         {!i.reserva && (
