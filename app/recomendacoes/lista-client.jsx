@@ -141,7 +141,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
           <div style={{ padding: '8px 20px 0', fontSize: 12, color: 'var(--ink-soft)' }}>
             Distribuindo <b style={{ fontFamily: 'var(--font-display)', color: 'var(--forest-2)' }}>{brl(municao)}</b> disponíveis
             {reservaAporte > 0
-              ? <>: <b>{brl(reservaAporte)}</b> para a reserva (valor fixo) e <b>{brl(municao - reservaAporte)}</b> entre os ativos, na proporção do buraco de cada um.</>
+              ? <>: <b>{brl(reservaAporte)}</b> para a reserva e <b>{brl(municao - reservaAporte)}</b> entre os ativos, tudo na proporção do buraco de cada um.</>
               : ' na proporção do buraco de cada ativo.'}
           </div>
         )}

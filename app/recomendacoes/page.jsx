@@ -11,9 +11,8 @@ export const revalidate = 0;
 // tolerância: aceita até X% do lado "errado" do PM antes de virar aviso
 const TOL = 0.03;
 
-// reserva de emergência: valor fixo mensal sugerido a partir do saldo "A investir"
+// reserva de emergência: entra na divisão do saldo "A investir" pelo tamanho do buraco
 const NOME_RESERVA = 'Reserva de Emergência';
-const RESERVA_APORTE_FIXO = 200;
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
@@ -207,21 +206,22 @@ export default async function Recomendacoes() {
     .filter((c) => c.fora_rateio && !(c.alvo_valor != null && Number(c.alvo_valor) > 0))
     .reduce((s, c) => s + (valorClasse[c.name] || 0), 0);
 
-  // Reserva de emergência: recebe um valor FIXO por mês (tirado do topo do saldo),
-  // e não uma fatia proporcional. Para quando bate o alvo cadastrado em R$ — para
-  // seguir aportando depois dos R$ 10 mil, basta subir o alvo na tela de Alvos.
+  // Reserva de emergência: disputa o saldo como mais um destino, pelo tamanho do
+  // buraco em R$ até o alvo cadastrado (igual aos ativos). Com a reserva no alvo
+  // ou acima, o buraco é zero e ela não recebe nada — para voltar a aportar nela,
+  // basta subir o alvo na tela de Alvos.
   const reservaClasse = (classes || []).find((c) => c.name === NOME_RESERVA);
   const reservaAlvo = reservaClasse && reservaClasse.alvo_valor != null ? Number(reservaClasse.alvo_valor) : 0;
   const reservaFalta = Math.max(0, reservaAlvo - (valorClasse[NOME_RESERVA] || 0));
-  const reservaAporte = municao > 0 ? Math.min(RESERVA_APORTE_FIXO, reservaFalta, municao) : 0;
-  const paraAtivos = municao - reservaAporte;
+  let reservaAporte = 0;
 
   if (municao > 0) {
     const compraveis = itens.filter((i) => i.acao === 'comprar' && i.sugestaoRs > 0);
-    const fatias = distribuirAporte(
-      compraveis.map((i) => ({ ticker: i.ticker, buraco: i.sugestaoRs, preco: i.precoUnit, inteiro: i.inteiro })),
-      paraAtivos,
-    );
+    const entradas = compraveis.map((i) => ({ ticker: i.ticker, buraco: i.sugestaoRs, preco: i.precoUnit, inteiro: i.inteiro }));
+    // a reserva não tem cota: é valor livre (inteiro = false, sem preço)
+    if (reservaFalta > 0) entradas.push({ ticker: NOME_RESERVA, buraco: reservaFalta, preco: 0, inteiro: false });
+    const fatias = distribuirAporte(entradas, municao);
+    reservaAporte = fatias[NOME_RESERVA] || 0;
     for (const i of compraveis) {
       i.buraco = i.sugestaoRs;
       i.sugestaoRs = fatias[i.ticker] || 0;
@@ -247,7 +247,7 @@ export default async function Recomendacoes() {
   if (reservaAporte > 0) {
     comprar.push({
       ticker: NOME_RESERVA, classe: NOME_RESERVA, reserva: true,
-      acao: 'comprar', tom: 'buy', motivo: `valor fixo mensal · alvo ${brl(reservaAlvo)}`,
+      acao: 'comprar', tom: 'buy', motivo: `abaixo do alvo · reserva de ${brl(reservaAlvo)}`,
       nova: false, atencao: false, held: false,
       sugestaoRs: reservaAporte, buraco: reservaFalta,
       precoUnit: 0, qtd: null, inteiro: false, umaCotaPassa: false,
