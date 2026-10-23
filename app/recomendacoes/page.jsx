@@ -148,7 +148,9 @@ export default async function Recomendacoes() {
       acao = 'comprar'; tom = 'buy'; motivo = 'nova posição — você ainda não tem'; forca = 5; nova = true;
     } else if (held) {
       const abaixoAlvo = gap > 0.002;
-      const acimaAlvo = gap < -0.005;
+      // posição que saiu da carteira (alvo 0) sempre aparece em Reduzir, por menor
+      // que seja: sem isso, abaixo de 0,5% do patrimônio ela ficava "no alvo"
+      const acimaAlvo = gap < -0.005 || (u.target === 0 && pesoReal > 0);
 
       if (abaixoAlvo) {
         acao = 'comprar'; tom = 'buy';
@@ -188,6 +190,8 @@ export default async function Recomendacoes() {
       if (acao === 'reduzir' && held) {
         const disponivel = Number(p.quantidade) || 0;
         if (qtd > disponivel) qtd = inteiro ? Math.floor(disponivel) : disponivel;
+        // saída total (alvo 0): vende tudo, sem deixar 1 cota por arredondamento
+        if (u.target === 0) qtd = inteiro ? Math.floor(disponivel) : disponivel;
       }
     }
 
@@ -250,6 +254,7 @@ export default async function Recomendacoes() {
       acao: 'comprar', tom: 'buy', motivo: `abaixo do alvo · reserva de ${brl(reservaAlvo)}`,
       nova: false, atencao: false, held: false,
       sugestaoRs: reservaAporte, buraco: reservaFalta,
+      saldo: valorClasse[NOME_RESERVA] || 0, alvoRs: reservaAlvo,
       precoUnit: 0, qtd: null, inteiro: false, umaCotaPassa: false,
     });
   }
