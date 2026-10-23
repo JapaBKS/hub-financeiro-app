@@ -38,7 +38,22 @@ export default async function Home() {
     if (c.alvo_valor != null && Number(c.alvo_valor) > 0) alvoFixoDe[c.name] = Number(c.alvo_valor);
   });
   const total = classes.reduce((s, c) => s + Number(c.valor), 0);
-  const maxPct = Math.max(0.01, ...classes.map((c) => Math.max(Number(c.pct_real), Number(c.pct_alvo || 0))));
+
+  // Os alvos em % (43%, 20%, 15%...) somam 100% do que é INVESTIMENTO rebalanceável.
+  // Classes com alvo em R$ (reserva, fluxo) ficam fora dessa base; o "A investir"
+  // entra, porque é dinheiro que está prestes a virar investimento. Antes, as duas
+  // telas aplicavam os % sobre o patrimônio inteiro e inflavam todos os buracos.
+  const totalRebal = classes
+    .filter((c) => alvoFixoDe[c.classe] == null)
+    .reduce((s, c) => s + Number(c.valor), 0);
+  const realDe = (c) => (alvoFixoDe[c.classe] != null
+    ? Number(c.pct_real)
+    : (totalRebal > 0 ? Number(c.valor) / totalRebal : 0));
+  const ajusteDe = (c) => (alvoFixoDe[c.classe] != null
+    ? alvoFixoDe[c.classe] - Number(c.valor)
+    : Number(c.pct_alvo || 0) * totalRebal - Number(c.valor));
+
+  const maxPct = Math.max(0.01, ...classes.map((c) => Math.max(realDe(c), Number(c.pct_alvo || 0))));
 
   // dividendos: ano, total, por ano
   const anoAtual = new Date().getFullYear();
@@ -200,11 +215,11 @@ export default async function Home() {
             <div className="card-h"><h2>Carteira por classe · real vs. alvo</h2></div>
             <div>
               {classes.map((c, i) => {
-                const real = Number(c.pct_real);
+                const real = realDe(c);
                 const fixo = alvoFixoDe[c.classe];
                 const temFixo = fixo != null;
                 const alvoPct = temFixo ? (total > 0 ? fixo / total : 0) : Number(c.pct_alvo || 0);
-                const ajuste = temFixo ? fixo - Number(c.valor) : Number(c.ajuste_rs);
+                const ajuste = ajusteDe(c);
                 const tag = ajuste > 50 ? 'buy' : (!temFixo && ajuste < -50) ? 'sell' : 'hold';
                 const tagTxt = temFixo
                   ? (ajuste > 50 ? `guardar ${brlShort(ajuste)}` : ajuste < -50 ? `sobra ${brlShort(-ajuste)}` : 'no alvo')
@@ -231,11 +246,11 @@ export default async function Home() {
             <AlocacaoDonut
               total={total}
               dados={classes.map((c) => {
-                const real = Number(c.pct_real);
+                const real = realDe(c);
                 const fixo = alvoFixoDe[c.classe];
                 const temFixo = fixo != null;
                 const alvo = temFixo ? (total > 0 ? fixo / total : 0) : Number(c.pct_alvo || 0);
-                const ajuste = temFixo ? fixo - Number(c.valor) : Number(c.ajuste_rs);
+                const ajuste = ajusteDe(c);
                 const tag = ajuste > 50 ? 'buy' : (!temFixo && ajuste < -50) ? 'sell' : 'hold';
                 const tagTxt = temFixo
                   ? (ajuste > 50 ? `guardar ${brlShort(ajuste)}` : ajuste < -50 ? `sobra ${brlShort(-ajuste)}` : 'no alvo')
