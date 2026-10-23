@@ -4,12 +4,13 @@ import { brl, pct } from '../../lib/format';
 import FormNegociacao from '../negociacoes/form-client';
 import PrecoManual from '../preco-manual-client';
 
-export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, municao = 0, tol, assets, classes }) {
+export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, municao = 0, reservaAporte = 0, tol, assets, classes }) {
   const [preset, setPreset] = useState(null);
   const [abertoTicker, setAbertoTicker] = useState(null); // abre inline sob a linha
   const [aberto, setAberto] = useState(false);            // form avulso no rodapé
 
   function usarRecomendacao(i) {
+    if (i.reserva) return; // reserva não é negociação: o saldo se edita em Saldos manuais
     if (abertoTicker === i.ticker) { setAbertoTicker(null); return; } // clicar de novo fecha
     setPreset({
       ticker: i.ticker,
@@ -80,7 +81,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: i.tom === 'buy' ? 'var(--up)' : 'var(--down)' }}>
           {i.sugestaoRs >= 0 ? 'comprar ' : 'reduzir '}{brl(Math.abs(i.sugestaoRs))}
         </div>
-        {(i.acao === 'comprar' || i.acao === 'reduzir') && (
+        {!i.reserva && (i.acao === 'comprar' || i.acao === 'reduzir') && (
           i.precoUnit > 0 ? (
             <div style={{ fontSize: 11, marginTop: 2, color: i.umaCotaPassa ? 'var(--amber)' : 'var(--ink-faint)' }}>
               {i.umaCotaPassa
@@ -103,9 +104,11 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
             faltam {brl(i.buraco)} até o alvo
           </div>
         )}
-        <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>
-          {pct(i.pesoReal)} de {pct(i.target)}
-        </div>
+        {!i.reserva && (
+          <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2 }}>
+            {pct(i.pesoReal)} de {pct(i.target)}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -137,7 +140,9 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
         {municao > 0 && (
           <div style={{ padding: '8px 20px 0', fontSize: 12, color: 'var(--ink-soft)' }}>
             Distribuindo <b style={{ fontFamily: 'var(--font-display)', color: 'var(--forest-2)' }}>{brl(municao)}</b> disponíveis
-            {' '}na proporção do buraco de cada ativo.
+            {reservaAporte > 0
+              ? <>: <b>{brl(reservaAporte)}</b> para a reserva (valor fixo) e <b>{brl(municao - reservaAporte)}</b> entre os ativos, na proporção do buraco de cada um.</>
+              : ' na proporção do buraco de cada ativo.'}
           </div>
         )}
         <div style={{ marginTop: 6 }}>

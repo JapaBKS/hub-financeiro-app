@@ -11,6 +11,10 @@ export const revalidate = 0;
 // tolerância: aceita até X% do lado "errado" do PM antes de virar aviso
 const TOL = 0.03;
 
+// reserva de emergência: valor fixo mensal sugerido a partir do saldo "A investir"
+const NOME_RESERVA = 'Reserva de Emergência';
+const RESERVA_APORTE_FIXO = 200;
+
 export default async function Recomendacoes() {
   const sb = supabaseServer();
   const [{ data: pos }, { data: alvoAssets }, { data: alloc }, { data: allocPorClasse }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }, { data: manuais }, { data: congelados }, { data: recebidos }, { data: pendentes }] = await Promise.all([
@@ -203,11 +207,20 @@ export default async function Recomendacoes() {
     .filter((c) => c.fora_rateio && !(c.alvo_valor != null && Number(c.alvo_valor) > 0))
     .reduce((s, c) => s + (valorClasse[c.name] || 0), 0);
 
+  // Reserva de emergência: recebe um valor FIXO por mês (tirado do topo do saldo),
+  // e não uma fatia proporcional. Para quando bate o alvo cadastrado em R$ — para
+  // seguir aportando depois dos R$ 10 mil, basta subir o alvo na tela de Alvos.
+  const reservaClasse = (classes || []).find((c) => c.name === NOME_RESERVA);
+  const reservaAlvo = reservaClasse && reservaClasse.alvo_valor != null ? Number(reservaClasse.alvo_valor) : 0;
+  const reservaFalta = Math.max(0, reservaAlvo - (valorClasse[NOME_RESERVA] || 0));
+  const reservaAporte = municao > 0 ? Math.min(RESERVA_APORTE_FIXO, reservaFalta, municao) : 0;
+  const paraAtivos = municao - reservaAporte;
+
   if (municao > 0) {
     const compraveis = itens.filter((i) => i.acao === 'comprar' && i.sugestaoRs > 0);
     const fatias = distribuirAporte(
       compraveis.map((i) => ({ ticker: i.ticker, buraco: i.sugestaoRs, preco: i.precoUnit, inteiro: i.inteiro })),
-      municao,
+      paraAtivos,
     );
     for (const i of compraveis) {
       i.buraco = i.sugestaoRs;
@@ -230,6 +243,16 @@ export default async function Recomendacoes() {
     .sort((a, b) => (b.nova - a.nova) || (a.atencao - b.atencao) || (Math.abs(b.sugestaoRs) - Math.abs(a.sugestaoRs)));
   const reduzir = itens.filter((i) => i.acao === 'reduzir')
     .sort((a, b) => (a.atencao - b.atencao) || (Math.abs(b.sugestaoRs) - Math.abs(a.sugestaoRs)));
+  // a reserva não é um ativo negociável: entra como linha própria, sem cotas
+  if (reservaAporte > 0) {
+    comprar.push({
+      ticker: NOME_RESERVA, classe: NOME_RESERVA, reserva: true,
+      acao: 'comprar', tom: 'buy', motivo: `valor fixo mensal · alvo ${brl(reservaAlvo)}`,
+      nova: false, atencao: false, held: false,
+      sugestaoRs: reservaAporte, buraco: reservaFalta,
+      precoUnit: 0, qtd: null, inteiro: false, umaCotaPassa: false,
+    });
+  }
   const manter = itens.filter((i) => i.acao === 'manter');
   const novasN = comprar.filter((i) => i.nova).length;
 
@@ -249,6 +272,7 @@ export default async function Recomendacoes() {
         manterN={manter.length}
         novasN={novasN}
         municao={municao}
+        reservaAporte={reservaAporte}
         tol={TOL}
         assets={listaAssets || []}
         classes={listaClasses || []}
