@@ -50,6 +50,13 @@ body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webk
 .brand span{display:block;font-size:11px;color:var(--ink-faint);margin-top:-2px}
 .clock{text-align:right;font-size:12px;color:var(--ink-soft);white-space:nowrap}
 .clock b{color:var(--ink);font-weight:600;text-transform:capitalize}
+.btn-backup{font-size:12px;font-weight:600;color:var(--forest-2);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 11px;margin-right:12px;white-space:nowrap}
+/* celular: o topo quebra linha; o texto das cotações ocupa a linha de baixo, inteiro e à esquerda */
+@media(max-width:560px){
+  .topbar{flex-wrap:wrap;gap:8px 10px}
+  .btn-backup{margin-right:0}
+  .topbar .clock{order:3;flex:1 1 100%;text-align:left;white-space:normal;line-height:1.5}
+}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
 .card-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:17px 20px 0}
