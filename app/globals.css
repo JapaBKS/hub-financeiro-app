@@ -1,3 +1,8 @@
+/* Tailwind: só as utilitárias (o reset está desligado em tailwind.config.js) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root{
   color-scheme:light;
   --ink:#15251D;--ink-soft:#4C5C53;--ink-faint:#8B978F;
