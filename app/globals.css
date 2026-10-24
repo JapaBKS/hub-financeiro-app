@@ -70,15 +70,8 @@ body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webk
 .grid-wide{display:grid;grid-template-columns:2.4fr 1fr;gap:18px}
 @media(max-width:900px){.grid{grid-template-columns:1fr}}
 @media(max-width:900px){.grid-wide{grid-template-columns:1fr}}
-.nav-inline{display:flex;gap:4px;flex-wrap:wrap;align-items:center;width:100%}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:560px){.grid2{grid-template-columns:1fr}}
-.nav-mobile{display:none}
-@media(max-width:720px){
-  .nav-inline{display:none}
-  .nav-mobile{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px}
-  body{padding:12px}
-}
 .col{display:flex;flex-direction:column;gap:18px}
 
 .alloc-row{display:grid;grid-template-columns:130px 1fr 130px;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--line-soft)}
@@ -184,62 +177,24 @@ img, svg, table, pre { max-width: 100%; }
 /* faixas que precisam rolar, rolam sozinhas (sem arrastar a página) */
 .rola-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-/* barra de abas inferior (só no celular) */
-.tabbar { display: none; }
-
 @media (max-width: 720px) {
-  .nav-inline-wrap { display: none; }
-
-  body { padding: 10px 12px calc(68px + env(safe-area-inset-bottom, 0px)); }
-
-  .tabbar {
-    display: flex;
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-    background: var(--card);
-    border-top: 1px solid var(--line);
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -2px 14px -6px rgba(0,0,0,.25);
-  }
-  [data-theme="dark"] .tabbar { box-shadow: 0 -2px 14px -6px rgba(0,0,0,.6); }
-
-  .tabitem {
-    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
-    padding: 7px 2px; border: 0; background: transparent; cursor: pointer;
-    text-decoration: none; color: var(--ink-faint);
-    border-radius: 10px; transition: color .16s ease, background .16s ease;
-    min-width: 0;
-  }
-  .tabitem.ativo { color: var(--forest-2); background: var(--up-bg); }
-  .tabicone { font-size: 17px; line-height: 1; }
-  .tablabel {
-    font-size: 10px; font-weight: 600; letter-spacing: .01em;
-    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-
-  /* folha do "Mais" */
-  .nav-sheet-fundo {
-    position: fixed; inset: 0; z-index: 60;
-    background: rgba(20,24,22,.45);
-    display: flex; align-items: flex-end;
-  }
-  .nav-sheet {
-    width: 100%; background: var(--card);
-    border-radius: 16px 16px 0 0;
-    padding: 14px 14px calc(80px + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid var(--line);
-    animation: sheetUp .22s cubic-bezier(.22,.61,.36,1) both;
-  }
-  @keyframes sheetUp { from { transform: translateY(14px); opacity: .6 } to { transform: translateY(0); opacity: 1 } }
-  .nav-sheet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  body { padding: 10px 12px calc(20px + env(safe-area-inset-bottom, 0px)); }
 
   /* alvos de toque maiores */
   button, .navlink, select { min-height: 40px; }
   .card { border-radius: 13px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .nav-sheet { animation: none; }
+/* menu: rolagem horizontal sem barra visível (desktop) e animação do menu suspenso (celular) */
+.menu-rola {
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  /* esmaece a ponta direita: quando falta espaço, o item cortado não parece quebrado */
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
 }
+.menu-rola::-webkit-scrollbar { display: none; }
+.menu-suspenso { animation: menuDesce .2s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes menuDesce { from { transform: translateY(-10px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
 
 /* mesmo dado, apresentação diferente por tamanho de tela */
 .so-mobile { display: none; }
