@@ -61,30 +61,34 @@ export default function MetasClasse({ classes }) {
       </p>
 
       <div style={{ marginTop: 8 }}>
+        {/* cabeçalho das colunas (só no desktop; no celular cada campo já tem o seu rótulo) */}
+        <div className="meta-classe meta-classe-cab" aria-hidden="true">
+          <span>Classe</span>
+          <span>Meta %</span>
+          <span style={{ textAlign: 'center' }}>Fora</span>
+          <span>Valor fixo</span>
+        </div>
         {classes.map((c) => {
           const fixo = ehFixo(c.id);
           const off = foraDoRateio(c.id);
           return (
-            <div key={c.id} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-              padding: '9px 20px', borderBottom: '1px solid var(--line-soft)', flexWrap: 'wrap',
-            }}>
-              <span style={{ fontSize: 13.5, fontWeight: 500, flex: 1, minWidth: 90 }}>{c.name}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, opacity: off ? 0.4 : 1 }}>
-                <Campo tamanho="sm" numerico largura={78} type="number" step="any" min="0"
+            <div key={c.id} className="meta-classe">
+              <span className="c-nome" style={{ fontSize: 13.5, fontWeight: 500 }}>{c.name}</span>
+              <div className="c-campo c-pct" style={{ opacity: off ? 0.4 : 1 }}>
+                <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0"
                   value={vals[c.id]} disabled={off}
                   onChange={(e) => setVals((v) => ({ ...v, [c.id]: e.target.value }))} />
                 <span style={{ fontSize: 13, color: 'var(--ink-faint)' }}>%</span>
               </div>
-              <label title="fora do rateio: não disputa os 100% (ex.: dinheiro a investir)"
-                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, cursor: 'pointer', color: fora[c.id] ? 'var(--forest-2)' : 'var(--ink-faint)', whiteSpace: 'nowrap' }}>
+              <label className="c-fora" title="fora do rateio: não disputa os 100% (ex.: dinheiro a investir)"
+                style={{ color: fora[c.id] ? 'var(--forest-2)' : 'var(--ink-faint)' }}>
                 <input type="checkbox" checked={!!fora[c.id]} style={{ margin: 0 }}
                   onChange={() => setFora((f) => ({ ...f, [c.id]: !f[c.id] }))} />
                 fora
               </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div className="c-campo c-fixo">
                 <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>R$</span>
-                <Campo tamanho="sm" numerico largura={96}
+                <Campo tamanho="sm" numerico largura="100%"
                   style={fixo ? { borderColor: 'var(--forest-2)' } : undefined}
                   type="number" step="any" min="0" placeholder="fixo" value={fixos[c.id]}
                   onChange={(e) => setFixos((f) => ({ ...f, [c.id]: e.target.value }))} />

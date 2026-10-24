@@ -3,6 +3,9 @@ import { useState } from 'react';
 
 const brl = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+// Cada cofre é um bloco com a MESMA estrutura (nome + variação / valor / alvo), numa grade
+// de colunas iguais. Antes eram "etiquetas" soltas em linha, de larguras diferentes, que
+// quebravam de linha de forma irregular — principalmente no celular.
 export default function CofresClient({ cofres }) {
   const [editId, setEditId] = useState(null);
   const [valor, setValor] = useState('');
@@ -18,12 +21,10 @@ export default function CofresClient({ cofres }) {
   }
 
   return (
-    <section className="card" style={{ padding: '9px 14px', marginBottom: 14 }}>
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
-          Cofres
-        </span>
+    <section className="card" style={{ padding: '12px 14px 14px', marginBottom: 14 }}>
+      <div className="eyebrow" style={{ marginBottom: 8 }}>Cofres</div>
 
+      <div className="cofres-grade">
         {cofres.map((c) => {
           const sobra = c.valor - c.alvo;
           const pct = c.alvo > 0 ? (sobra / c.alvo) * 100 : 0;
@@ -31,39 +32,41 @@ export default function CofresClient({ cofres }) {
           const editando = editId === c.id;
 
           return (
-            <span key={c.nome} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <span style={{ color: 'var(--ink-faint)' }}>{c.nome}</span>
-              <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)' }}>{brl(c.valor)}</b>
+            <div key={c.nome} className="cofre">
+              <div className="cofre-topo">
+                <span className="cofre-nome">{c.nome}</span>
+                <span className="cofre-pct" style={{
+                  color: acima ? 'var(--up)' : 'var(--amber)',
+                  background: acima ? 'var(--up-bg)' : 'var(--amber-bg)',
+                }}>
+                  {acima ? '+' : ''}{pct.toFixed(2).replace('.', ',')}%
+                </span>
+              </div>
 
-              {editando ? (
-                <>
-                  <span style={{ color: 'var(--ink-faint)', fontSize: 11 }}>alvo</span>
-                  <input value={valor} onChange={(e) => setValor(e.target.value)} autoFocus
-                    style={{
-                      width: 72, padding: '3px 6px', borderRadius: 6, border: '1px solid var(--forest-2)',
-                      fontSize: 11.5, textAlign: 'right', background: 'var(--surface)', color: 'var(--ink)',
-                    }} />
-                  <button onClick={() => salvar(c.id)} disabled={busy} style={btn({ background: 'var(--forest)', color: '#fff', border: 0 })}>ok</button>
-                  <button onClick={() => setEditId(null)} style={btn()}>✕</button>
-                </>
-              ) : (
-                <>
-                  <span style={{
-                    fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '1px 7px',
-                    color: acima ? 'var(--up)' : 'var(--amber)',
-                    background: acima ? 'var(--up-bg)' : 'var(--amber-bg)',
-                  }}>
-                    {acima ? '+' : ''}{pct.toFixed(2).replace('.', ',')}%
-                  </span>
-                  <button
-                    onClick={() => { setEditId(c.id); setValor(String(c.alvo)); }}
-                    title={`alvo ${brl(c.alvo)} · clique para editar`}
-                    style={btn({ color: 'var(--ink-faint)' })}>
-                    {brl(c.alvo)} ✎
-                  </button>
-                </>
-              )}
-            </span>
+              <b className="cofre-valor">{brl(c.valor)}</b>
+
+              <div className="cofre-alvo">
+                {editando ? (
+                  <>
+                    <span style={{ color: 'var(--ink-faint)', fontSize: 11 }}>alvo</span>
+                    <input value={valor} onChange={(e) => setValor(e.target.value)} autoFocus
+                      className="cofre-input" inputMode="decimal" />
+                    <button onClick={() => salvar(c.id)} disabled={busy} style={btn({ background: 'var(--forest)', color: '#fff', border: 0 })}>ok</button>
+                    <button onClick={() => setEditId(null)} style={btn()}>✕</button>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ color: 'var(--ink-faint)', fontSize: 11 }}>alvo</span>
+                    <button
+                      onClick={() => { setEditId(c.id); setValor(String(c.alvo)); }}
+                      title={`alvo ${brl(c.alvo)} · clique para editar`}
+                      style={btn({ color: 'var(--ink-soft)' })}>
+                      {brl(c.alvo)} ✎
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
           );
         })}
       </div>
@@ -72,6 +75,6 @@ export default function CofresClient({ cofres }) {
 }
 
 const btn = (extra = {}) => ({
-  fontSize: 10.5, fontWeight: 600, padding: '2px 7px', borderRadius: 6, cursor: 'pointer',
+  fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
   border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)', ...extra,
 });

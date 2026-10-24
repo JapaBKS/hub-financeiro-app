@@ -270,3 +270,38 @@ img, svg, table, pre { max-width: 100%; }
   .btn { min-height: 40px; }
   .campo { min-height: 40px; font-size: 16px; } /* 16px evita o zoom automático no iOS */
 }
+
+/* ---------- Cofres (visão geral): blocos iguais numa grade ---------- */
+.cofres-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.cofre{border:1px solid var(--line-soft);background:var(--surface-2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.cofre-topo{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cofre-nome{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cofre-pct{font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 8px;white-space:nowrap;flex:none}
+.cofre-valor{font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.cofre-alvo{display:flex;align-items:center;gap:6px;min-height:28px}
+.cofre-input{width:92px;padding:3px 6px;border-radius:6px;border:1px solid var(--forest-2);font-size:12px;text-align:right;background:var(--surface);color:var(--ink)}
+
+/* ---------- Meta · histórico mensal ---------- */
+.hist-linha{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px 10px 17px;border-bottom:1px solid var(--line-soft)}
+.hist-mes{display:flex;align-items:center;gap:8px;flex:none}
+.hist-valores{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0;text-align:right}
+
+/* ---------- Alvos · metas por classe: colunas fixas, todas as linhas alinham ---------- */
+.meta-classe{display:grid;grid-template-columns:minmax(90px,1fr) 104px 56px 132px;align-items:center;gap:10px;padding:9px 20px;border-bottom:1px solid var(--line-soft)}
+.meta-classe-cab{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);padding-top:6px;padding-bottom:6px}
+.meta-classe .c-campo{display:flex;align-items:center;gap:4px;min-width:0}
+.meta-classe .c-campo .campo{min-width:0;flex:1}
+.meta-classe .c-fora{display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap}
+@media(max-width:560px){
+  .meta-classe{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"nome nome nome" "pct fora fixo";row-gap:8px}
+  .meta-classe-cab{display:none}
+  .meta-classe .c-nome{grid-area:nome}
+  .meta-classe .c-pct{grid-area:pct}
+  .meta-classe .c-fora{grid-area:fora}
+  .meta-classe .c-fixo{grid-area:fixo}
+}
+
+/* ---------- Negociações: par de botões iguais ---------- */
+.acoes-dupla{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.acao-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:13.5px;font-weight:600;line-height:1.2;text-align:center;cursor:pointer}
+.acao-btn.ativo{background:var(--forest);border-color:var(--forest);color:#fff}

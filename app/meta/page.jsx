@@ -1,3 +1,4 @@
+import HistoricoMensal from './historico-mensal';
 import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
 import MetaForm from './meta-client';
@@ -273,7 +274,7 @@ export default async function Meta() {
         <div className="card-h"><h2>Projetado vs real</h2></div>
         <div style={{ padding: '4px 0 8px' }}>
           <div style={{ display: 'flex', padding: '6px 20px', fontSize: 11, color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>
-            <span style={{ minWidth: 74 }}>Mês</span>
+            <span style={{ minWidth: 78 }}>Mês</span>
             <span style={{ flex: 1, textAlign: 'right' }}>Projetado</span>
             <span style={{ flex: 1, textAlign: 'right' }}>Real</span>
             <span style={{ flex: 1, textAlign: 'right' }}>Diferença</span>
@@ -287,7 +288,7 @@ export default async function Meta() {
                 borderBottom: '1px solid var(--line-soft)',
                 background: atual ? 'var(--up-bg)' : n % 2 ? 'var(--surface-2)' : 'transparent',
               }}>
-                <span style={{ minWidth: 74, fontWeight: 600, textTransform: 'capitalize' }}>{mesLabel(c.idx)}{atual ? ' •' : ''}</span>
+                <span style={{ minWidth: 78, fontWeight: 600, textTransform: 'capitalize', whiteSpace: 'nowrap' }}>{mesLabel(c.idx)}{atual ? ' •' : ''}</span>
                 <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: 'var(--brass)' }}>{c.proj != null ? valor(c.proj) : '—'}</span>
                 <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{c.real != null ? valor(c.real) : '—'}</span>
                 <span style={{ flex: 1, textAlign: 'right', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: diff == null ? 'var(--ink-faint)' : diff >= 0 ? 'var(--up)' : 'var(--down)' }}>
@@ -308,27 +309,7 @@ export default async function Meta() {
             O histórico começa a se preencher conforme os meses passam (uma foto por mês). Por enquanto só há o mês atual — volte no fim do mês que vem.
           </p>
         ) : (
-          <div style={{ padding: '4px 0 8px' }}>
-            {historico.map((h, n) => {
-              const sobe = h.deltaVal != null && h.deltaVal >= 0;
-              const atual = n === 0;
-              return (
-                <div key={h.idx} style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px',
-                  borderBottom: '1px solid var(--line-soft)',
-                  background: atual ? 'var(--up-bg)' : 'transparent',
-                  borderLeft: atual ? '3px solid var(--forest)' : '3px solid transparent',
-                }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'capitalize', minWidth: 74 }}>{mesLabel(h.idx)}</span>
-                  {atual && <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', background: 'var(--forest)', borderRadius: 4, padding: '1px 6px' }}>ATUAL</span>}
-                  <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', fontSize: 14 }}>{brl(h.value)}</b>
-                  <span style={{ minWidth: 120, textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: h.deltaVal == null ? 'var(--ink-faint)' : sobe ? 'var(--up)' : 'var(--down)' }}>
-                    {h.deltaVal == null ? '—' : `${sobe ? '▲' : '▼'} ${brl(Math.abs(h.deltaVal))} (${sobe ? '+' : '−'}${pct(Math.abs(h.deltaPct))})`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <HistoricoMensal historico={historico} mesLabel={mesLabel} />
         )}
       </section>
 
