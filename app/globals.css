@@ -322,3 +322,15 @@ img, svg, table, pre { max-width: 100%; }
   .saldo-edit{grid-template-columns:1fr 1fr;grid-template-areas:"nome nome" "classe valor" "salvar editar"}
   .saldo-edit .s-classe{grid-area:classe}
 }
+
+/* ---------- Cartões ---------- */
+.cart-abas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;max-width:560px}
+.fat-item{padding:11px 20px;border-bottom:1px solid var(--line-soft)}
+.fat-item-topo{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.fat-item-desc{font-size:13.5px;font-weight:500;min-width:0;overflow-wrap:anywhere}
+.fat-item-valor{display:flex;align-items:center;gap:8px;flex:none;font-size:13.5px}
+.fat-item-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:4px;font-size:10.5px;color:var(--ink-faint)}
+.fat-cat{padding:10px 20px 18px;display:flex;gap:18px;align-items:center}
+.fat-cat > svg{flex:none}
+.fat-cat-leg{flex:1;min-width:0}
+@media(max-width:560px){.fat-cat{flex-direction:column;align-items:stretch}.fat-cat > svg{align-self:center}}
