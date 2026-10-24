@@ -67,8 +67,13 @@ function parseNegociacoes(raw) {
 }
 
 
-export default function ImportarNegociacoesB3({ assets = [], classes = [] }) {
-  const [aberto, setAberto] = useState(false);
+// `onFechar` informado = o pai controla a abertura (par de botões em acoes-client.jsx);
+// sem ele, o componente mantém o próprio botão "importar da B3", como antes.
+export default function ImportarNegociacoesB3({ assets = [], classes = [], onFechar }) {
+  const controlado = typeof onFechar === 'function';
+  const [abertoInterno, setAbertoInterno] = useState(false);
+  const aberto = controlado ? true : abertoInterno;
+  const setAberto = controlado ? (v) => { if (!v) onFechar(); } : setAbertoInterno;
   const [texto, setTexto] = useState('');
   const [estado, setEstado] = useState(null);
   const [msg, setMsg] = useState('');
