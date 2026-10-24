@@ -43,6 +43,7 @@ export default function CofresClient({ cofres }) {
                 </span>
               </div>
 
+              <div className="cofre-linha">
               <b className="cofre-valor">{brl(c.valor)}</b>
 
               <div className="cofre-alvo">
@@ -65,6 +66,7 @@ export default function CofresClient({ cofres }) {
                     </button>
                   </>
                 )}
+              </div>
               </div>
             </div>
           );

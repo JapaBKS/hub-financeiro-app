@@ -305,3 +305,5 @@ img, svg, table, pre { max-width: 100%; }
 .acoes-dupla{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .acao-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:13.5px;font-weight:600;line-height:1.2;text-align:center;cursor:pointer}
 .acao-btn.ativo{background:var(--forest);border-color:var(--forest);color:#fff}
+
+.cofre-linha{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
