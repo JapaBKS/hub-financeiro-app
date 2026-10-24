@@ -75,49 +75,49 @@ export default function SaldosClient({ holdings, classes }) {
         {lista.map((h) => {
           const mudou = String(vals[h.id]) !== String(h.amount);
           return (
-            <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px', borderBottom: '1px solid var(--line-soft)', flexWrap: 'wrap' }}>
+            <div key={h.id} className={editId === h.id ? 'saldo-linha saldo-edit' : 'saldo-linha'}>
               {editId === h.id ? (
                 <>
-                  <input className="campo" style={{ flex: 1, minWidth: 130 }} value={edit.label}
+                  <input className="campo s-nome" value={edit.label}
                     onChange={(e) => setEdit((f) => ({ ...f, label: e.target.value }))} />
-                  <select className="campo" style={{ width: 'auto', minWidth: 140 }} value={edit.class_id}
+                  <select className="campo s-classe" value={edit.class_id}
                     onChange={(e) => setEdit((f) => ({ ...f, class_id: e.target.value }))}>
                     {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
-                  <input className="campo" style={{ width: 120, textAlign: 'right', fontFamily: 'var(--font-display)' }}
+                  <input className="campo s-valor" style={{ textAlign: 'right', fontFamily: 'var(--font-display)' }}
                     type="number" step="any" value={edit.amount}
                     onChange={(e) => setEdit((f) => ({ ...f, amount: e.target.value }))} />
-                  <button onClick={() => salvarEdicao(h)} disabled={busy === h.id} style={{
+                  <button className="s-salvar" onClick={() => salvarEdicao(h)} disabled={busy === h.id} style={{
                     padding: '9px 13px', borderRadius: 9, border: 0, cursor: 'pointer',
                     background: 'var(--forest)', color: '#fff', fontSize: 13, fontWeight: 600,
                   }}>{busy === h.id ? '…' : 'Salvar'}</button>
-                  <button onClick={() => setEditId(null)} style={{
+                  <button className="s-editar" onClick={() => setEditId(null)} style={{
                     padding: '9px 13px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 600,
                     border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)',
                   }}>Cancelar</button>
                 </>
               ) : (
               <>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{h.label}</div>
+              <div className="s-nome" style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, overflowWrap: 'anywhere' }}>{h.label}</div>
                 <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{h.classe}</div>
               </div>
               <input
-                className="campo" style={{ width: 130, textAlign: 'right', fontFamily: 'var(--font-display)' }}
+                className="campo s-valor" style={{ textAlign: 'right', fontFamily: 'var(--font-display)' }}
                 type="number" step="any" value={vals[h.id] ?? ''}
                 onChange={(e) => setVals((v) => ({ ...v, [h.id]: e.target.value }))}
               />
-              <button onClick={() => salvar(h.id)} disabled={!mudou || busy === h.id} style={{
+              <button className="s-salvar" onClick={() => salvar(h.id)} disabled={!mudou || busy === h.id} style={{
                 padding: '9px 13px', borderRadius: 9, border: 0, cursor: mudou ? 'pointer' : 'default',
                 background: mudou ? 'var(--forest)' : 'var(--track)', color: mudou ? '#fff' : 'var(--ink-faint)',
                 fontSize: 13, fontWeight: 600,
               }}>{busy === h.id ? '…' : 'Salvar'}</button>
               <button onClick={() => { setEditId(h.id); setEdit({ label: h.label, class_id: String(h.class_id), amount: String(h.amount) }); }}
-                title="Editar nome e classe" style={{
+                title="Editar nome e classe" className="s-editar" style={{
                   fontSize: 11.5, fontWeight: 600, padding: '6px 11px', borderRadius: 8, cursor: 'pointer',
                   border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)',
                 }}>editar</button>
-              <button onClick={() => apagar(h.id)} disabled={busy === h.id} title="Remover" style={{
+              <button className="s-apagar" onClick={() => apagar(h.id)} disabled={busy === h.id} title="Remover" style={{
                 border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 18, padding: '0 2px',
               }}>×</button>
               </>

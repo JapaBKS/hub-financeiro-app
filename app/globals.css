@@ -307,3 +307,18 @@ img, svg, table, pre { max-width: 100%; }
 .acao-btn.ativo{background:var(--forest);border-color:var(--forest);color:#fff}
 
 .cofre-linha{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+/* ---------- Saldos manuais: linha em grade (nada corta no celular) ---------- */
+.saldo-linha{display:grid;grid-template-columns:minmax(0,1fr) 130px auto auto auto;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line-soft)}
+.saldo-linha .campo{width:100%;min-width:0}
+.saldo-edit{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 120px auto auto}
+@media(max-width:560px){
+  .saldo-linha{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"nome nome apagar" "valor salvar editar"}
+  .saldo-linha .s-nome{grid-area:nome}
+  .saldo-linha .s-valor{grid-area:valor}
+  .saldo-linha .s-salvar{grid-area:salvar}
+  .saldo-linha .s-editar{grid-area:editar}
+  .saldo-linha .s-apagar{grid-area:apagar;justify-self:end}
+  .saldo-edit{grid-template-columns:1fr 1fr;grid-template-areas:"nome nome" "classe valor" "salvar editar"}
+  .saldo-edit .s-classe{grid-area:classe}
+}
