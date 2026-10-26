@@ -82,7 +82,7 @@ export default function Recentes({ purchases, cards }) {
         <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{filtrada.length} de {lista.length}</span>
       </div>
       <div style={{ padding: '8px 20px 0' }}>
-        <input className="campo" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por descrição, cartão ou categoria" />
+        <input className="campo" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar compra…" />
       </div>
       <div style={{ marginTop: 6 }}>
         {filtrada.map((p) => {

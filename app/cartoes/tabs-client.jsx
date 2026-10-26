@@ -10,7 +10,7 @@ export default function CartoesTabs({ cards, recentes, invoices, items, payments
 
   const tab = (val, label) => (
     <button onClick={() => setAba(val)} style={{
-      padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontSize: 13.5, fontWeight: 600,
+      padding: '10px 6px', borderRadius: 9, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', minWidth: 0,
       border: '1px solid ' + (aba === val ? 'var(--forest)' : 'var(--line)'),
       background: aba === val ? 'var(--forest)' : 'var(--surface)',
       color: aba === val ? '#fff' : 'var(--ink-soft)',
@@ -19,9 +19,9 @@ export default function CartoesTabs({ cards, recentes, invoices, items, payments
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      <div className="cart-abas">
         {tab('faturas', 'Faturas')}
-        {tab('lancar', '+ Lançar compra')}
+        {tab('lancar', '+ Lançar')}
         {tab('cartoes', 'Meus cartões')}
       </div>
 

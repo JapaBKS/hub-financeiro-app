@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { brl as fmt } from '../../lib/format';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
 import { CORES, arcPath, fatiar } from '../ui/donut';
-import FormCartao from '../cartoes/form-client';
 
 
 
@@ -147,7 +146,6 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
 
   const [cardId, setCardId] = useState(cards[0]?.id ?? null);
   const [mes, setMes] = useState(cards[0]?.id ? mesPadrao(cards[0].id) : mesHoje);
-  const [mostrarForm, setMostrarForm] = useState(false);
   const [verPagas, setVerPagas] = useState(false);
 
   function trocarCartao(id) {
@@ -190,20 +188,6 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <button onClick={() => setMostrarForm((v) => !v)} style={{
-          padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 600,
-          border: '1px solid var(--forest)', background: mostrarForm ? 'var(--surface)' : 'var(--forest)',
-          color: mostrarForm ? 'var(--forest-2)' : '#fff',
-        }}>{mostrarForm ? 'Fechar' : '+ lançar compra'}</button>
-      </div>
-
-      {mostrarForm && (
-        <div style={{ marginBottom: 16 }}>
-          <FormCartao cards={cards} defaultCardId={cardId} defaultMes={mes.slice(0, 7)} onSaved={() => setTimeout(() => window.location.reload(), 700)} />
-        </div>
-      )}
-
       {aPagar.length > 0 && (
         <div className="card" style={{ padding: '14px 18px', marginBottom: 14, borderLeft: '3px solid var(--amber)' }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--amber)', letterSpacing: '.02em' }}>A PAGAR (vencidas ou deste mês)</div>
@@ -289,7 +273,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
               </div>
             </div>
 
-            <div style={{ padding: '0 20px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ padding: '0 20px 14px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               {pagoDe(cardId, mes) ? (
                 <>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--up)', background: 'var(--up-bg)', borderRadius: 8, padding: '6px 12px' }}>
@@ -342,33 +326,27 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                   );
                 }
                 return (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '11px 20px',
-                    borderBottom: '1px solid var(--line-soft)', fontSize: 13.5,
-                  }}>
-                    <span style={{ fontWeight: 500 }}>{it.description}</span>
-                    {it.purchased_at && (
-                      <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>{(it.purchased_at || '').slice(0, 10).split('-').reverse().join('/')}</span>
-                    )}
-                    {it.categoria && (
-                      <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>{it.categoria}</span>
-                    )}
-                    {it.parcela && !it.parcela.startsWith('1/1') && (
-                      <span style={{
-                        fontSize: 10, fontWeight: 600, color: 'var(--forest-2)', background: 'var(--up-bg)',
-                        borderRadius: 5, padding: '1px 6px',
-                      }}>{it.parcela}</span>
-                    )}
-                    {it.pagador === 'pai' && (
-                      <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }}>PAI</span>
-                    )}
-                    {it.pagador === 'dividido' && (
-                      <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }} title={`pai paga ${fmt(it.amount_pai || 0)}`}>PAI {Math.round(Number(it.pai_pct))}%</span>
-                    )}
-                    <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <b style={{ fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{fmt(it.amount)}</b>
-                      <button onClick={() => abrirEdit(it)} title="editar este item" style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 13, padding: 0 }}>✎</button>
-                    </span>
+                  <div key={i} className="fat-item">
+                    <div className="fat-item-topo">
+                      <span className="fat-item-desc">{it.description}</span>
+                      <span className="fat-item-valor">
+                        <b style={{ fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{fmt(it.amount)}</b>
+                        <button onClick={() => abrirEdit(it)} title="editar este item" style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 14, padding: 0 }}>✎</button>
+                      </span>
+                    </div>
+                    <div className="fat-item-meta">
+                      {it.purchased_at && <span>{(it.purchased_at || '').slice(0, 10).split('-').reverse().join('/')}</span>}
+                      {it.categoria && <span>{it.categoria}</span>}
+                      {it.parcela && !it.parcela.startsWith('1/1') && (
+                        <span style={{ fontWeight: 600, color: 'var(--forest-2)', background: 'var(--up-bg)', borderRadius: 5, padding: '1px 6px' }}>{it.parcela}</span>
+                      )}
+                      {it.pagador === 'pai' && (
+                        <span style={{ fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }}>PAI</span>
+                      )}
+                      {it.pagador === 'dividido' && (
+                        <span style={{ fontWeight: 700, letterSpacing: '.04em', color: 'var(--brass)', background: 'var(--brass-bg, #F3ECD9)', borderRadius: 4, padding: '1px 6px' }} title={`pai paga ${fmt(it.amount_pai || 0)}`}>PAI {Math.round(Number(it.pai_pct))}%</span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -382,12 +360,12 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
             <section className="card" style={{ marginTop: 16 }}>
               <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <h2>Gastos por categoria</h2>
-                <span style={{ fontSize: 12, color: 'var(--ink-faint)', textTransform: 'capitalize' }}>{rotuloMes(mes)} · todos os cartões</span>
+                <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}><span style={{ textTransform: 'capitalize' }}>{rotuloMes(mes)}</span> · todos os cartões</span>
               </div>
               <div style={{ padding: '6px 20px 4px', fontSize: 12, color: 'var(--ink-faint)' }}>
                 sua parte no mês: <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)' }}>{fmt(gastoMesSeu)}</b>
               </div>
-              <div style={{ padding: '10px 20px 18px', display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div className="fat-cat">
                 <svg viewBox="0 0 150 150" width="150" height="150" style={{ flex: 'none' }}>
                   {fatias.length === 1 ? (
                     <circle cx="75" cy="75" r="56" fill="none" stroke={fatias[0].color} strokeWidth="28" />
@@ -397,7 +375,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                   <text x="75" y="71" textAnchor="middle" fontSize="9" fill="var(--ink-faint)">sua parte</text>
                   <text x="75" y="86" textAnchor="middle" fontSize="12.5" fontWeight="600" fill="var(--ink)" style={{ fontFamily: 'var(--font-display)' }}>{fmt(gastoMesSeu)}</text>
                 </svg>
-                <div style={{ flex: 1, minWidth: 180 }}>
+                <div className="fat-cat-leg">
                   {fatias.map((g) => (
                     <div key={g.cat} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
                       <span style={{ width: 11, height: 11, borderRadius: 3, background: g.color, flex: 'none' }} />
