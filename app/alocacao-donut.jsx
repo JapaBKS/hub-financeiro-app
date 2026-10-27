@@ -29,8 +29,7 @@ function fatias(dados, chave, R, r) {
 export default function AlocacaoDonut({ dados, total }) {
   const [sel, setSel] = useState(null);
 
-  const reais = fatias(dados, 'real', 92, 68);
-  const alvos = fatias(dados, 'alvo', 60, 40);
+  const reais = fatias(dados, 'real', 92, 58);
   const escolhido = sel != null ? dados.find((d) => d.classe === sel) : null;
 
   const anel = (f, opacidade, chave) => (
@@ -47,11 +46,10 @@ export default function AlocacaoDonut({ dados, total }) {
 
   return (
     <section className="card">
-      <div className="card-h"><h2>Carteira por classe · real vs. alvo</h2></div>
+      <div className="card-h"><h2>Carteira por classe</h2></div>
 
       <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', padding: '10px 16px 4px', justifyContent: 'center' }}>
         <svg viewBox="0 0 200 200" style={{ width: 190, height: 190, flex: 'none' }} onMouseLeave={() => setSel(null)}>
-          {alvos.map((f) => anel(f, 0.42, `a-${f.classe}`))}
           {reais.map((f) => anel(f, 1, `r-${f.classe}`))}
           <text x="100" y="95" textAnchor="middle" fontSize="9" fill="var(--ink-faint)">
             {escolhido ? escolhido.classe : 'patrimônio'}
@@ -66,15 +64,11 @@ export default function AlocacaoDonut({ dados, total }) {
           )}
         </svg>
 
-        <div style={{ display: 'flex', gap: 12, fontSize: 10.5, color: 'var(--ink-faint)', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--forest)' }} />anel externo: real
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--forest)', opacity: 0.42 }} />anel interno: alvo
-          </span>
-        </div>
       </div>
+
+      <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '2px 16px 6px', textAlign: 'center' }}>
+        gráfico = % real · na lista: <b>real</b> / alvo
+      </p>
 
       <div style={{ padding: '4px 0 6px' }}>
         {dados.map((d, i) => {
