@@ -28,6 +28,23 @@ export default async function Meta() {
 
   const realNow = (alloc || []).reduce((s, c) => s + Number(c.valor), 0);
 
+  // compras e vendas por mês, separadas em 1ª quinzena (até o dia 15) e 2ª (depois) — alimenta
+  // o cartão "Recebido e investido". O Supabase devolve no máx. 1000 linhas por consulta: pagina.
+  const negociacoes = [];
+  for (let de = 0; de < 20000; de += 1000) {
+    const { data: pag } = await sb.from('trades').select('traded_at, side, quantity, price')
+      .gte('traded_at', '2024-01-01').order('traded_at').range(de, de + 999);
+    negociacoes.push(...(pag || []));
+    if (!pag || pag.length < 1000) break;
+  }
+  const fluxoTrades = {};
+  negociacoes.forEach((t) => {
+    const ym = t.traded_at.slice(0, 7);
+    const q = Number(t.traded_at.slice(8, 10)) <= 15 ? 1 : 2;
+    const f = (fluxoTrades[ym] ||= { compra_1: 0, compra_2: 0, venda_1: 0, venda_2: 0 });
+    f[`${t.side === 'compra' ? 'compra' : 'venda'}_${q}`] += Number(t.quantity) * Number(t.price);
+  });
+
   if (!goal) {
     return (
       <div className="wrap" style={{ maxWidth: 640 }}>
@@ -272,7 +289,7 @@ export default async function Meta() {
       <MetaChart proj={proj} realPts={realPts} target={target} todayIdx={todayIdx} realNow={realNow} />
 
       {/* recebido e investido por mês (duas quinzenas) */}
-      <FluxoMensal linhas={fluxo || []} tabelaOk={!fluxoErro}
+      <FluxoMensal linhas={fluxo || []} tabelaOk={!fluxoErro} trades={fluxoTrades}
         mesAtual={`${hoje.getUTCFullYear()}-${String(hoje.getUTCMonth() + 1).padStart(2, '0')}`}
         aportePlanejado={aporteDoAno(todayIdx)} />
 
