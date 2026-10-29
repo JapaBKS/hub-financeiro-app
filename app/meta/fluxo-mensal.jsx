@@ -8,10 +8,12 @@ const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'o
 const rotulo = (ym) => `${MESES[Number(ym.slice(5, 7)) - 1]}/${ym.slice(0, 4)}`;
 const n = (v) => Number(v) || 0;
 const VAZIO = { compra_1: 0, compra_2: 0, venda_1: 0, venda_2: 0 };
+const liquido = (t, q) => t[`compra_${q}`] - t[`venda_${q}`];
+const sinal = (x) => (x < 0 ? '−' : '') + brl(Math.abs(x));
 
-// Recebido (você digita) x investido (calculado das compras registradas em Negociações), por
-// quinzena: dia 15 = compras até o dia 15; dia 30 = compras depois. As vendas aparecem à parte
-// para você descontar quando quiser; o "investido" aqui ainda é o valor BRUTO de compras.
+// Recebido (você digita) x investido (calculado das Negociações), por quinzena: dia 15 = até o
+// dia 15; dia 30 = depois. Investido = compras − vendas, ou seja, só o dinheiro NOVO que entrou
+// (o que foi vendido e recomprado é giro da carteira, não aporte).
 export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado, tabelaOk }) {
   const porMes = Object.fromEntries(linhas.map((l) => [l.mes.slice(0, 7), l]));
   const [ym, setYm] = useState(mesAtual);
@@ -42,8 +44,7 @@ export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado,
   }
 
   const totRec = n(v.recebido_1) + n(v.recebido_2);
-  const totCompra = t.compra_1 + t.compra_2;
-  const totVenda = t.venda_1 + t.venda_2;
+  const totInv = liquido(t, 1) + liquido(t, 2);
 
   // meses da lista: os que têm recebido gravado ou negociação, do mais novo para o mais antigo
   const meses = [...new Set([...Object.keys(porMes), ...Object.keys(trades), mesAtual])].sort().reverse().slice(0, 12);
@@ -82,18 +83,21 @@ export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado,
           <span className="fluxo-rot">Compras</span>
           <span className="fluxo-calc">{brl(t.compra_1)}</span>
           <span className="fluxo-calc">{brl(t.compra_2)}</span>
-          <span className="fluxo-rot" style={{ color: 'var(--ink-faint)', fontWeight: 500 }}>Vendas</span>
-          <span className="fluxo-calc" style={{ color: 'var(--ink-faint)' }}>{brl(t.venda_1)}</span>
-          <span className="fluxo-calc" style={{ color: 'var(--ink-faint)' }}>{brl(t.venda_2)}</span>
+          <span className="fluxo-rot">Vendas</span>
+          <span className="fluxo-calc">− {brl(t.venda_1)}</span>
+          <span className="fluxo-calc">− {brl(t.venda_2)}</span>
+          <span className="fluxo-rot fluxo-total">Investido</span>
+          <span className="fluxo-calc fluxo-total">{sinal(liquido(t, 1))}</span>
+          <span className="fluxo-calc fluxo-total">{sinal(liquido(t, 2))}</span>
         </div>
 
         <div className="fluxo-resumo">
           <span>Recebido <b>{brl(totRec)}</b></span>
-          <span>Investido (compras) <b>{brl(totCompra)}</b></span>
-          <span>{totRec > 0 ? `${((totCompra / totRec) * 100).toFixed(0)}% do recebido` : '—'}</span>
+          <span>Investido <b>{sinal(totInv)}</b></span>
+          <span>{totRec > 0 ? `${((totInv / totRec) * 100).toFixed(0)}% do recebido` : '—'}</span>
         </div>
         <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '8px 0 0' }}>
-          Compras vêm das Negociações (até o dia 15 / depois). Vendas do mês: {brl(totVenda)} — ainda não descontadas.
+          Investido = compras − vendas das Negociações (só o dinheiro novo). Dia 15 = até o dia 15; dia 30 = depois.
         </p>
 
         <Botao variante="primario" tamanho="lg" cheio style={{ marginTop: 12 }} onClick={salvar} carregando={estado === 'enviando'}>
@@ -103,19 +107,19 @@ export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado,
       </div>
 
       <div style={{ marginTop: 14 }}>
-        <div className="fluxo-lista fluxo-lista-cab"><span>Mês</span><span>Recebido</span><span>Compras</span><span>%</span></div>
+        <div className="fluxo-lista fluxo-lista-cab"><span>Mês</span><span>Recebido</span><span>Investido</span><span>%</span></div>
         {meses.map((m) => {
           const l = porMes[m] || {};
           const tr = trades[m] || VAZIO;
           const rec = n(l.recebido_1) + n(l.recebido_2);
-          const inv = tr.compra_1 + tr.compra_2;
+          const inv = liquido(tr, 1) + liquido(tr, 2);
           const ok = aportePlanejado > 0 && inv >= aportePlanejado;
           return (
             <button key={m} type="button" className="fluxo-lista fluxo-lista-linha" onClick={() => trocarMes(m)}
               style={{ background: m === ym ? 'var(--surface-2)' : 'transparent' }}>
               <span style={{ fontWeight: 600, textAlign: 'left' }}>{rotulo(m)}</span>
               <span>{rec ? brl(rec) : '—'}</span>
-              <span style={{ color: ok ? 'var(--up)' : 'inherit' }}>{brl(inv)}</span>
+              <span style={{ color: ok ? 'var(--up)' : 'inherit' }}>{sinal(inv)}</span>
               <span style={{ color: 'var(--ink-faint)' }}>{rec > 0 ? `${((inv / rec) * 100).toFixed(0)}%` : '—'}</span>
             </button>
           );
