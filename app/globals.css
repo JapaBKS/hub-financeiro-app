@@ -347,3 +347,4 @@ img, svg, table, pre { max-width: 100%; }
 .fluxo-lista-cab{border-top:0;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint)}
 .fluxo-lista-cab span:first-child{text-align:left}
 .fluxo-lista-linha{cursor:pointer;font-family:inherit}
+.fluxo-calc{font-size:13px;font-variant-numeric:tabular-nums;text-align:right;padding-right:4px;font-family:var(--font-display)}

@@ -7,33 +7,34 @@ import { brl } from '../../lib/format';
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const rotulo = (ym) => `${MESES[Number(ym.slice(5, 7)) - 1]}/${ym.slice(0, 4)}`;
 const n = (v) => Number(v) || 0;
+const VAZIO = { compra_1: 0, compra_2: 0, venda_1: 0, venda_2: 0 };
 
-// Recebido x investido por mês, em duas quinzenas (dia 15 e dia 30).
-export default function FluxoMensal({ linhas, mesAtual, aportePlanejado, tabelaOk }) {
+// Recebido (você digita) x investido (calculado das compras registradas em Negociações), por
+// quinzena: dia 15 = compras até o dia 15; dia 30 = compras depois. As vendas aparecem à parte
+// para você descontar quando quiser; o "investido" aqui ainda é o valor BRUTO de compras.
+export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado, tabelaOk }) {
   const porMes = Object.fromEntries(linhas.map((l) => [l.mes.slice(0, 7), l]));
   const [ym, setYm] = useState(mesAtual);
-  const ini = porMes[ym] || {};
-  const [v, setV] = useState({
-    recebido_1: ini.recebido_1 ? String(ini.recebido_1) : '', recebido_2: ini.recebido_2 ? String(ini.recebido_2) : '',
-    investido_1: ini.investido_1 ? String(ini.investido_1) : '', investido_2: ini.investido_2 ? String(ini.investido_2) : '',
-  });
+  const preencher = (m) => {
+    const l = porMes[m] || {};
+    return { recebido_1: l.recebido_1 ? String(l.recebido_1) : '', recebido_2: l.recebido_2 ? String(l.recebido_2) : '' };
+  };
+  const [v, setV] = useState(() => preencher(mesAtual));
   const [estado, setEstado] = useState(null);
   const [msg, setMsg] = useState('');
 
-  function trocarMes(novo) {
-    setYm(novo); setMsg(''); setEstado(null);
-    const l = porMes[novo] || {};
-    setV({
-      recebido_1: l.recebido_1 ? String(l.recebido_1) : '', recebido_2: l.recebido_2 ? String(l.recebido_2) : '',
-      investido_1: l.investido_1 ? String(l.investido_1) : '', investido_2: l.investido_2 ? String(l.investido_2) : '',
-    });
-  }
+  const t = trades[ym] || VAZIO;
+
+  function trocarMes(novo) { setYm(novo); setMsg(''); setEstado(null); setV(preencher(novo)); }
   const set = (k) => (e) => setV((x) => ({ ...x, [k]: e.target.value }));
 
   async function salvar() {
     setEstado('enviando'); setMsg('');
+    const atual = porMes[ym] || {};
     const res = await fetch('/api/fluxo', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mes: ym, ...v }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      // mantém o que já estava gravado nas colunas "investido" (não são mais usadas aqui)
+      body: JSON.stringify({ mes: ym, ...v, investido_1: atual.investido_1 || 0, investido_2: atual.investido_2 || 0 }),
     });
     const d = await res.json().catch(() => ({}));
     if (res.ok && d.ok) { window.location.reload(); return; }
@@ -41,7 +42,11 @@ export default function FluxoMensal({ linhas, mesAtual, aportePlanejado, tabelaO
   }
 
   const totRec = n(v.recebido_1) + n(v.recebido_2);
-  const totInv = n(v.investido_1) + n(v.investido_2);
+  const totCompra = t.compra_1 + t.compra_2;
+  const totVenda = t.venda_1 + t.venda_2;
+
+  // meses da lista: os que têm recebido gravado ou negociação, do mais novo para o mais antigo
+  const meses = [...new Set([...Object.keys(porMes), ...Object.keys(trades), mesAtual])].sort().reverse().slice(0, 12);
 
   if (!tabelaOk) {
     return (
@@ -74,42 +79,48 @@ export default function FluxoMensal({ linhas, mesAtual, aportePlanejado, tabelaO
           <span className="fluxo-rot">Recebido</span>
           <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" placeholder="0,00" value={v.recebido_1} onChange={set('recebido_1')} />
           <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" placeholder="0,00" value={v.recebido_2} onChange={set('recebido_2')} />
-          <span className="fluxo-rot">Investido</span>
-          <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" placeholder="0,00" value={v.investido_1} onChange={set('investido_1')} />
-          <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" placeholder="0,00" value={v.investido_2} onChange={set('investido_2')} />
+          <span className="fluxo-rot">Compras</span>
+          <span className="fluxo-calc">{brl(t.compra_1)}</span>
+          <span className="fluxo-calc">{brl(t.compra_2)}</span>
+          <span className="fluxo-rot" style={{ color: 'var(--ink-faint)', fontWeight: 500 }}>Vendas</span>
+          <span className="fluxo-calc" style={{ color: 'var(--ink-faint)' }}>{brl(t.venda_1)}</span>
+          <span className="fluxo-calc" style={{ color: 'var(--ink-faint)' }}>{brl(t.venda_2)}</span>
         </div>
 
         <div className="fluxo-resumo">
           <span>Recebido <b>{brl(totRec)}</b></span>
-          <span>Investido <b>{brl(totInv)}</b></span>
-          <span>{totRec > 0 ? `${((totInv / totRec) * 100).toFixed(0)}% do recebido` : '—'}</span>
+          <span>Investido (compras) <b>{brl(totCompra)}</b></span>
+          <span>{totRec > 0 ? `${((totCompra / totRec) * 100).toFixed(0)}% do recebido` : '—'}</span>
         </div>
+        <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '8px 0 0' }}>
+          Compras vêm das Negociações (até o dia 15 / depois). Vendas do mês: {brl(totVenda)} — ainda não descontadas.
+        </p>
 
         <Botao variante="primario" tamanho="lg" cheio style={{ marginTop: 12 }} onClick={salvar} carregando={estado === 'enviando'}>
-          Salvar {rotulo(ym)}
+          Salvar recebido de {rotulo(ym)}
         </Botao>
         {msg && <p style={{ marginTop: 8, fontSize: 12.5, color: 'var(--down)' }}>{msg}</p>}
       </div>
 
-      {linhas.length > 0 && (
-        <div style={{ marginTop: 14 }}>
-          <div className="fluxo-lista fluxo-lista-cab"><span>Mês</span><span>Recebido</span><span>Investido</span><span>%</span></div>
-          {linhas.slice(0, 12).map((l) => {
-            const rec = n(l.recebido_1) + n(l.recebido_2);
-            const inv = n(l.investido_1) + n(l.investido_2);
-            const ok = aportePlanejado > 0 && inv >= aportePlanejado;
-            return (
-              <button key={l.mes} type="button" className="fluxo-lista fluxo-lista-linha" onClick={() => trocarMes(l.mes.slice(0, 7))}
-                style={{ background: l.mes.slice(0, 7) === ym ? 'var(--surface-2)' : 'transparent' }}>
-                <span style={{ fontWeight: 600, textAlign: 'left' }}>{rotulo(l.mes.slice(0, 7))}</span>
-                <span>{brl(rec)}</span>
-                <span style={{ color: ok ? 'var(--up)' : 'inherit' }}>{brl(inv)}</span>
-                <span style={{ color: 'var(--ink-faint)' }}>{rec > 0 ? `${((inv / rec) * 100).toFixed(0)}%` : '—'}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <div style={{ marginTop: 14 }}>
+        <div className="fluxo-lista fluxo-lista-cab"><span>Mês</span><span>Recebido</span><span>Compras</span><span>%</span></div>
+        {meses.map((m) => {
+          const l = porMes[m] || {};
+          const tr = trades[m] || VAZIO;
+          const rec = n(l.recebido_1) + n(l.recebido_2);
+          const inv = tr.compra_1 + tr.compra_2;
+          const ok = aportePlanejado > 0 && inv >= aportePlanejado;
+          return (
+            <button key={m} type="button" className="fluxo-lista fluxo-lista-linha" onClick={() => trocarMes(m)}
+              style={{ background: m === ym ? 'var(--surface-2)' : 'transparent' }}>
+              <span style={{ fontWeight: 600, textAlign: 'left' }}>{rotulo(m)}</span>
+              <span>{rec ? brl(rec) : '—'}</span>
+              <span style={{ color: ok ? 'var(--up)' : 'inherit' }}>{brl(inv)}</span>
+              <span style={{ color: 'var(--ink-faint)' }}>{rec > 0 ? `${((inv / rec) * 100).toFixed(0)}%` : '—'}</span>
+            </button>
+          );
+        })}
+      </div>
     </section>
   );
 }
