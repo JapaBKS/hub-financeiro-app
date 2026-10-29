@@ -8,18 +8,22 @@ const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'o
 const rotulo = (ym) => `${MESES[Number(ym.slice(5, 7)) - 1]}/${ym.slice(0, 4)}`;
 const n = (v) => Number(v) || 0;
 const VAZIO = { compra_1: 0, compra_2: 0, venda_1: 0, venda_2: 0 };
-const liquido = (t, q) => t[`compra_${q}`] - t[`venda_${q}`];
+const liquido = (t, q, aj = 0) => t[`compra_${q}`] - t[`venda_${q}`] + n(aj);
 const sinal = (x) => (x < 0 ? '−' : '') + brl(Math.abs(x));
 
 // Recebido (você digita) x investido (calculado das Negociações), por quinzena: dia 15 = até o
-// dia 15; dia 30 = depois. Investido = compras − vendas, ou seja, só o dinheiro NOVO que entrou
-// (o que foi vendido e recomprado é giro da carteira, não aporte).
+// dia 15; dia 30 = depois. Investido = compras − vendas + ajuste: só o dinheiro NOVO que entrou
+// (o que foi vendido e recomprado é giro da carteira). O ajuste (você digita, pode ser negativo)
+// cobre as sobras: dinheiro vendido que ficou na corretora ou foi para reserva/fluxo.
 export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado, tabelaOk }) {
   const porMes = Object.fromEntries(linhas.map((l) => [l.mes.slice(0, 7), l]));
   const [ym, setYm] = useState(mesAtual);
   const preencher = (m) => {
     const l = porMes[m] || {};
-    return { recebido_1: l.recebido_1 ? String(l.recebido_1) : '', recebido_2: l.recebido_2 ? String(l.recebido_2) : '' };
+    return {
+      recebido_1: l.recebido_1 ? String(l.recebido_1) : '', recebido_2: l.recebido_2 ? String(l.recebido_2) : '',
+      ajuste_1: Number(l.ajuste_1) ? String(l.ajuste_1) : '', ajuste_2: Number(l.ajuste_2) ? String(l.ajuste_2) : '',
+    };
   };
   const [v, setV] = useState(() => preencher(mesAtual));
   const [estado, setEstado] = useState(null);
@@ -44,7 +48,7 @@ export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado,
   }
 
   const totRec = n(v.recebido_1) + n(v.recebido_2);
-  const totInv = liquido(t, 1) + liquido(t, 2);
+  const totInv = liquido(t, 1, v.ajuste_1) + liquido(t, 2, v.ajuste_2);
 
   // meses da lista: os que têm recebido gravado ou negociação, do mais novo para o mais antigo
   const meses = [...new Set([...Object.keys(porMes), ...Object.keys(trades), mesAtual])].sort().reverse().slice(0, 12);
@@ -86,9 +90,12 @@ export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado,
           <span className="fluxo-rot">Vendas</span>
           <span className="fluxo-calc">− {brl(t.venda_1)}</span>
           <span className="fluxo-calc">− {brl(t.venda_2)}</span>
+          <span className="fluxo-rot" title="sobra que ficou na corretora (+) ou valor que foi para reserva/fluxo (−)">Ajuste</span>
+          <Campo tamanho="sm" numerico largura="100%" type="number" step="any" placeholder="0,00" value={v.ajuste_1} onChange={set('ajuste_1')} />
+          <Campo tamanho="sm" numerico largura="100%" type="number" step="any" placeholder="0,00" value={v.ajuste_2} onChange={set('ajuste_2')} />
           <span className="fluxo-rot fluxo-total">Investido</span>
-          <span className="fluxo-calc fluxo-total">{sinal(liquido(t, 1))}</span>
-          <span className="fluxo-calc fluxo-total">{sinal(liquido(t, 2))}</span>
+          <span className="fluxo-calc fluxo-total">{sinal(liquido(t, 1, v.ajuste_1))}</span>
+          <span className="fluxo-calc fluxo-total">{sinal(liquido(t, 2, v.ajuste_2))}</span>
         </div>
 
         <div className="fluxo-resumo">
@@ -97,11 +104,11 @@ export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado,
           <span>{totRec > 0 ? `${((totInv / totRec) * 100).toFixed(0)}% do recebido` : '—'}</span>
         </div>
         <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '8px 0 0' }}>
-          Investido = compras − vendas das Negociações (só o dinheiro novo). Dia 15 = até o dia 15; dia 30 = depois.
+          Investido = compras − vendas das Negociações + ajuste (sobras que ficaram na corretora ou foram para reserva/fluxo). Dia 15 = até o dia 15; dia 30 = depois.
         </p>
 
         <Botao variante="primario" tamanho="lg" cheio style={{ marginTop: 12 }} onClick={salvar} carregando={estado === 'enviando'}>
-          Salvar recebido de {rotulo(ym)}
+          Salvar {rotulo(ym)}
         </Botao>
         {msg && <p style={{ marginTop: 8, fontSize: 12.5, color: 'var(--down)' }}>{msg}</p>}
       </div>
@@ -112,7 +119,7 @@ export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado,
           const l = porMes[m] || {};
           const tr = trades[m] || VAZIO;
           const rec = n(l.recebido_1) + n(l.recebido_2);
-          const inv = liquido(tr, 1) + liquido(tr, 2);
+          const inv = liquido(tr, 1, l.ajuste_1) + liquido(tr, 2, l.ajuste_2);
           const ok = aportePlanejado > 0 && inv >= aportePlanejado;
           return (
             <button key={m} type="button" className="fluxo-lista fluxo-lista-linha" onClick={() => trocarMes(m)}
