@@ -4,54 +4,45 @@ import { Campo } from '../ui/campos';
 import { Botao } from '../ui/botoes';
 import { brl } from '../../lib/format';
 
+const META_PCT = 0.30; // meta: investir 30% do que recebe
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const rotulo = (ym) => `${MESES[Number(ym.slice(5, 7)) - 1]}/${ym.slice(0, 4)}`;
 const n = (v) => Number(v) || 0;
-const VAZIO = { compra_1: 0, compra_2: 0, venda_1: 0, venda_2: 0 };
-const liquido = (t, q, aj = 0) => t[`compra_${q}`] - t[`venda_${q}`] + n(aj);
-const sinal = (x) => (x < 0 ? '−' : '') + brl(Math.abs(x));
+const texto = (x) => (n(x) ? String(x) : '');
 
-// Recebido (você digita) x investido (calculado das Negociações), por quinzena: dia 15 = até o
-// dia 15; dia 30 = depois. Investido = compras − vendas + ajuste: só o dinheiro NOVO que entrou
-// (o que foi vendido e recomprado é giro da carteira). O ajuste (você digita, pode ser negativo)
-// cobre as sobras: dinheiro vendido que ficou na corretora ou foi para reserva/fluxo.
-export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado, tabelaOk }) {
+// Recebido e investido do mês (você digita, dia 15 e dia 30), contra a meta de investir 30% do recebido.
+export default function FluxoMensal({ linhas, mesAtual, tabelaOk }) {
   const porMes = Object.fromEntries(linhas.map((l) => [l.mes.slice(0, 7), l]));
-  const [ym, setYm] = useState(mesAtual);
   const preencher = (m) => {
     const l = porMes[m] || {};
-    return {
-      recebido_1: l.recebido_1 ? String(l.recebido_1) : '', recebido_2: l.recebido_2 ? String(l.recebido_2) : '',
-      ajuste_1: Number(l.ajuste_1) ? String(l.ajuste_1) : '', ajuste_2: Number(l.ajuste_2) ? String(l.ajuste_2) : '',
-    };
+    return { recebido_1: texto(l.recebido_1), recebido_2: texto(l.recebido_2), investido_1: texto(l.investido_1), investido_2: texto(l.investido_2) };
   };
+  const [ym, setYm] = useState(mesAtual);
   const [v, setV] = useState(() => preencher(mesAtual));
   const [estado, setEstado] = useState(null);
   const [msg, setMsg] = useState('');
-
-  const t = trades[ym] || VAZIO;
 
   function trocarMes(novo) { setYm(novo); setMsg(''); setEstado(null); setV(preencher(novo)); }
   const set = (k) => (e) => setV((x) => ({ ...x, [k]: e.target.value }));
 
   async function salvar() {
     setEstado('enviando'); setMsg('');
-    const atual = porMes[ym] || {};
     const res = await fetch('/api/fluxo', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      // mantém o que já estava gravado nas colunas "investido" (não são mais usadas aqui)
-      body: JSON.stringify({ mes: ym, ...v, investido_1: atual.investido_1 || 0, investido_2: atual.investido_2 || 0 }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mes: ym, ...v }),
     });
     const d = await res.json().catch(() => ({}));
     if (res.ok && d.ok) { window.location.reload(); return; }
     setEstado('erro'); setMsg(d.erro || 'Não foi possível salvar.');
   }
 
-  const totRec = n(v.recebido_1) + n(v.recebido_2);
-  const totInv = liquido(t, 1, v.ajuste_1) + liquido(t, 2, v.ajuste_2);
+  const rec = n(v.recebido_1) + n(v.recebido_2);
+  const inv = n(v.investido_1) + n(v.investido_2);
+  const meta = rec * META_PCT;
+  const falta = Math.max(0, meta - inv);
+  const batida = rec > 0 && inv >= meta;
+  const progresso = meta > 0 ? Math.min(1, inv / meta) : 0;
 
-  // meses da lista: os que têm recebido gravado ou negociação, do mais novo para o mais antigo
-  const meses = [...new Set([...Object.keys(porMes), ...Object.keys(trades), mesAtual])].sort().reverse().slice(0, 12);
+  const meses = [...new Set([...Object.keys(porMes), mesAtual])].sort().reverse().slice(0, 12);
 
   if (!tabelaOk) {
     return (
@@ -68,7 +59,7 @@ export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado,
     <section className="card" style={{ marginBottom: 16, padding: '4px 0 16px' }}>
       <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <h2>Recebido e investido</h2>
-        <span style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>aporte planejado {brl(aportePlanejado)}/mês</span>
+        <span style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>meta: {Math.round(META_PCT * 100)}% do recebido</span>
       </div>
 
       <div style={{ padding: '4px 20px 0' }}>
@@ -84,28 +75,23 @@ export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado,
           <span className="fluxo-rot">Recebido</span>
           <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" placeholder="0,00" value={v.recebido_1} onChange={set('recebido_1')} />
           <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" placeholder="0,00" value={v.recebido_2} onChange={set('recebido_2')} />
-          <span className="fluxo-rot">Compras</span>
-          <span className="fluxo-calc">{brl(t.compra_1)}</span>
-          <span className="fluxo-calc">{brl(t.compra_2)}</span>
-          <span className="fluxo-rot">Vendas</span>
-          <span className="fluxo-calc">− {brl(t.venda_1)}</span>
-          <span className="fluxo-calc">− {brl(t.venda_2)}</span>
-          <span className="fluxo-rot" title="sobra que ficou na corretora (+) ou valor que foi para reserva/fluxo (−)">Ajuste</span>
-          <Campo tamanho="sm" numerico largura="100%" type="number" step="any" placeholder="0,00" value={v.ajuste_1} onChange={set('ajuste_1')} />
-          <Campo tamanho="sm" numerico largura="100%" type="number" step="any" placeholder="0,00" value={v.ajuste_2} onChange={set('ajuste_2')} />
-          <span className="fluxo-rot fluxo-total">Investido</span>
-          <span className="fluxo-calc fluxo-total">{sinal(liquido(t, 1, v.ajuste_1))}</span>
-          <span className="fluxo-calc fluxo-total">{sinal(liquido(t, 2, v.ajuste_2))}</span>
+          <span className="fluxo-rot">Investido</span>
+          <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" placeholder="0,00" value={v.investido_1} onChange={set('investido_1')} />
+          <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" placeholder="0,00" value={v.investido_2} onChange={set('investido_2')} />
         </div>
 
-        <div className="fluxo-resumo">
-          <span>Recebido <b>{brl(totRec)}</b></span>
-          <span>Investido <b>{sinal(totInv)}</b></span>
-          <span>{totRec > 0 ? `${((totInv / totRec) * 100).toFixed(0)}% do recebido` : '—'}</span>
+        <div style={{ marginTop: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-faint)', marginBottom: 6 }}>
+            <span>Investido <b style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>{brl(inv)}</b></span>
+            <span>Meta <b style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>{brl(meta)}</b></span>
+          </div>
+          <div style={{ height: 8, background: 'var(--track)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ width: `${progresso * 100}%`, height: '100%', background: batida ? 'var(--up)' : 'var(--forest)' }} />
+          </div>
+          <p style={{ fontSize: 12.5, margin: '8px 0 0', fontWeight: 600, color: batida ? 'var(--up)' : 'var(--ink-soft)' }}>
+            {rec <= 0 ? 'Informe o recebido para ver a meta.' : batida ? 'Meta do mês batida ✓' : `Faltam ${brl(falta)} para a meta`}
+          </p>
         </div>
-        <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '8px 0 0' }}>
-          Investido = compras − vendas das Negociações + ajuste (sobras que ficaram na corretora ou foram para reserva/fluxo). Dia 15 = até o dia 15; dia 30 = depois.
-        </p>
 
         <Botao variante="primario" tamanho="lg" cheio style={{ marginTop: 12 }} onClick={salvar} carregando={estado === 'enviando'}>
           Salvar {rotulo(ym)}
@@ -117,17 +103,16 @@ export default function FluxoMensal({ linhas, trades, mesAtual, aportePlanejado,
         <div className="fluxo-lista fluxo-lista-cab"><span>Mês</span><span>Recebido</span><span>Investido</span><span>%</span></div>
         {meses.map((m) => {
           const l = porMes[m] || {};
-          const tr = trades[m] || VAZIO;
-          const rec = n(l.recebido_1) + n(l.recebido_2);
-          const inv = liquido(tr, 1, l.ajuste_1) + liquido(tr, 2, l.ajuste_2);
-          const ok = aportePlanejado > 0 && inv >= aportePlanejado;
+          const r = n(l.recebido_1) + n(l.recebido_2);
+          const i = n(l.investido_1) + n(l.investido_2);
+          const ok = r > 0 && i >= r * META_PCT;
           return (
             <button key={m} type="button" className="fluxo-lista fluxo-lista-linha" onClick={() => trocarMes(m)}
               style={{ background: m === ym ? 'var(--surface-2)' : 'transparent' }}>
               <span style={{ fontWeight: 600, textAlign: 'left' }}>{rotulo(m)}</span>
-              <span>{rec ? brl(rec) : '—'}</span>
-              <span style={{ color: ok ? 'var(--up)' : 'inherit' }}>{sinal(inv)}</span>
-              <span style={{ color: 'var(--ink-faint)' }}>{rec > 0 ? `${((inv / rec) * 100).toFixed(0)}%` : '—'}</span>
+              <span>{r ? brl(r) : '—'}</span>
+              <span>{i ? brl(i) : '—'}</span>
+              <span style={{ color: ok ? 'var(--up)' : 'var(--ink-faint)', fontWeight: ok ? 700 : 400 }}>{r > 0 && i ? `${((i / r) * 100).toFixed(0)}%` : '—'}</span>
             </button>
           );
         })}
