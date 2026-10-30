@@ -19,13 +19,20 @@ const valor = (v) => (v ? Number(v).toLocaleString('pt-BR', { minimumFractionDig
 
 export default async function Meta() {
   const sb = supabaseServer();
-  const [{ data: goal }, { data: snaps }, { data: alloc }] = await Promise.all([
+  const [{ data: goal }, { data: snaps }, { data: alloc }, { data: classesAlvo }] = await Promise.all([
     sb.from('goal_config').select('*').eq('id', 1).maybeSingle(),
     sb.from('portfolio_snapshots').select('snapshot_month, value, asset_classes(name)'),
     sb.from('v_class_allocation').select('classe, valor'),
+    sb.from('asset_classes').select('name, alvo_valor'),
   ]);
 
   const realNow = (alloc || []).reduce((s, c) => s + Number(c.valor), 0);
+
+  // quanto falta para a reserva de emergência chegar no alvo (alvo em R$ cadastrado em Alvos)
+  const NOME_RESERVA = 'Reserva de Emergência';
+  const reservaAlvo = Number((classesAlvo || []).find((c) => c.name === NOME_RESERVA)?.alvo_valor) || 0;
+  const reservaSaldo = Number((alloc || []).find((c) => c.classe === NOME_RESERVA)?.valor) || 0;
+  const reservaFalta = Math.max(0, reservaAlvo - reservaSaldo);
 
   if (!goal) {
     return (
@@ -271,7 +278,7 @@ export default async function Meta() {
       <MetaChart proj={proj} realPts={realPts} target={target} todayIdx={todayIdx} realNow={realNow} />
 
       {/* regra dos 30%: calculadora */}
-      <CalculadoraAporte />
+      <CalculadoraAporte reservaFalta={reservaFalta} />
 
       {/* projetado vs real */}
       <section className="card" style={{ marginBottom: 16 }}>
