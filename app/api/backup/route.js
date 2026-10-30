@@ -65,7 +65,7 @@ function toCSV(rows) {
 const TABELAS = [
   'assets', 'asset_classes', 'trades', 'dividends', 'dividends_pending', 'prices',
   'manual_holdings', 'cards', 'card_purchases', 'invoice_payments', 'installment_overrides',
-  'portfolio_snapshots', 'cashbook', 'recurring_bills', 'goal_config', 'fluxo_mensal',
+  'portfolio_snapshots', 'cashbook', 'recurring_bills', 'goal_config',
 ];
 
 export async function GET() {

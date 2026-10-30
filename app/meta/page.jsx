@@ -1,5 +1,5 @@
 import HistoricoMensal from './historico-mensal';
-import FluxoMensal from './fluxo-mensal';
+import CalculadoraAporte from './calculadora-aporte';
 import { supabaseServer } from '../../lib/supabase';
 import { brl, brlShort, pct } from '../../lib/format';
 import MetaForm from './meta-client';
@@ -19,11 +19,10 @@ const valor = (v) => (v ? Number(v).toLocaleString('pt-BR', { minimumFractionDig
 
 export default async function Meta() {
   const sb = supabaseServer();
-  const [{ data: goal }, { data: snaps }, { data: alloc }, { data: fluxo, error: fluxoErro }] = await Promise.all([
+  const [{ data: goal }, { data: snaps }, { data: alloc }] = await Promise.all([
     sb.from('goal_config').select('*').eq('id', 1).maybeSingle(),
     sb.from('portfolio_snapshots').select('snapshot_month, value, asset_classes(name)'),
     sb.from('v_class_allocation').select('classe, valor'),
-    sb.from('fluxo_mensal').select('*').order('mes', { ascending: false }),
   ]);
 
   const realNow = (alloc || []).reduce((s, c) => s + Number(c.valor), 0);
@@ -271,9 +270,8 @@ export default async function Meta() {
       {/* gráfico */}
       <MetaChart proj={proj} realPts={realPts} target={target} todayIdx={todayIdx} realNow={realNow} />
 
-      {/* recebido e investido por mês (duas quinzenas) */}
-      <FluxoMensal linhas={fluxo || []} tabelaOk={!fluxoErro}
-        mesAtual={`${hoje.getUTCFullYear()}-${String(hoje.getUTCMonth() + 1).padStart(2, '0')}`} />
+      {/* regra dos 30%: calculadora */}
+      <CalculadoraAporte />
 
       {/* projetado vs real */}
       <section className="card" style={{ marginBottom: 16 }}>

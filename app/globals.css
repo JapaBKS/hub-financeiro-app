@@ -350,3 +350,11 @@ img, svg, table, pre { max-width: 100%; }
 .fluxo-calc{font-size:13px;font-variant-numeric:tabular-nums;text-align:right;padding-right:4px;font-family:var(--font-display)}
 .fluxo-total{border-top:1px solid var(--line-soft);padding-top:8px;font-weight:700}
 .fluxo-calc.fluxo-total{color:var(--ink)}
+
+/* ---------- Meta · regra dos 30% ---------- */
+.calc30{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.calc30-bloco{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;border:1px solid var(--line-soft);background:var(--surface-2);min-width:0}
+.calc30-bloco span{font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--ink-faint)}
+.calc30-bloco b{font-family:var(--font-display);font-size:19px;font-weight:600;color:var(--ink)}
+.calc30-sep{background:var(--up-bg);border-color:transparent}
+.calc30-sep b{color:var(--forest-2)}
