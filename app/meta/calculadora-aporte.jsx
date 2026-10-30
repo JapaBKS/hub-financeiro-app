@@ -8,9 +8,17 @@ const num = (v) => Number(String(v).replace(',', '.')) || 0;
 
 // Calculadora da regra dos 30%: nada é salvo. Do que entrou, separa 30%, desconta as contas do
 // mês e mostra a sobra — com uma sugestão de quanto mandar para a reserva, se ainda faltar.
-export default function CalculadoraAporte({ reservaFalta = 0 }) {
+export default function CalculadoraAporte({ reservaFalta = 0, faturasDia15 = [], faturasDia30 = [], diaInicial = 15 }) {
+  const somaF = (l) => Math.round(l.reduce((t, f) => t + f.valor, 0) * 100) / 100;
+  const textoF = (l) => (somaF(l) ? String(somaF(l)) : '');
+  const [dia, setDia] = useState(diaInicial);
   const [valor, setValor] = useState('');
-  const [fatura, setFatura] = useState('');
+  const [fatura, setFatura] = useState(() => textoF(diaInicial === 15 ? faturasDia15 : faturasDia30));
+  const faturas = dia === 15 ? faturasDia15 : faturasDia30;
+  function trocarDia(d) {
+    setDia(d);
+    setFatura(textoF(d === 15 ? faturasDia15 : faturasDia30)); // preenche com a sua parte; segue editável
+  }
   const [fluxo, setFluxo] = useState('');
 
   const x = num(valor);
@@ -26,13 +34,20 @@ export default function CalculadoraAporte({ reservaFalta = 0 }) {
         <span style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>do que entrar, separe 30%</span>
       </div>
       <div style={{ padding: '4px 20px 0' }}>
+        <div className="calc30-dias" role="group" aria-label="Qual salário">
+          {[15, 30].map((d) => (
+            <button key={d} type="button" className={dia === d ? 'calc30-dia ativo' : 'calc30-dia'} onClick={() => trocarDia(d)}>
+              Salário do dia {d}
+            </button>
+          ))}
+        </div>
         <label className="calc30-rot">Recebi (R$)</label>
         <Campo numerico largura="100%" type="number" step="any" min="0" inputMode="decimal" placeholder="0,00"
           value={valor} onChange={(e) => setValor(e.target.value)} />
 
         <div className="calc30-contas">
           <div>
-            <label className="calc30-rot">Fatura do cartão (sua parte)</label>
+            <label className="calc30-rot">Faturas (sua parte)</label>
             <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" inputMode="decimal" placeholder="0,00"
               value={fatura} onChange={(e) => setFatura(e.target.value)} />
           </div>
@@ -42,6 +57,13 @@ export default function CalculadoraAporte({ reservaFalta = 0 }) {
               value={fluxo} onChange={(e) => setFluxo(e.target.value)} />
           </div>
         </div>
+
+        <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '6px 0 0' }}>
+          {faturas.length > 0
+            ? <>Faturas em aberto: {faturas.map((f) => `${f.nome} ${brl(f.valor)}`).join(' · ')}.</>
+            : 'Nenhuma fatura em aberto para este salário.'}
+          {' '}{dia === 15 ? 'Cobre Rico, Nubank e Mercado Pago do mês.' : 'Cobre o Inter (vence dia 1).'}
+        </p>
 
         <div className="calc30">
           <div className="calc30-bloco calc30-sep">

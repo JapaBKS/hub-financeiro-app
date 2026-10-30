@@ -19,11 +19,14 @@ const valor = (v) => (v ? Number(v).toLocaleString('pt-BR', { minimumFractionDig
 
 export default async function Meta() {
   const sb = supabaseServer();
-  const [{ data: goal }, { data: snaps }, { data: alloc }, { data: classesAlvo }] = await Promise.all([
+  const [{ data: goal }, { data: snaps }, { data: alloc }, { data: classesAlvo }, { data: cartoes }, { data: itensFatura }, { data: pagFaturas }] = await Promise.all([
     sb.from('goal_config').select('*').eq('id', 1).maybeSingle(),
     sb.from('portfolio_snapshots').select('snapshot_month, value, asset_classes(name)'),
     sb.from('v_class_allocation').select('classe, valor'),
     sb.from('asset_classes').select('name, alvo_valor'),
+    sb.from('cards').select('id, name, due_day'),
+    sb.from('v_card_invoice_items').select('card_id, bill_month, amount, amount_pai'),
+    sb.from('invoice_payments').select('card_id, bill_month'),
   ]);
 
   const realNow = (alloc || []).reduce((s, c) => s + Number(c.valor), 0);
@@ -33,6 +36,24 @@ export default async function Meta() {
   const reservaAlvo = Number((classesAlvo || []).find((c) => c.name === NOME_RESERVA)?.alvo_valor) || 0;
   const reservaSaldo = Number((alloc || []).find((c) => c.classe === NOME_RESERVA)?.valor) || 0;
   const reservaFalta = Math.max(0, reservaAlvo - reservaSaldo);
+
+  // faturas (só a sua parte) que cada salário cobre, ainda não pagas:
+  //  · salário do dia 15 → cartões com vencimento do dia 15 em diante (Rico, Nubank, Mercado Pago), fatura do mês;
+  //  · salário do dia 30 → cartões que vencem no início do mês (Inter, dia 1), fatura do mês seguinte.
+  const spAgora = new Date(Date.now() - 3 * 3600 * 1000); // horário de Brasília
+  const mesIso = (d) => d.toISOString().slice(0, 7) + '-01';
+  const mesCorrente = mesIso(spAgora);
+  const mesSeguinte = mesIso(new Date(Date.UTC(spAgora.getUTCFullYear(), spAgora.getUTCMonth() + 1, 1)));
+  const pagasSet = new Set((pagFaturas || []).map((p) => `${p.card_id}|${String(p.bill_month).slice(0, 10)}`));
+  const faturasDe = (cartaoFiltro, mes) => (cartoes || []).filter(cartaoFiltro).map((c) => {
+    const valor = (itensFatura || [])
+      .filter((i) => i.card_id === c.id && String(i.bill_month).slice(0, 10) === mes)
+      .reduce((t, i) => t + Number(i.amount) - Number(i.amount_pai || 0), 0);
+    return { nome: c.name, valor: pagasSet.has(`${c.id}|${mes}`) ? 0 : Math.round(valor * 100) / 100 };
+  }).filter((f) => f.valor > 0);
+  const faturasDia15 = faturasDe((c) => Number(c.due_day) >= 15, mesCorrente);
+  const faturasDia30 = faturasDe((c) => Number(c.due_day) < 15, mesSeguinte);
+  const diaInicial = spAgora.getUTCDate() >= 23 ? 30 : 15;
 
   if (!goal) {
     return (
@@ -278,7 +299,7 @@ export default async function Meta() {
       <MetaChart proj={proj} realPts={realPts} target={target} todayIdx={todayIdx} realNow={realNow} />
 
       {/* regra dos 30%: calculadora */}
-      <CalculadoraAporte reservaFalta={reservaFalta} />
+      <CalculadoraAporte reservaFalta={reservaFalta} faturasDia15={faturasDia15} faturasDia30={faturasDia30} diaInicial={diaInicial} />
 
       {/* projetado vs real */}
       <section className="card" style={{ marginBottom: 16 }}>
