@@ -7,10 +7,16 @@ export async function POST(req) {
   const month = (b.month || '').slice(0, 7); // YYYY-MM
   if (!/^\d{4}-\d{2}$/.test(month)) return NextResponse.json({ ok: false, erro: 'Mês inválido.' }, { status: 400 });
 
+  // fim do intervalo = 1º dia do mês seguinte (exclusivo). Antes era `${month}-31`, data que
+  // NÃO existe em nov/abr/jun/set/fev: o banco rejeitava a consulta, `existentes` vinha vazio
+  // e as fixas eram inseridas de novo a cada clique.
+  const [ano, mes] = month.split('-').map(Number);
+  const proximo = new Date(Date.UTC(ano, mes, 1)).toISOString().slice(0, 10);
+
   const sb = supabaseServer();
-  const [{ data: bills }, { data: existentes }, { data: itensFatura }] = await Promise.all([
+  const [{ data: bills }, { data: existentes, error: erroExistentes }, { data: itensFatura }] = await Promise.all([
     sb.from('recurring_bills').select('*').eq('active', true),
-    sb.from('cashbook').select('details, entry_date, kind').gte('entry_date', `${month}-01`).lte('entry_date', `${month}-31`),
+    sb.from('cashbook').select('details, entry_date, kind').gte('entry_date', `${month}-01`).lt('entry_date', proximo),
     sb.from('v_card_invoice_items').select('card_id, amount_pai').eq('bill_month', `${month}-01`),
   ]);
 
@@ -20,8 +26,16 @@ export async function POST(req) {
     paiPorCartao[it.card_id] = (paiPorCartao[it.card_id] || 0) + Number(it.amount_pai || 0);
   });
 
-  const chave = (nome, data) => `${(nome || '').trim().toLowerCase()}|${(data || '').slice(0, 10)}`;
-  const jaTem = new Set((existentes || []).filter((e) => e.kind === 'saida').map((e) => chave(e.details, e.entry_date)));
+  // sem conseguir ler o que já existe, não insere nada (melhor falhar do que duplicar)
+  if (erroExistentes) return NextResponse.json({ ok: false, erro: erroExistentes.message }, { status: 500 });
+
+  // quantas saídas com o mesmo nome já existem no mês — vale o nome, não a data, para não duplicar
+  // quando você mudou o dia ou o vencimento de uma conta depois de aberta
+  const jaTemPorNome = {};
+  (existentes || []).filter((e) => e.kind === 'saida').forEach((e) => {
+    const k = (e.details || '').trim().toLowerCase();
+    jaTemPorNome[k] = (jaTemPorNome[k] || 0) + 1;
+  });
 
   const novos = [];
   (bills || []).forEach((bill) => {
@@ -30,8 +44,9 @@ export async function POST(req) {
     if (bill.card_id != null && paiPorCartao[bill.card_id] > 0) {
       valor = paiPorCartao[bill.card_id];
     }
+    const nomeKey = (bill.name || '').trim().toLowerCase();
     ocorrenciasNoMes(bill, month).forEach((data) => {
-      if (jaTem.has(chave(bill.name, data))) return;
+      if (jaTemPorNome[nomeKey] > 0) { jaTemPorNome[nomeKey] -= 1; return; } // essa ocorrência já está lançada
       novos.push({
         entry_date: data,
         details: bill.name,

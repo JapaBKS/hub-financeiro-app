@@ -21,6 +21,8 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
   // ao trocar de mês, guarda na URL (sem navegar) pra sobreviver a um reload (ex.: confirmar pagamento)
   function setMes(novoMes) {
     setMesRaw(novoMes);
+    // lembra o último mês aberto (por 7 dias) para a aba não voltar sempre ao mês corrente
+    try { localStorage.setItem('caixa_mes_ultimo', JSON.stringify({ mes: novoMes, em: Date.now() })); } catch {}
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.set('mes', novoMes);
@@ -30,7 +32,17 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
   // após montar, se a URL já guardava um mês válido (voltando de um reload), usa ele
   useEffect(() => {
     const mesDaUrl = new URLSearchParams(window.location.search).get('mes');
-    if (mesDaUrl && mesDaUrl !== mes && mesesDisponiveis.includes(mesDaUrl)) setMesRaw(mesDaUrl);
+    if (mesDaUrl && mesDaUrl !== mes && mesesDisponiveis.includes(mesDaUrl)) { setMesRaw(mesDaUrl); return; }
+    if (!mesDaUrl) {
+      try {
+        const guardado = JSON.parse(localStorage.getItem('caixa_mes_ultimo') || 'null');
+        const recente = guardado && Date.now() - guardado.em < 7 * 24 * 3600 * 1000;
+        if (recente && guardado.mes !== mes && mesesDisponiveis.includes(guardado.mes)) {
+          setMesRaw(guardado.mes);
+          setAnosAbertos((a) => new Set([...a, guardado.mes.slice(0, 4)]));
+        }
+      } catch {}
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
