@@ -361,3 +361,7 @@ img, svg, table, pre { max-width: 100%; }
 .calc30-rot{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin:0 0 6px}
 .calc30-contas{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 @media(max-width:420px){.calc30-contas{grid-template-columns:1fr}}
+
+.calc30-dias{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 12px}
+.calc30-dia{padding:9px 6px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.calc30-dia.ativo{background:var(--forest);border-color:var(--forest);color:#fff}
