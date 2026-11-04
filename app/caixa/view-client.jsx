@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import SeletorCategoria from '../ui/seletor-categoria';
 import { brl as fmt } from '../../lib/format';
 import { CORES, arcPath, fatiar } from '../ui/donut';
 import { hojeISO } from '../../lib/dominio/datas';
@@ -311,8 +312,8 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
                 <input style={inp} type="number" step="0.01" placeholder="Valor" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} />
               </div>
               <input style={{ ...inp, marginBottom: 8 }} placeholder="Detalhes" value={f.details} onChange={(e) => setF({ ...f, details: e.target.value })} />
-              <input style={{ ...inp, marginBottom: 8 }} placeholder="Categoria" list="cats-caixa" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} />
-              <datalist id="cats-caixa">{categorias.map((c) => <option key={c} value={c} />)}</datalist>
+              <SeletorCategoria opcoes={categorias} value={f.category} onChange={(v) => setF({ ...f, category: v })}
+                className="" estiloInput={inp} style={{ marginBottom: 8 }} />
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-soft)', marginBottom: 12, cursor: 'pointer' }}>
                 <input type="checkbox" checked={f.paid} onChange={(e) => setF({ ...f, paid: e.target.checked })} /> já {f.kind === 'entrada' ? 'recebido' : 'pago'}
               </label>
