@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 
+import SeletorCategoria from '../../ui/seletor-categoria';
 import { brl as fmt } from '../../../lib/format';
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
@@ -75,10 +76,9 @@ export default function FixasClient({ bills, categorias, cards = [] }) {
         <section ref={formRef} className="card" style={{ padding: 16, marginBottom: 14 }}>
           <input className="campo" style={{ marginBottom: 8 }} placeholder="Nome (ex.: PUC, Vivo+Copel)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <div className="grid2" style={{ marginBottom: 8 }}>
-            <input className="campo" placeholder="Categoria" list="cats-fixas" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            <SeletorCategoria opcoes={categorias} value={form.category} onChange={(v) => setForm({ ...form, category: v })} />
             <input className="campo" type="number" step="0.01" placeholder="Valor sugerido" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
           </div>
-          <datalist id="cats-fixas">{categorias.map((c) => <option key={c} value={c} />)}</datalist>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <button onClick={() => setForm({ ...form, schedule_kind: 'dia_mes' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12.5, border: '1px solid var(--line)', background: form.schedule_kind === 'dia_mes' ? 'var(--brass-bg, #F3ECD9)' : 'var(--surface)', color: form.schedule_kind === 'dia_mes' ? 'var(--brass)' : 'var(--ink-soft)' }}>Dia do mês</button>
