@@ -114,12 +114,13 @@ export default async function Meta() {
   const plannedNow = projAt(todayIdx);
 
   // roda a mesma fórmula a partir de um ponto qualquer até alcançar um alvo -> retorna o idx
-  const alcancaIdx = (startVal, startIdx, alvo) => {
+  const CRESC_CONSERV = 0.006; // cenário conservador: valorização de 0,6% ao mês (proventos seguem 0,5%)
+  const alcancaIdx = (startVal, startIdx, alvo, cresc = CRESC_MES) => {
     if (startVal >= alvo) return startIdx;
     let saldo = startVal, div = saldo * DIV_PCT, idx = startIdx, g = 0;
     while (saldo < alvo && g < 1200) {
       idx++; g++;
-      saldo = saldo * (1 + CRESC_MES) + aporteDoAno(idx) + div;
+      saldo = saldo * (1 + cresc) + aporteDoAno(idx) + div;
       div = saldo * DIV_PCT;
     }
     return idx;
@@ -135,6 +136,7 @@ export default async function Meta() {
     alvo,
     atingido: realNow >= alvo,
     seuRitmo: alcancaIdx(realNow, todayIdx, alvo),
+    conservador: alcancaIdx(realNow, todayIdx, alvo, CRESC_CONSERV),
     pelaProj: projAlcancaIdx(alvo),
   }));
 
@@ -276,6 +278,7 @@ export default async function Meta() {
           <div style={{ display: 'flex', padding: '6px 20px', fontSize: 11, color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>
             <span style={{ flex: 1 }}>Marco</span>
             <span style={{ flex: 1, textAlign: 'right' }}>No seu ritmo</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>Conservador</span>
             <span style={{ flex: 1, textAlign: 'right' }}>Pela projeção</span>
           </div>
           {marcos.map((m) => (
@@ -284,6 +287,9 @@ export default async function Meta() {
               <span style={{ flex: 1, textAlign: 'right', fontWeight: 600, color: m.atingido ? 'var(--up)' : 'var(--forest-2)', textTransform: 'capitalize' }}>
                 {m.atingido ? '✓ atingido' : mesLabel(m.seuRitmo)}
               </span>
+              <span style={{ flex: 1, textAlign: 'right', color: 'var(--ink-soft)', textTransform: 'capitalize' }}>
+                {m.atingido ? '✓' : mesLabel(m.conservador)}
+              </span>
               <span style={{ flex: 1, textAlign: 'right', color: 'var(--brass)', textTransform: 'capitalize' }}>
                 {mesLabel(m.pelaProj)}
               </span>
@@ -291,7 +297,7 @@ export default async function Meta() {
           ))}
         </div>
         <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>
-          "No seu ritmo" parte do seu valor de hoje seguindo a mesma fórmula. "Pela projeção" é o plano puro desde jul/2024.
+          "No seu ritmo" parte do seu valor de hoje seguindo a mesma fórmula (valorização de 1% ao mês + proventos de 0,5%). "Conservador" usa o mesmo aporte, mas com valorização de 0,6% ao mês. "Pela projeção" é o plano puro desde jul/2024.
         </p>
       </section>
 
