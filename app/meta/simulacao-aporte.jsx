@@ -67,7 +67,7 @@ export default function SimulacaoAporte({ valorHoje, idxHoje, cresc, divPct, mar
         })}
       </div>
       <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '8px 20px 0' }}>
-        Mesma fórmula da projeção (valorização de 1% ao mês + proventos de 0,5%), sem reajuste do aporte. A diferença é contra o "No seu ritmo" do plano (aporte de R$ 1.000 em 2024 com +10% ao ano).
+        Mesma fórmula da projeção (valorização de 1% ao mês + proventos de 0,12%), sem reajuste do aporte. A diferença é contra o "No seu ritmo" do plano (aporte de R$ 1.000 em 2024 com +10% ao ano).
       </p>
     </section>
   );
