@@ -392,7 +392,6 @@ export default async function Meta() {
         </section>
       )}
 
-      <MetaForm goal={goal} />
     </div>
   );
 }
