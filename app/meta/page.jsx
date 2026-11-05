@@ -76,12 +76,12 @@ export default async function Meta() {
 
   // ---- projeção personalizada ----
   // Começa jul/2024 com 8.200. Cada mês: saldo = saldo_ant × 1,01 + aporte(ano) + dividendos_mês_anterior.
-  // dividendos = 0,5% do saldo do mês. Aporte: 1.000 em 2024, +10% a cada virada de ano. Vai até 1 milhão.
+  // dividendos = 0,12% do saldo do mês (0,8% ao mês nos FIIs × 15% do alvo). Aporte: 1.000 em 2024, +10% a cada virada de ano. Vai até 1 milhão.
   const META = 1000000;
   const PROJ_INICIO = ymIndex('2024-07-01');
   const PROJ_SALDO0 = 8200;
   const CRESC_MES = 0.01;
-  const DIV_PCT = 0.005;
+  const DIV_PCT = 0.0012;
   const APORTE_BASE = 1000;
   const APORTE_ANO0 = 2024;
   const APORTE_CRESC = 0.10;
