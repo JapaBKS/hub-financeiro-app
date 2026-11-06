@@ -33,7 +33,6 @@ export default async function Alvos() {
     <div className="wrap" style={{ maxWidth: 600 }}>
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Carteira recomendada</b><span>abas e pesos por ativo</span></div>
         </div>
         <a href="/recomendacoes" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>ver sinais →</a>

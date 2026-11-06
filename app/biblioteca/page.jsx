@@ -132,7 +132,6 @@ export default async function Biblioteca() {
     <div className="wrap" style={{ maxWidth: 760 }}>
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Biblioteca</b><span>{ativos.length} ativos no histórico</span></div>
         </div>
         <a href="/carteira" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>carteira →</a>

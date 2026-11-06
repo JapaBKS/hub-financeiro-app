@@ -19,10 +19,8 @@ export default async function Saldos() {
     <div className="wrap" style={{ maxWidth: 560 }}>
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Saldos manuais</b><span>Tesouro, fundos, reserva, Mercado Pago…</span></div>
         </div>
-        <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
       <SaldosClient holdings={flat} classes={classes || []} />
     </div>

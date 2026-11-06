@@ -47,7 +47,6 @@ export default async function Apuracao() {
     <div className="wrap" style={{ maxWidth: 760 }}>
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Apuração</b><span>resultado por mês · conferência</span></div>
         </div>
         <a href="/biblioteca" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>biblioteca →</a>

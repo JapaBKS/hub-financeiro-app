@@ -57,10 +57,8 @@ export default async function Caixa() {
     <div className="wrap">
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Caixa</b><span>entradas e saídas do mês</span></div>
         </div>
-        <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
       <AlertaContas dias={3} />
       <CaixaView resumo={resumo} categorias={categorias} bills={bills || []} />

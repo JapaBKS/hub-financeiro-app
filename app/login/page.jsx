@@ -26,27 +26,21 @@ export default function Login() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '24px', background: 'var(--paper)' }}>
-      <form onSubmit={entrar} style={{
-        background: 'var(--card)', padding: '28px 24px', borderRadius: 16, width: 'min(360px, 100%)',
-        boxShadow: 'var(--shadow)', fontFamily: 'var(--font-body)',
-      }}>
-        <div className="mark" style={{ marginBottom: 14 }} />
-        <h1 style={{ fontSize: 20, margin: '0 0 4px', color: 'var(--ink)' }}>Hub Financeiro</h1>
-        <p style={{ fontSize: 13, color: 'var(--ink-faint)', margin: '0 0 20px' }}>Digite a senha para entrar.</p>
-        <input
-          type="password" value={senha} onChange={(e) => setSenha(e.target.value)}
-          placeholder="Senha" autoFocus
-          style={{
-            width: '100%', padding: '13px', borderRadius: 9, border: '1px solid var(--line)',
-            fontSize: 16, boxSizing: 'border-box', marginBottom: 12, background: 'var(--surface)', color: 'var(--ink)',
-          }}
-        />
-        {erro && <p style={{ color: 'var(--down)', fontSize: 12, margin: '0 0 12px' }}>Senha incorreta.</p>}
-        <button type="submit" disabled={carregando} style={{
-          width: '100%', padding: '13px', borderRadius: 9, border: 0, cursor: 'pointer',
-          background: 'var(--forest)', color: '#fff', fontSize: 15, fontWeight: 600,
-        }}>{carregando ? 'Entrando…' : 'Entrar'}</button>
+    <div className="login">
+      <form onSubmit={entrar} className="login-cartao">
+        <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true" style={{ marginBottom: 18 }}>
+          <rect width="32" height="32" rx="9" fill="var(--brass)" />
+          <path d="M10 9v14M22 9v14M10 16h12" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+        </svg>
+        <h1>Hub Financeiro</h1>
+        <p>Digite a senha para entrar.</p>
+        <label htmlFor="senha" className="login-rotulo">Senha</label>
+        <input id="senha" className="campo" type="password" value={senha} onChange={(e) => setSenha(e.target.value)}
+          autoFocus autoComplete="current-password" aria-invalid={erro || undefined} />
+        {erro && <p className="login-erro" role="alert">Senha incorreta. Tente de novo.</p>}
+        <button type="submit" disabled={carregando || !senha} className="btn btn-primario btn-lg btn-cheio" style={{ marginTop: 14 }}>
+          {carregando ? 'Entrando…' : 'Entrar'}
+        </button>
       </form>
     </div>
   );

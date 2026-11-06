@@ -35,10 +35,8 @@ export default async function Negociacoes() {
     <div className="wrap" style={{ maxWidth: 640 }}>
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Negociações</b><span>{flat.length} no total</span></div>
         </div>
-        <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
       <AcoesNegociacao assets={assets || []} classes={classes || []} />
       <ListaNegociacoes trades={flat} />

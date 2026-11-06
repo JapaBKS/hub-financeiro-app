@@ -163,7 +163,6 @@ export default async function Home() {
     <div className="wrap">
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Patrimônio</b><span>seu hub financeiro</span></div>
         </div>
         <a href="/api/backup" title="Baixar backup (.zip com todos os dados)" className="btn-backup">⤓ backup</a>
