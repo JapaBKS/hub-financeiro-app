@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import SeletorCategoria from '../ui/seletor-categoria';
 import { brl as fmt } from '../../lib/format';
 import { arcPath, fatiar } from '../ui/donut';
@@ -55,7 +55,6 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
   const [anosAbertos, setAnosAbertos] = useState(() => new Set([mes.slice(0, 4), anoAtual]));
   const toggleAno = (a) => setAnosAbertos((s) => { const n = new Set(s); n.has(a) ? n.delete(a) : n.add(a); return n; });
 
-  const activeRef = useRef(null);
 
   // após inserir fixas e recarregar, reabre no mês alvo
   useEffect(() => {
@@ -349,31 +348,26 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
                   );
                 }
                 return (
-                  <div key={it.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px 10px 17px',
-                    borderBottom: '1px solid var(--line-soft)',
-                    borderLeft: it.paid ? '3px solid transparent' : '3px solid var(--amber)',
-                    background: it.paid ? 'transparent' : 'var(--amber-bg)',
-                  }}>
-                    <div style={{ minWidth: 44, fontSize: 11, color: 'var(--ink-faint)', fontFamily: 'var(--font-display)' }}>{brDate(it.entry_date).slice(0, 5)}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.details || '—'}</div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
+                  <div key={it.id} className={`cx-linha${it.paid ? '' : ' pendente'}`}>
+                    <div className="cx-data">{brDate(it.entry_date).slice(0, 5)}</div>
+                    <div className="cx-desc">
+                      <div className="cx-nome">{it.details || '—'}</div>
+                      <div className="cx-meta">
                         {it.category}
                         {it.paid
                           ? <span style={{ color: 'var(--up)', fontWeight: 600 }}> · pago</span>
                           : <span style={{ color: 'var(--amber)', fontWeight: 700 }}> · a pagar</span>}
                       </div>
                     </div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: entrada ? 'var(--up)' : 'var(--down)' }}>{entrada ? '+' : '−'}{fmt(it.amount)}</div>
-                    <button onClick={() => reconferir(it)} title="editar valor" style={{ border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--ink-soft)' }}>✎</button>
-                    <button onClick={() => togglePago(it)} title={it.paid ? 'marcar pendente' : 'marcar pago'} style={{
-                      borderRadius: 7, padding: '4px 9px', cursor: 'pointer', fontSize: 12, fontWeight: 700,
-                      border: it.paid ? 0 : '1px solid var(--amber)',
-                      background: it.paid ? 'var(--up)' : 'var(--surface)',
-                      color: it.paid ? '#fff' : 'var(--amber)',
-                    }}>{it.paid ? '✓' : '○'}</button>
-                    <button onClick={() => apagar(it)} title="apagar" style={{ border: '1px solid var(--line)', background: 'var(--surface)', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--down)' }}>✕</button>
+                    <div className="cx-valor" style={{ color: entrada ? 'var(--up)' : 'var(--down)' }}>{entrada ? '+' : '−'}{fmt(it.amount)}</div>
+                    <div className="cx-acoes">
+                      <button type="button" className="cx-btn" onClick={() => reconferir(it)} title="editar valor" aria-label="Editar valor">✎</button>
+                      <button type="button" className={`cx-btn cx-pago${it.paid ? ' ok' : ''}`} onClick={() => togglePago(it)}
+                        title={it.paid ? 'marcar pendente' : 'marcar pago'} aria-label={it.paid ? 'Marcar como pendente' : 'Marcar como pago'}>
+                        {it.paid ? '✓ pago' : 'pagar'}
+                      </button>
+                      <button type="button" className="cx-btn cx-apagar" onClick={() => apagar(it)} title="apagar" aria-label="Apagar">✕</button>
+                    </div>
                   </div>
                 );
               })}
@@ -398,11 +392,8 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
                   {aberto && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingBottom: 4 }}>
                       {porAno[a].map((m) => (
-                        <button key={m} ref={m === mes ? activeRef : null} onClick={() => setMes(m)} style={{
-                          padding: '6px 10px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', whiteSpace: 'nowrap',
-                          fontSize: 12, fontWeight: 600, textTransform: 'capitalize',
-                          background: m === mes ? 'var(--forest)' : 'var(--surface)', color: m === mes ? '#fff' : 'var(--ink-soft)',
-                        }}>{MESES[Number(m.slice(5, 7)) - 1]}</button>
+                        <button type="button" key={m} className="chip" aria-pressed={m === mes} onClick={() => setMes(m)}
+                          style={{ textTransform: 'capitalize' }}>{MESES[Number(m.slice(5, 7)) - 1]}</button>
                       ))}
                     </div>
                   )}

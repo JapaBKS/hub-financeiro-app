@@ -207,12 +207,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
       {/* abas de cartão */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
         {cards.map((c) => (
-          <button key={c.id} onClick={() => trocarCartao(c.id)} style={{
-            padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600,
-            border: '1px solid ' + (c.id === cardId ? 'var(--forest)' : 'var(--line)'),
-            background: c.id === cardId ? 'var(--forest)' : 'var(--surface)',
-            color: c.id === cardId ? '#fff' : 'var(--ink-soft)',
-          }}>{c.name}</button>
+          <button type="button" key={c.id} className="chip" aria-pressed={c.id === cardId} onClick={() => trocarCartao(c.id)}>{c.name}</button>
         ))}
       </div>
 
@@ -229,12 +224,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
             {mesesVisiveis.map((m) => {
               const ativo = m === mes;
               return (
-                <button key={m} onClick={() => setMes(m)} style={{
-                  flex: 'none', padding: '8px 12px', borderRadius: 9, cursor: 'pointer', textAlign: 'center',
-                  border: '1px solid ' + (ativo ? 'var(--forest)' : 'var(--line)'),
-                  background: ativo ? 'var(--forest)' : 'var(--surface)', color: ativo ? '#fff' : 'var(--ink-soft)',
-                  minWidth: 76,
-                }}>
+                <button type="button" key={m} className="chip chip-mes" aria-pressed={ativo} onClick={() => setMes(m)}>
                   <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize' }}>{rotuloMes(m)}</div>
                   <div style={{ fontSize: 12, fontFamily: 'var(--font-display)', fontWeight: 600, marginTop: 2 }}>
                     {fmt(totaisDe(cardId, m).total).replace('R$', '').trim()}
@@ -303,11 +293,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                         </select>
                         <div style={{ display: 'flex', gap: 4 }}>
                           {[['eu', 'Eu'], ['pai', 'Pai'], ['dividido', 'Div.']].map(([v, l]) => (
-                            <button type="button" key={v} onClick={() => setEditForm({ ...editForm, pagador: v })} style={{
-                              flex: 1, padding: '7px 2px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                              border: '1px solid ' + (editForm.pagador === v ? 'var(--forest)' : 'var(--line)'),
-                              background: editForm.pagador === v ? 'var(--forest)' : 'var(--surface)', color: editForm.pagador === v ? '#fff' : 'var(--ink-soft)',
-                            }}>{l}</button>
+                            <button type="button" key={v} className="chip" aria-pressed={editForm.pagador === v} onClick={() => setEditForm({ ...editForm, pagador: v })} style={{ flex: 1, paddingLeft: 4, paddingRight: 4 }}>{l}</button>
                           ))}
                         </div>
                         {editForm.pagador === 'dividido' && (

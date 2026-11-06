@@ -85,11 +85,7 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
           <label style={labelStyle}>Quem paga</label>
           <div style={{ display: 'flex', gap: 5 }}>
             {[['eu', 'Eu'], ['pai', 'Pai'], ['dividido', 'Dividido']].map(([v, l]) => (
-              <button type="button" key={v} onClick={() => setPagador(v)} style={{
-                flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
-                border: '1px solid ' + (pagador === v ? 'var(--forest)' : 'var(--line)'),
-                background: pagador === v ? 'var(--forest)' : 'var(--surface)', color: pagador === v ? '#fff' : 'var(--ink-soft)',
-              }}>{l}</button>
+              <button type="button" key={v} className="chip chip-grande" aria-pressed={pagador === v} onClick={() => setPagador(v)} style={{ flex: 1 }}>{l}</button>
             ))}
           </div>
         </div>
