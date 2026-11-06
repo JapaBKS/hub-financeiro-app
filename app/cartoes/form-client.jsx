@@ -10,9 +10,18 @@ const inputStyle = {
 };
 const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '14px 0 6px' };
 
+// 1ª fatura sugerida: cartão que vence no começo do mês (Inter, dia 1) cobra a compra
+// na fatura do mês seguinte; os que vencem a partir do dia 15 cobram no próprio mês.
+function mesSugerido(card, dataCompra) {
+  const [y, m] = (dataCompra || hojeISO()).split('-').map(Number);
+  if (card && Number(card.due_day) < 15) {
+    return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+  }
+  return `${y}-${String(m).padStart(2, '0')}`;
+}
+
 export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }) {
   const hoje = hojeISO();
-  const mesAtual = hoje.slice(0, 7); // YYYY-MM
 
   const [cardId, setCardId] = useState(defaultCardId != null ? String(defaultCardId) : (cards[0]?.id ? String(cards[0].id) : ''));
   const [description, setDescription] = useState('');
@@ -22,7 +31,10 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
   const [purchasedAt, setPurchasedAt] = useState(hoje);
   const [valorTotal, setValorTotal] = useState('');
   const [parcelas, setParcelas] = useState('1');
-  const [mesInicio, setMesInicio] = useState(defaultMes || mesAtual);
+  const cartaoDe = (id) => cards.find((c) => String(c.id) === String(id));
+  const [mesInicio, setMesInicio] = useState(defaultMes || mesSugerido(cartaoDe(cardId), hoje));
+  // enquanto você não mexer no mês à mão, ele acompanha o cartão e a data da compra
+  const [mesManual, setMesManual] = useState(Boolean(defaultMes));
   const [estado, setEstado] = useState(null);
   const [msg, setMsg] = useState('');
 
@@ -66,7 +78,7 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
   return (
     <form onSubmit={salvar} className="card" style={{ padding: '20px 22px' }}>
       <label style={labelStyle}>Cartão</label>
-      <select style={inputStyle} value={cardId} onChange={(e) => setCardId(e.target.value)} required>
+      <select style={inputStyle} value={cardId} onChange={(e) => { setCardId(e.target.value); if (!mesManual) setMesInicio(mesSugerido(cartaoDe(e.target.value), purchasedAt)); }} required>
         {cards.map((c) => <option key={c.id} value={c.id}>{c.name} (vence dia {c.due_day})</option>)}
       </select>
 
@@ -122,12 +134,12 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
         <div>
           <label style={labelStyle}>Data da compra</label>
           <input style={inputStyle} type="date" value={purchasedAt}
-            onChange={(e) => setPurchasedAt(e.target.value)} required />
+            onChange={(e) => { setPurchasedAt(e.target.value); if (!mesManual && e.target.value) setMesInicio(mesSugerido(cartaoDe(cardId), e.target.value)); }} required />
         </div>
         <div>
           <label style={labelStyle}>1ª parcela no mês</label>
           <input style={inputStyle} type="month" value={mesInicio}
-            onChange={(e) => setMesInicio(e.target.value)} required />
+            onChange={(e) => { setMesInicio(e.target.value); setMesManual(true); }} required />
         </div>
       </div>
 

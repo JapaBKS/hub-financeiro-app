@@ -55,6 +55,19 @@ export default async function Dividendos() {
     if (ehFii) futMap[k].fiis += v; else futMap[k].acoes += v;
     futMap[k].itens.push({ ticker: p.ticker, kind: p.kind, amount: v, pay_date: (p.pay_date || '').slice(0, 10), fii: ehFii });
   });
+  // a receber AINDA neste mês: entram na linha do mês atual (marcados), sem somar no recebido
+  const pendMesAtual = futuros.filter((p) => (p.pay_date || '').slice(0, 7) === mesAtualKey);
+  if (pendMesAtual.length) {
+    let atual = meses.find((m) => m.mes === mesAtualKey);
+    if (!atual) { atual = { mes: mesAtualKey, total: 0, acoes: 0, fiis: 0, itens: [] }; meses.push(atual); }
+    atual.aReceber = 0;
+    pendMesAtual.forEach((p) => {
+      const v = Number(p.amount);
+      atual.aReceber += v;
+      atual.itens.push({ ticker: p.ticker, kind: p.kind, amount: v, pay_date: (p.pay_date || '').slice(0, 10), fii: p.classe === 'fiis', pendente: true });
+    });
+    atual.itens.sort((a, b) => ((a.paid_at || a.pay_date) || '').localeCompare((b.paid_at || b.pay_date) || ''));
+  }
   const futMeses = Object.values(futMap);
   futMeses.forEach((m) => m.itens.sort((a, b) => a.pay_date.localeCompare(b.pay_date)));
   // junta com os recebidos e ordena do mais recente/futuro pro mais antigo
