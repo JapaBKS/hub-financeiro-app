@@ -27,7 +27,8 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
   const [msg, setMsg] = useState('');
 
   const nParc = Math.max(1, Number(parcelas) || 1);
-  const valorParcela = (Number(valorTotal) || 0) / nParc;
+  // parcela arredondada em centavos (o banco também arredonda)
+  const valorParcela = Math.round(((Number(valorTotal) || 0) / nParc) * 100) / 100;
   const paiPctNum = pagador === 'eu' ? 0 : pagador === 'pai' ? 100 : Math.min(100, Math.max(0, Number(paiPct) || 0));
 
   async function salvar(e) {

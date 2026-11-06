@@ -48,10 +48,12 @@ export async function POST(req) {
 
   // busca as trades já existentes nas datas envolvidas, pra não duplicar
   const datas = [...new Set(validos.map((i) => i.traded_at))];
-  const { data: existentes } = await sb
+  const { data: existentes, error: erroExist } = await sb
     .from('trades')
     .select('asset_id, traded_at, side, quantity, price')
     .in('traded_at', datas);
+  // sem saber o que já existe, importar duplicaria tudo
+  if (erroExist) return NextResponse.json({ ok: false, erro: 'Não foi possível conferir duplicados. Tente de novo.' }, { status: 500 });
 
   // Conta QUANTAS de cada assinatura já existem — execuções idênticas no mesmo dia
   // são legítimas (ordem partida), então não dá pra deduplicar por presença.

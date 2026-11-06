@@ -6,15 +6,10 @@ import NumeroAnimado from './numero-animado';
 import CoberturaEmergencia from './cobertura-emergencia';
 import Municao from './municao';
 import AlocacaoDonut from './alocacao-donut';
-import { hojeISO } from '../lib/dominio/datas';
+import { hojeISO, inicioDoMes, FUSO } from '../lib/dominio/datas';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-function mesAtualISO() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-}
 
 export default async function Home() {
   const sb = supabaseServer();
@@ -28,14 +23,18 @@ export default async function Home() {
     sb.from('v_positions').select('ticker, quantidade, preco_atual'),
     sb.from('prices').select('ticker, previous_close, updated_at'),
     sb.from('invoice_payments').select('card_id, bill_month'),
-    sb.from('asset_classes').select('name, alvo_valor'),
+    sb.from('asset_classes').select('name, alvo_valor, fora_rateio'),
   ]);
 
+  // sem a alocação a tela mostraria "Patrimônio R$ 0,00" como se fosse verdade
+  if (alloc.error) throw new Error('Não foi possível carregar o patrimônio.');
   const classes = (alloc.data || []).filter((c) => Number(c.valor) > 0);
   // classes com alvo em R$ (ex.: reserva) — o alvo delas não é percentual
   const alvoFixoDe = {};
+  const foraRateio = new Set();
   (classesCfg.data || []).forEach((c) => {
     if (c.alvo_valor != null && Number(c.alvo_valor) > 0) alvoFixoDe[c.name] = Number(c.alvo_valor);
+    if (c.fora_rateio) foraRateio.add(c.name);
   });
   const total = classes.reduce((s, c) => s + Number(c.valor), 0);
 
@@ -53,10 +52,11 @@ export default async function Home() {
     ? alvoFixoDe[c.classe] - Number(c.valor)
     : Number(c.pct_alvo || 0) * totalRebal - Number(c.valor));
 
-  const maxPct = Math.max(0.01, ...classes.map((c) => Math.max(realDe(c), Number(c.pct_alvo || 0))));
+  const alvoPctDe = (c) => (alvoFixoDe[c.classe] != null ? (total > 0 ? alvoFixoDe[c.classe] / total : 0) : Number(c.pct_alvo || 0));
+  const maxPct = Math.max(0.01, ...classes.map((c) => Math.max(realDe(c), alvoPctDe(c))));
 
   // dividendos: ano, total, por ano
-  const anoAtual = new Date().getFullYear();
+  const anoAtual = Number(hojeISO().slice(0, 4));
 
   // provisionados já vencidos contam como recebidos; futuros, como a receber
   const pendentes = pend.data || [];
@@ -128,7 +128,7 @@ export default async function Home() {
   const subiu = varDia >= 0;
 
   // faturas do mês (esconde as já pagas)
-  const mes = mesAtualISO();
+  const mes = inicioDoMes();
   const pagosSet = new Set((pagamentos.data || []).map((p) => `${p.card_id}|${(p.bill_month || '').slice(0, 10)}`));
   const faturasMes = (faturas.data || [])
     .filter((f) => (f.bill_month || '').slice(0, 10) === mes)
@@ -137,7 +137,7 @@ export default async function Home() {
 
   const alvo = Number(goal.data?.target_value || 1000000);
   const progresso = Math.min(1, total / alvo);
-  const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' }).replace('.', '');
+  const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short', timeZone: FUSO }).replace('.', '');
 
   // última atualização de cotações
   let ultimaAtt = null;
@@ -216,10 +216,11 @@ export default async function Home() {
                 const temFixo = fixo != null;
                 const alvoPct = temFixo ? (total > 0 ? fixo / total : 0) : Number(c.pct_alvo || 0);
                 const ajuste = ajusteDe(c);
-                const tag = ajuste > 50 ? 'buy' : (!temFixo && ajuste < -50) ? 'sell' : 'hold';
+                const semAlvo = !temFixo && foraRateio.has(c.classe); // ex.: A investir: dinheiro de passagem, sem alvo
+                const tag = semAlvo ? 'hold' : ajuste > 50 ? 'buy' : (!temFixo && ajuste < -50) ? 'sell' : 'hold';
                 const tagTxt = temFixo
                   ? (ajuste > 50 ? `guardar ${brlShort(ajuste)}` : ajuste < -50 ? `sobra ${brlShort(-ajuste)}` : 'no alvo')
-                  : (ajuste > 50 ? `comprar ${brlShort(ajuste)}` : ajuste < -50 ? `acima ${brlShort(ajuste)}` : 'manter');
+                  : semAlvo ? 'a distribuir' : (ajuste > 50 ? `comprar ${brlShort(ajuste)}` : ajuste < -50 ? `acima ${brlShort(-ajuste)}` : 'manter');
                 return (
                   <div className="alloc-row" key={c.classe}>
                     <div className="a-name">{c.classe}<span>{brl(Number(c.valor))}</span></div>
@@ -247,10 +248,11 @@ export default async function Home() {
                 const temFixo = fixo != null;
                 const alvo = temFixo ? (total > 0 ? fixo / total : 0) : Number(c.pct_alvo || 0);
                 const ajuste = ajusteDe(c);
-                const tag = ajuste > 50 ? 'buy' : (!temFixo && ajuste < -50) ? 'sell' : 'hold';
+                const semAlvo = !temFixo && foraRateio.has(c.classe); // ex.: A investir: dinheiro de passagem, sem alvo
+                const tag = semAlvo ? 'hold' : ajuste > 50 ? 'buy' : (!temFixo && ajuste < -50) ? 'sell' : 'hold';
                 const tagTxt = temFixo
                   ? (ajuste > 50 ? `guardar ${brlShort(ajuste)}` : ajuste < -50 ? `sobra ${brlShort(-ajuste)}` : 'no alvo')
-                  : (ajuste > 50 ? `comprar ${brlShort(ajuste)}` : ajuste < -50 ? `acima ${brlShort(ajuste)}` : 'manter');
+                  : semAlvo ? 'a distribuir' : (ajuste > 50 ? `comprar ${brlShort(ajuste)}` : ajuste < -50 ? `acima ${brlShort(-ajuste)}` : 'manter');
                 return { classe: c.classe, valor: Number(c.valor), real, alvo, temFixo, fixo, ajuste, tag, tagTxt };
               })}
             />

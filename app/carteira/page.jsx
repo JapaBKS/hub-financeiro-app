@@ -34,7 +34,8 @@ export default async function Carteira() {
     const semCotacao = resolvido.origem === 'pm' || resolvido.origem === 'nenhum';
     const precoRef = resolvido.preco;
     const valor = Number(p.quantidade) * precoRef;
-    const lucro = !semAuto ? Number(p.lucro_rs) : (usouManual ? valor - Number(p.quantidade) * Number(p.preco_medio) : 0);
+    // sem cotação (vale o PM) o lucro é zero; com cotação antiga ou manual, compara com o PM
+    const lucro = !semAuto ? Number(p.lucro_rs) : (semCotacao ? 0 : valor - Number(p.quantidade) * Number(p.preco_medio));
     const proventos = provDe[p.ticker] || 0;
     return { ...p, semAuto, semCotacao, usouManual, manual, precoRef, valor, lucro, proventos, lucroTotal: lucro + proventos };
   });

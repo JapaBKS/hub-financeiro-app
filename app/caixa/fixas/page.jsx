@@ -1,4 +1,4 @@
-import { supabaseServer } from '../../../lib/supabase';
+import { supabaseServer, lerTudo } from '../../../lib/supabase';
 import FixasClient from './fixas-client';
 
 export const dynamic = 'force-dynamic';
@@ -8,7 +8,7 @@ export default async function Fixas() {
   const sb = supabaseServer();
   const [{ data: bills }, { data: cats }, { data: cards }] = await Promise.all([
     sb.from('recurring_bills').select('*').order('name'),
-    sb.from('cashbook').select('category'),
+    lerTudo((de, ate) => sb.from('cashbook').select('category').order('id').range(de, ate)),
     sb.from('cards').select('id, name').order('name'),
   ]);
   const categorias = [...new Set((cats || []).map((c) => c.category).filter(Boolean))].sort();

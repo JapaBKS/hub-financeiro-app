@@ -1,4 +1,4 @@
-import { supabaseServer } from '../../../lib/supabase';
+import { supabaseServer, lerTudo } from '../../../lib/supabase';
 import zlib from 'zlib';
 import { hojeISO } from '../../../lib/dominio/datas';
 
@@ -66,6 +66,7 @@ const TABELAS = [
   'assets', 'asset_classes', 'trades', 'dividends', 'dividends_pending', 'prices',
   'manual_holdings', 'cards', 'card_purchases', 'invoice_payments', 'installment_overrides',
   'portfolio_snapshots', 'cashbook', 'recurring_bills', 'goal_config',
+  'corporate_events', 'darf_payments', 'manual_prices',
 ];
 
 export async function GET() {
@@ -73,7 +74,7 @@ export async function GET() {
   const files = [];
   const erros = [];
   for (const t of TABELAS) {
-    const { data, error } = await sb.from(t).select('*');
+    const { data, error } = await lerTudo((de, ate) => sb.from(t).select('*').range(de, ate));
     if (error) { erros.push(`${t}: ${error.message}`); continue; }
     files.push({ name: `${t}.csv`, data: Buffer.from(toCSV(data || []), 'utf8') });
   }

@@ -1,4 +1,5 @@
 'use client';
+import { hojeISO } from '../../lib/dominio/datas';
 import { useState } from 'react';
 import { brl as fmt } from '../../lib/format';
 import { Botao } from '../ui/botoes';
@@ -46,8 +47,8 @@ export default function RecebidosMes({ meses }) {
     if (!m.futuro) porAno[ano].temRecebido = true;
   });
 
-  const anoAtual = String(new Date().getFullYear());
-  const mesAtualKey = `${anoAtual}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const mesAtualKey = hojeISO().slice(0, 7);
+  const anoAtual = mesAtualKey.slice(0, 4);
   const [anosAbertos, setAnosAbertos] = useState(() => new Set([anoAtual]));
   const [mesAberto, setMesAberto] = useState(null);
 
