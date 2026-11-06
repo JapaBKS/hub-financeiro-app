@@ -50,10 +50,10 @@ body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webk
 
 /* ---------- Estrutura: barra lateral + conteúdo ---------- */
 .shell{display:flex;min-height:100vh}
-.shell-main{flex:1;min-width:0;padding:30px 36px 56px}
+.shell-main{flex:1;min-width:0;margin-left:236px;padding:30px 36px 56px}
 .icone{flex:none}
 
-.lateral{position:sticky;top:0;height:100vh;width:236px;flex:none;display:flex;flex-direction:column;gap:6px;
+.lateral{position:fixed;left:0;top:0;bottom:0;width:236px;flex:none;display:flex;flex-direction:column;gap:6px;
   padding:20px 14px 16px;background:var(--lateral);color:var(--lateral-ink);overflow:hidden;z-index:20}
 .lateral-rosacea{position:absolute;width:420px;height:420px;left:-150px;bottom:-170px;fill:none;stroke:var(--lateral-ink);stroke-width:.45;opacity:.13;pointer-events:none}
 .lateral-marca{display:flex;align-items:center;gap:10px;padding:2px 8px 14px;color:inherit;text-decoration:none;position:relative}
@@ -87,7 +87,7 @@ body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webk
 
 @media(max-width:720px){
   .shell{display:block}
-  .shell-main{padding:16px 14px calc(88px + env(safe-area-inset-bottom,0px))}
+  .shell-main{margin-left:0;padding:16px 14px calc(88px + env(safe-area-inset-bottom,0px))}
   .lateral{display:none}
   .topo-celular{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;
     padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:var(--lateral);color:var(--lateral-ink)}
@@ -223,7 +223,8 @@ input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px var(--
 /* ============ MOBILE ============ */
 
 /* nada de rolagem lateral: o conteúdo se ajusta à largura da tela */
-html, body { max-width: 100%; overflow-x: hidden; }
+/* clip (e não hidden): hidden transforma o body num contêiner de rolagem e quebra o topo fixo (sticky) do celular */
+html, body { max-width: 100%; overflow-x: hidden; overflow-x: clip; }
 .wrap { max-width: 100%; box-sizing: border-box; }
 img, svg, table, pre { max-width: 100%; }
 /* filhos de flex/grid encolhem em vez de empurrar a página */
