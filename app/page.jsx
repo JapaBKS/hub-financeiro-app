@@ -4,6 +4,7 @@ import CardOrigem from './card-origem-client';
 import AlertaContas from './alerta-contas';
 import NumeroAnimado from './numero-animado';
 import CoberturaEmergencia from './cobertura-emergencia';
+import VariacaoDia from './variacao-dia';
 import Municao from './municao';
 import AlocacaoDonut from './alocacao-donut';
 import { hojeISO, inicioDoMes, FUSO } from '../lib/dominio/datas';
@@ -125,6 +126,21 @@ export default async function Home() {
     if (prev != null && p.preco_atual != null) varDia += Number(p.quantidade) * (Number(p.preco_atual) - Number(prev));
   }
   const varDiaPct = (total - varDia) > 0 ? varDia / (total - varDia) : 0;
+
+  // por ativo: top altas e top baixas do dia
+  const movimentos = (positions.data || [])
+    .filter((p) => Number(p.quantidade) > 0 && Number(prevMap[p.ticker]) > 0 && p.preco_atual != null)
+    .map((p) => {
+      const prev = Number(prevMap[p.ticker]); const atual = Number(p.preco_atual);
+      return { ticker: p.ticker, preco: atual, pct: atual / prev - 1, rs: Number(p.quantidade) * (atual - prev) };
+    })
+    .filter((m) => Math.abs(m.pct) > 0.00005);
+  // cotação de outro dia (fim de semana/feriado): avisa que é a variação do último pregão
+  const attPrecos = (precos.data || []).map((p) => p.updated_at).filter(Boolean).sort().pop();
+  const diaAtt = attPrecos ? new Date(attPrecos).toLocaleDateString('sv-SE', { timeZone: FUSO }) : null;
+  const rotuloVariacao = !diaAtt ? '' : diaAtt === hojeISO()
+    ? `hoje, até ${new Date(attPrecos).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: FUSO })}`
+    : `último pregão (${diaAtt.split('-').reverse().slice(0, 2).join('/')})`;
   const subiu = varDia >= 0;
 
   // faturas do mês (esconde as já pagas)
@@ -201,6 +217,8 @@ export default async function Home() {
         <Municao />
         <CoberturaEmergencia />
       </div>
+
+      <VariacaoDia movimentos={movimentos} rotulo={rotuloVariacao} />
 
       <div className="grid">
         <div className="col">
