@@ -30,7 +30,7 @@ export default function RecebidosMes({ meses }) {
 
   const limparMes = (m) => excluir(
     { month: m.mes },
-    `Limpar TODOS os proventos de ${rotulo(m.mes)}? Apaga ${m.itens.length} lançamento(s). Use para reimportar da B3.`,
+    `Limpar TODOS os proventos de ${rotulo(m.mes)}? Apaga ${m.itens.filter((it) => !it.pendente).length} lançamento(s). Use para reimportar da B3.`,
     `mes-${m.mes}`,
   );
 
@@ -104,7 +104,10 @@ export default function RecebidosMes({ meses }) {
                         <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.04em', color: '#fff', background: 'var(--forest)', borderRadius: 4, padding: '1px 6px' }}>ESTE MÊS</span>
                       ) : null}
                       <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>ações {fmt(m.acoes)} · fiis {fmt(m.fiis)}</span>
-                      <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: m.futuro ? 'var(--amber)' : 'var(--up)' }}>{fmt(m.total)}</b>
+                      <span style={{ marginLeft: 'auto', textAlign: 'right', lineHeight: 1.2 }}>
+                        <b style={{ fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: m.futuro ? 'var(--amber)' : 'var(--up)' }}>{fmt(m.total)}</b>
+                        {m.aReceber > 0 && <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--amber)', whiteSpace: 'nowrap' }}>+ {fmt(m.aReceber)} a receber</span>}
+                      </span>
                     </button>
 
                     {aberta && (
@@ -120,12 +123,13 @@ export default function RecebidosMes({ meses }) {
                           </div>
                         )}
                         {m.itens.map((it, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 20px 7px 48px', fontSize: 12.5 }}>
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 20px 7px 48px', fontSize: 12.5, background: it.pendente ? 'var(--amber-bg)' : undefined }}>
                             <b style={{ fontFamily: 'var(--font-display)' }}>{it.ticker}</b>
                             <span style={{ fontSize: 9.5, fontWeight: 700, color: it.fii ? 'var(--brass)' : 'var(--forest-2)', background: it.fii ? 'var(--brass-bg, #F3ECD9)' : 'var(--up-bg)', borderRadius: 4, padding: '1px 6px' }}>{it.fii ? 'FII' : 'AÇÃO'}</span>
                             <span style={{ color: 'var(--ink-faint)' }}>{KIND[it.kind] || it.kind}</span>
                             <span style={{ color: 'var(--ink-faint)', fontSize: 11 }}>{((it.paid_at || it.pay_date) || '').split('-').reverse().slice(0, 2).join('/')}</span>
-                            <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{fmt(it.amount)}</b>
+                            {it.pendente && <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--amber)' }}>a receber</span>}
+                            <b style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: it.pendente ? 'var(--amber)' : undefined }}>{fmt(it.amount)}</b>
                             {!m.futuro && it.id != null && (
                               <Botao variante="perigo" tamanho="sm"
                                 onClick={() => excluirItem(it)}
