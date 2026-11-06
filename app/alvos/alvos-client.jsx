@@ -91,11 +91,7 @@ export default function AlvosClient({ grupos: gruposIniciais }) {
     <div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
         {grupos.map((x, i) => (
-          <button key={x.class_id} onClick={() => { setAba(i); setMsg(''); }} style={{
-            padding: '8px 14px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600,
-            border: '1px solid ' + (i === aba ? 'var(--forest)' : 'var(--line)'),
-            background: i === aba ? 'var(--forest)' : 'var(--surface)', color: i === aba ? '#fff' : 'var(--ink-soft)',
-          }}>{x.name}</button>
+          <button type="button" key={x.class_id} className="chip" aria-pressed={i === aba} onClick={() => { setAba(i); setMsg(''); }}>{x.name}</button>
         ))}
       </div>
 

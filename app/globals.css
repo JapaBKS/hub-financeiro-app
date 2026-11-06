@@ -420,3 +420,11 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .hero-destaque .track{background:rgba(255,255,255,.16)}
 .hero-destaque .track i{background:var(--brass)}
 [data-theme="dark"] .hero-destaque{background:#0E3240;box-shadow:none;border:1px solid var(--line)}
+
+/* ---------- Chips: filtros, abas e escolhas (um estilo só para o app inteiro) ---------- */
+.chip{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:6px 13px;border-radius:999px;
+  border:1px solid var(--line);background:var(--card);color:var(--ink-soft);font:600 12.5px/1.2 var(--font-body);cursor:pointer;white-space:nowrap}
+.chip:hover{border-color:var(--forest-2);color:var(--ink);box-shadow:none;filter:none}
+.chip[aria-pressed="true"]{background:var(--forest);border-color:var(--forest);color:#fff}
+[data-theme="dark"] .chip[aria-pressed="true"]{color:#fff}
+.chip-grande{min-height:42px;font-size:14px;border-radius:11px}

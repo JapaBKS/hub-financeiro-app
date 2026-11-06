@@ -24,10 +24,7 @@ export default function EvolucaoProventos({ porMes, porAno }) {
   const temPendente = dados.some((d) => (d.pendente || 0) > 0);
 
   const btn = (val, label) => (
-    <button onClick={() => { setModo(val); setHover(null); }} style={{
-      padding: '6px 11px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-      background: modo === val ? 'var(--forest)' : 'var(--surface)', color: modo === val ? '#fff' : 'var(--ink-soft)',
-    }}>{label}</button>
+    <button type="button" className="chip" aria-pressed={modo === val} onClick={() => { setModo(val); setHover(null); }}>{label}</button>
   );
 
   const W = 700, H = 240, padL = 8, padR = 8, padT = 14, padB = 34;

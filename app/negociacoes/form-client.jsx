@@ -92,12 +92,7 @@ export default function FormNegociacao({ assets, classes, preset }) {
       <label style={labelStyle}>Tipo</label>
       <div style={{ display: 'flex', gap: 8 }}>
         {['compra', 'venda'].map((s) => (
-          <button type="button" key={s} onClick={() => setSide(s)} style={{
-            flex: 1, padding: '10px', borderRadius: 9, cursor: 'pointer', fontSize: 14, fontWeight: 600,
-            border: '1px solid ' + (side === s ? 'var(--forest)' : 'var(--line)'),
-            background: side === s ? 'var(--forest)' : 'var(--surface)',
-            color: side === s ? '#fff' : 'var(--ink-soft)',
-          }}>{s === 'compra' ? 'Compra' : 'Venda'}</button>
+          <button type="button" key={s} className="chip chip-grande" aria-pressed={side === s} onClick={() => setSide(s)} style={{ flex: 1 }}>{s === 'compra' ? 'Compra' : 'Venda'}</button>
         ))}
       </div>
 
