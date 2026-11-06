@@ -174,7 +174,7 @@ export default async function Home() {
 
       <AlertaContas dias={3} compact />
 
-      <section className="card hero">
+      <section className="card hero hero-destaque">
         <div className="hero-top">
           <div>
             <div className="eyebrow">Patrimônio total</div>
