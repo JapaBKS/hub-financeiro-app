@@ -120,7 +120,7 @@ export default function ApuracaoLista({ meses, pagos = {}, eventos = [], suspeit
   return (
     <div>
       <section className="card" style={{ padding: '14px 18px', marginBottom: 14 }}>
-        <div style={{ fontSize: 11, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.03em', marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginBottom: 8 }}>
           Acumulado desde o início
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>

@@ -163,23 +163,16 @@ export default async function Home() {
     <div className="wrap">
       <header className="topbar">
         <div className="brand">
-          <div><b>Patrimônio</b><span>seu hub financeiro</span></div>
+          <div><b>Patrimônio</b><span>{hoje.charAt(0).toUpperCase() + hoje.slice(1)}</span></div>
         </div>
-        <a href="/api/backup" title="Baixar backup (.zip com todos os dados)" className="btn-backup">⤓ backup</a>
-        <div className="clock">
-          cotações · {attLabel}
-          {cotacoesDesatualizadas && (
-            <span style={{ color: 'var(--amber)', fontWeight: 600 }}> · ⚠ desatualizadas{diasAtt != null ? ` há ${diasAtt}d` : ''}</span>
-          )}
-          <br /><b>{hoje}</b>
-        </div>
+        <span className={`status-cotacoes${cotacoesDesatualizadas ? ' velho' : ''}`} title="Última atualização automática das cotações">
+          <i aria-hidden="true" />
+          {cotacoesDesatualizadas ? `Cotações desatualizadas${diasAtt != null ? ` há ${diasAtt}d` : ''}` : `Cotações ${attLabel}`}
+        </span>
+        <a href="/api/backup" title="Baixar backup (.zip com todos os dados)">Baixar backup</a>
       </header>
 
       <AlertaContas dias={3} compact />
-
-      <Municao />
-
-      <CoberturaEmergencia meses={6} />
 
       <section className="card hero">
         <div className="hero-top">
@@ -203,6 +196,11 @@ export default async function Home() {
           <div className="track"><i style={{ width: `${progresso * 100}%` }} /></div>
         </div>
       </section>
+
+      <div className="painel-par">
+        <Municao />
+        <CoberturaEmergencia />
+      </div>
 
       <div className="grid">
         <div className="col">
@@ -309,7 +307,6 @@ export default async function Home() {
         </div>
       </div>
 
-      <p className="foot">Dados reais · patrimônio e cotações ao vivo do seu Supabase.</p>
     </div>
   );
 }
