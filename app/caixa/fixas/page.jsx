@@ -17,7 +17,6 @@ export default async function Fixas() {
     <div className="wrap" style={{ maxWidth: 640 }}>
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Contas fixas</b><span>recorrentes do caixa</span></div>
         </div>
         <a href="/caixa" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← caixa</a>

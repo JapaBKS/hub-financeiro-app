@@ -134,7 +134,6 @@ export default async function Carteira() {
     <div className="wrap" style={{ maxWidth: 820 }}>
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Carteira</b><span>{ativos.length} ativos{aguardando > 0 ? ` · ${aguardando} s/ cotação` : ''}</span></div>
         </div>
         <a href="/registrar" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>+ negociação</a>

@@ -83,10 +83,8 @@ export default async function Dividendos() {
     <div className="wrap" style={{ maxWidth: 680 }}>
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Proventos</b><span>recebidos e a receber</span></div>
         </div>
-        <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
       <ImportarB3Receber />
       <ImportarB3 />

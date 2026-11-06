@@ -60,8 +60,7 @@ export default async function Meta() {
     return (
       <div className="wrap" style={{ maxWidth: 640 }}>
         <header className="topbar">
-          <div className="brand"><div className="mark" /><div><b>Meta</b><span>projeção do patrimônio</span></div></div>
-          <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
+          <div className="brand"><div><b>Meta</b><span>projeção do patrimônio</span></div></div>
         </header>
         <div className="card" style={{ padding: 20, marginBottom: 16, fontSize: 13, color: 'var(--ink-soft)' }}>
           Defina sua meta para ver a projeção. Patrimônio atual: <b>{brl(realNow)}</b>.
@@ -218,8 +217,7 @@ export default async function Meta() {
   return (
     <div className="wrap" style={{ maxWidth: 760 }}>
       <header className="topbar">
-        <div className="brand"><div className="mark" /><div><b>Meta</b><span>projeção do patrimônio</span></div></div>
-        <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
+        <div className="brand"><div><b>Meta</b><span>projeção do patrimônio</span></div></div>
       </header>
 
       {/* números de destaque */}

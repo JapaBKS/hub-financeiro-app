@@ -271,7 +271,6 @@ export default async function Recomendacoes() {
     <div className="wrap" style={{ maxWidth: 760 }}>
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Recomendações</b><span>o que comprar e reduzir</span></div>
         </div>
         <a href="/carteira" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>carteira →</a>

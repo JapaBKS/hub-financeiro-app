@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fragment, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ThemeToggle from './theme-toggle';
 
 // Ícones de traço (24x24, herdam a cor do texto). Um conjunto só, no lugar dos
@@ -20,6 +20,8 @@ const ICONES = {
   caixa: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></>,
   saldos: <><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></>,
   seta: <path d="m6 9 6 6 6-6" />,
+  mais: <><circle cx="5" cy="12" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="19" cy="12" r="1.4" /></>,
+  sair: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>,
   fechar: <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,
 };
 
@@ -27,13 +29,13 @@ function Icone({ nome, tamanho = 17, className = '' }) {
   return (
     <svg width={tamanho} height={tamanho} viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-      className={`flex-none ${className}`}>
+      className={`icone ${className}`}>
       {ICONES[nome]}
     </svg>
   );
 }
 
-// 12 telas em 3 grupos: é a mesma ordem no desktop (divisores) e no celular (seções)
+// 12 telas em 3 grupos: mesma ordem na barra lateral (desktop) e no menu "Mais" (celular)
 const GRUPOS = [
   { titulo: 'Painel', itens: [
     { href: '/', label: 'Visão geral', icone: 'painel' },
@@ -55,6 +57,33 @@ const GRUPOS = [
   ] },
 ];
 
+// Rosácea de traços finos, como a de uma cédula. Calculada uma vez (determinística,
+// igual no servidor e no navegador) e usada como marca d'água da barra lateral.
+function rosacea(R, r, d, voltas, passos = 900) {
+  let p = '';
+  for (let i = 0; i <= passos; i++) {
+    const t = (i / passos) * Math.PI * 2 * voltas;
+    const x = (R - r) * Math.cos(t) + d * Math.cos(((R - r) / r) * t);
+    const y = (R - r) * Math.sin(t) - d * Math.sin(((R - r) / r) * t);
+    p += `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`;
+  }
+  return p;
+}
+const ROSACEA = [rosacea(120, 33, 62, 33), rosacea(120, 45, 30, 3), rosacea(96, 27, 52, 27)];
+
+function Marca({ tamanho = 30 }) {
+  return (
+    <svg width={tamanho} height={tamanho} viewBox="0 0 32 32" aria-hidden="true" className="marca">
+      <rect width="32" height="32" rx="9" fill="var(--brass)" />
+      <path d="M10 9v14M22 9v14M10 16h12" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// atalhos fixos da barra inferior no celular; o resto fica em "Mais"
+const ABAS_CELULAR = ['/', '/carteira', '/cartoes', '/caixa'];
+const ROTULO_CURTO = { '/': 'Início' };
+
 export default function Nav() {
   const path = usePathname();
   const [role, setRole] = useState('dono');
@@ -65,12 +94,7 @@ export default function Nav() {
     setRole(m ? decodeURIComponent(m[1]) : 'dono');
   }, []);
 
-  // fecha ao trocar de tela e, no desktop estreito, rola a barra até a tela atual
-  useEffect(() => {
-    setAberto(false);
-    const ativo = document.querySelector('nav[aria-label="Principal"] a[aria-current="page"]');
-    if (ativo && ativo.scrollIntoView) ativo.scrollIntoView({ inline: 'center', block: 'nearest' });
-  }, [path, role]);
+  useEffect(() => { setAberto(false); }, [path]);
 
   // menu aberto: trava a rolagem da página e fecha com Esc
   useEffect(() => {
@@ -93,88 +117,97 @@ export default function Nav() {
     .filter((g) => g.itens.length > 0);
   const todos = grupos.flatMap((g) => g.itens);
   const ehAtivo = (href) => (href === '/' ? path === '/' : path.startsWith(href));
-  const atual = todos.find((l) => ehAtivo(l.href));
+  const abas = todos.filter((l) => ABAS_CELULAR.includes(l.href));
+  const maisAtivo = !abas.some((l) => ehAtivo(l.href));
 
   async function sair() {
     try { await fetch('/api/logout', { method: 'POST' }); } catch {}
     window.location.href = '/login';
   }
 
-  const acoes = (
-    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-      <ThemeToggle />
-      <button onClick={sair} title="Sair" style={{
-        fontSize: 12.5, fontWeight: 600, padding: '7px 12px', borderRadius: 9, cursor: 'pointer',
-        border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)',
-      }}>Sair</button>
-    </div>
-  );
-
   return (
     <>
-      {/* DESKTOP: uma linha só, com ícones e divisores entre os grupos.
-          Se faltar espaço, rola na horizontal em vez de quebrar em duas linhas. */}
-      <nav aria-label="Principal" className="hidden min-[721px]:flex items-center gap-3 max-w-[1160px] mx-auto px-1 pb-3.5">
-        <div className="menu-rola flex flex-1 min-w-0 items-center gap-1 overflow-x-auto">
-          {grupos.map((g, gi) => (
-            <Fragment key={g.titulo}>
-              {gi > 0 && <span aria-hidden="true" className="flex-none w-px h-5 mx-2 bg-line" />}
+      {/* DESKTOP: barra lateral fixa */}
+      <aside className="lateral" aria-label="Menu">
+        <svg className="lateral-rosacea" viewBox="-130 -130 260 260" aria-hidden="true">
+          {ROSACEA.map((d, i) => <path key={i} d={d} />)}
+        </svg>
+        <Link href={role === 'pai' ? '/caixa' : '/'} className="lateral-marca">
+          <Marca />
+          <span><b>Hub Financeiro</b></span>
+        </Link>
+
+        <nav aria-label="Principal" className="lateral-nav">
+          {grupos.map((g) => (
+            <section key={g.titulo}>
+              {grupos.length > 1 && <div className="lateral-grupo">{g.titulo}</div>}
               {g.itens.map((l) => (
-                <Link key={l.href} href={l.href} aria-current={ehAtivo(l.href) ? 'page' : undefined}
-                  className={`navlink flex-none flex items-center gap-2 px-3 py-[7px] rounded-[9px] text-[13px] font-medium no-underline whitespace-nowrap ${ehAtivo(l.href) ? 'active' : ''}`}>
-                  <Icone nome={l.icone} tamanho={16} />
+                <Link key={l.href} href={l.href} aria-current={ehAtivo(l.href) ? 'page' : undefined} className="lateral-link">
+                  <Icone nome={l.icone} tamanho={17} />
                   {l.label}
                 </Link>
               ))}
-            </Fragment>
+            </section>
           ))}
-        </div>
-        <div className="flex-none">{acoes}</div>
-      </nav>
+        </nav>
 
-      {/* CELULAR: barra fixa no topo com a tela atual; toque abre o menu suspenso */}
-      <div className="min-[721px]:hidden sticky top-0 z-50 -mx-3 -mt-2.5 mb-3 px-3 py-2 bg-paper [border-bottom:1px_solid_var(--line)]">
-        <div className="flex items-center gap-2.5">
-          <Link href="/" aria-label="Início" className="mark block flex-none" style={{ width: 30, height: 30 }} />
-          <button type="button" onClick={() => setAberto(true)} aria-haspopup="true" aria-expanded={aberto}
-            className="flex flex-1 min-w-0 items-center gap-2.5 px-3 py-2 rounded-xl [border:1px_solid_var(--line)] bg-card text-ink font-display text-[15px] font-semibold text-left">
-            {atual && <Icone nome={atual.icone} tamanho={18} className="text-forest-2" />}
-            <span className="flex-1 min-w-0 truncate">{atual ? atual.label : 'Menu'}</span>
-            <Icone nome="seta" tamanho={18} className="text-ink-faint" />
+        <div className="lateral-rodape">
+          <ThemeToggle className="lateral-link" />
+          <button type="button" onClick={sair} className="lateral-link">
+            <Icone nome="sair" tamanho={17} />Sair
           </button>
         </div>
-      </div>
+      </aside>
+
+      {/* CELULAR: topo com a marca e barra de abas embaixo */}
+      <header className="topo-celular">
+        <Link href={role === 'pai' ? '/caixa' : '/'} className="lateral-marca" aria-label="Início">
+          <Marca tamanho={28} />
+          <span><b>Hub Financeiro</b></span>
+        </Link>
+        {role === 'pai' && (
+          <button type="button" onClick={sair} className="topo-sair" aria-label="Sair"><Icone nome="sair" tamanho={18} /></button>
+        )}
+      </header>
+
+      {role !== 'pai' && (
+        <nav className="abas-celular" aria-label="Atalhos">
+          {abas.map((l) => (
+            <Link key={l.href} href={l.href} aria-current={ehAtivo(l.href) ? 'page' : undefined} className="aba">
+              <Icone nome={l.icone} tamanho={21} />
+              <span>{ROTULO_CURTO[l.href] || l.label}</span>
+            </Link>
+          ))}
+          <button type="button" onClick={() => setAberto(true)} aria-haspopup="dialog" aria-expanded={aberto}
+            aria-current={maisAtivo ? 'page' : undefined} className="aba">
+            <Icone nome="mais" tamanho={21} />
+            <span>Mais</span>
+          </button>
+        </nav>
+      )}
 
       {aberto && (
-        <div className="min-[721px]:hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Menu">
-          <div className="absolute inset-0 bg-[rgba(20,24,22,.45)]" onClick={() => setAberto(false)} />
-          <div className="menu-suspenso absolute left-0 right-0 top-0 max-h-[88vh] overflow-y-auto bg-card [border-bottom:1px_solid_var(--line)] rounded-b-2xl shadow-card px-3.5 pt-3 pb-4">
-            <div className="flex items-center justify-between mb-2">
-              <b className="font-display text-[15px]">Menu</b>
-              <button type="button" onClick={() => setAberto(false)} aria-label="Fechar menu"
-                className="flex items-center justify-center w-9 h-9 rounded-[10px] [border:1px_solid_var(--line)] bg-surface text-ink-soft">
-                <Icone nome="fechar" tamanho={18} />
-              </button>
-            </div>
-
+        <div className="folha" role="dialog" aria-modal="true" aria-label="Todas as telas">
+          <div className="folha-fundo" onClick={() => setAberto(false)} />
+          <div className="folha-painel">
+            <div className="folha-alca" aria-hidden="true" />
             {grupos.map((g) => (
-              <section key={g.titulo} className="mt-3">
-                <div className="eyebrow mb-1.5 px-1">{g.titulo}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
+              <section key={g.titulo} className="folha-grupo">
+                <div className="folha-titulo">{g.titulo}</div>
+                <div className="folha-grade">
                   {g.itens.map((l) => (
-                    <Link key={l.href} href={l.href} onClick={() => setAberto(false)} aria-current={ehAtivo(l.href) ? 'page' : undefined}
-                      className={`navlink flex items-center gap-2.5 px-3 py-3 rounded-xl text-[13.5px] font-semibold no-underline ${ehAtivo(l.href) ? 'active' : ''}`}>
-                      <Icone nome={l.icone} tamanho={18} />
+                    <Link key={l.href} href={l.href} onClick={() => setAberto(false)} aria-current={ehAtivo(l.href) ? 'page' : undefined} className="folha-link">
+                      <Icone nome={l.icone} tamanho={20} />
                       {l.label}
                     </Link>
                   ))}
                 </div>
               </section>
             ))}
-
-            <div className="flex items-center justify-between mt-4 pt-3 [border-top:1px_solid_var(--line)]">
-              <span className="text-[12px] text-ink-faint">Tema e conta</span>
-              {acoes}
+            <div className="folha-rodape">
+              <ThemeToggle className="folha-link" />
+              <button type="button" onClick={sair} className="folha-link"><Icone nome="sair" tamanho={20} />Sair</button>
+              <button type="button" onClick={() => setAberto(false)} className="folha-link folha-fechar"><Icone nome="fechar" tamanho={20} />Fechar</button>
             </div>
           </div>
         </div>

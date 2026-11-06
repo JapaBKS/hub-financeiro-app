@@ -35,10 +35,8 @@ export default async function Cartoes() {
     <div className="wrap">
       <header className="topbar">
         <div className="brand">
-          <div className="mark" />
           <div><b>Cartões</b><span>faturas e lançamentos</span></div>
         </div>
-        <a href="/" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>← painel</a>
       </header>
       <CartoesTabs
         cards={cards || []}
