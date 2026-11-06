@@ -101,11 +101,7 @@ export default function Recentes({ purchases, cards }) {
                   </select>
                   <div style={{ display: 'flex', gap: 4 }}>
                     {[['eu', 'Eu'], ['pai', 'Pai'], ['dividido', 'Div.']].map(([v, l]) => (
-                      <button type="button" key={v} onClick={() => setForm({ ...form, pagador: v })} style={{
-                        flex: 1, padding: '7px 2px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                        border: '1px solid ' + (form.pagador === v ? 'var(--forest)' : 'var(--line)'),
-                        background: form.pagador === v ? 'var(--forest)' : 'var(--surface)', color: form.pagador === v ? '#fff' : 'var(--ink-soft)',
-                      }}>{l}</button>
+                      <button type="button" key={v} className="chip" aria-pressed={form.pagador === v} onClick={() => setForm({ ...form, pagador: v })} style={{ flex: 1 }}>{l}</button>
                     ))}
                   </div>
                   <input className="campo" type="number" step="any" value={form.parcela} onChange={(e) => setForm({ ...form, parcela: e.target.value })} placeholder="Valor da parcela" />

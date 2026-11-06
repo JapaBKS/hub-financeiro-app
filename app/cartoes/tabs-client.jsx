@@ -9,12 +9,7 @@ export default function CartoesTabs({ cards, recentes, invoices, items, payments
   const [aba, setAba] = useState('faturas'); // 'faturas' | 'lancar' | 'cartoes'
 
   const tab = (val, label) => (
-    <button type="button" onClick={() => setAba(val)} aria-pressed={aba === val} style={{
-      padding: '10px 6px', borderRadius: 9, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', minWidth: 0,
-      border: '1px solid ' + (aba === val ? 'var(--forest)' : 'var(--line)'),
-      background: aba === val ? 'var(--forest)' : 'var(--surface)',
-      color: aba === val ? '#fff' : 'var(--ink-soft)',
-    }}>{label}</button>
+    <button type="button" className="chip chip-grande" onClick={() => setAba(val)} aria-pressed={aba === val} style={{ minWidth: 0 }}>{label}</button>
   );
 
   return (

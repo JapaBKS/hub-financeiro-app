@@ -428,3 +428,25 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .chip[aria-pressed="true"]{background:var(--forest);border-color:var(--forest);color:#fff}
 [data-theme="dark"] .chip[aria-pressed="true"]{color:#fff}
 .chip-grande{min-height:42px;font-size:14px;border-radius:11px}
+.chip-mes{flex:none;flex-direction:column;gap:2px;min-width:78px;padding:7px 12px;border-radius:12px}
+
+/* ---------- Caixa: linha de lançamento ---------- */
+.cx-linha{display:grid;grid-template-columns:44px minmax(0,1fr) auto auto;grid-template-areas:"data desc valor acoes";align-items:center;gap:4px 12px;
+  padding:10px 20px 10px 17px;border-bottom:1px solid var(--line-soft);border-left:3px solid transparent}
+.cx-linha.pendente{border-left-color:var(--amber);background:var(--amber-bg)}
+.cx-data{grid-area:data;font-size:11.5px;color:var(--ink-faint);font-family:var(--font-display);font-variant-numeric:tabular-nums}
+.cx-desc{grid-area:desc;min-width:0}
+.cx-nome{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cx-meta{font-size:11.5px;color:var(--ink-faint)}
+.cx-valor{grid-area:valor;font-family:var(--font-display);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.cx-acoes{grid-area:acoes;display:flex;gap:6px;justify-content:flex-end}
+.cx-btn{min-height:30px;padding:4px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font:600 12px/1 var(--font-body);cursor:pointer}
+.cx-pago{border-color:var(--amber);color:var(--amber)}
+.cx-pago.ok{border-color:transparent;background:var(--up-bg);color:var(--up)}
+.cx-apagar{color:var(--down)}
+@media(max-width:560px){
+  .cx-linha{grid-template-columns:40px minmax(0,1fr) auto;grid-template-areas:"data desc valor" ". acoes acoes";padding:11px 14px 11px 11px}
+  .cx-nome{white-space:normal}
+  .cx-acoes{justify-content:flex-start}
+  .cx-btn{min-height:34px}
+}

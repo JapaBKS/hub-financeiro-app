@@ -81,8 +81,8 @@ export default function FixasClient({ bills, categorias, cards = [] }) {
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <button onClick={() => setForm({ ...form, schedule_kind: 'dia_mes' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12.5, border: '1px solid var(--line)', background: form.schedule_kind === 'dia_mes' ? 'var(--brass-bg, #F3ECD9)' : 'var(--surface)', color: form.schedule_kind === 'dia_mes' ? 'var(--brass)' : 'var(--ink-soft)' }}>Dia do mês</button>
-            <button onClick={() => setForm({ ...form, schedule_kind: 'semanal' })} style={{ flex: 1, padding: '9px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12.5, border: '1px solid var(--line)', background: form.schedule_kind === 'semanal' ? 'var(--brass-bg, #F3ECD9)' : 'var(--surface)', color: form.schedule_kind === 'semanal' ? 'var(--brass)' : 'var(--ink-soft)' }}>Toda semana</button>
+            <button type="button" className="chip chip-grande" aria-pressed={form.schedule_kind === 'dia_mes'} onClick={() => setForm({ ...form, schedule_kind: 'dia_mes' })} style={{ flex: 1 }}>Dia do mês</button>
+            <button type="button" className="chip chip-grande" aria-pressed={form.schedule_kind === 'semanal'} onClick={() => setForm({ ...form, schedule_kind: 'semanal' })} style={{ flex: 1 }}>Toda semana</button>
           </div>
 
           {form.schedule_kind === 'dia_mes' ? (
