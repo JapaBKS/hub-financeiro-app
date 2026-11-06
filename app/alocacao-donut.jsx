@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 
-const CORES = ['#2E5E4E', '#B98A3C', '#6FA287', '#C9A24B', '#3E7C63', '#8C6BB1', '#D98C5F', '#5B8DB8', '#A8B545', '#9C5A5A', '#7A7A7A'];
+import { CORES } from './ui/donut';
 const brl = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const pctTxt = (n) => `${(n * 100).toFixed(2).replace('.', ',')}%`;
 

@@ -7,9 +7,10 @@
 // o outro não, e virava "R$ NaN" numa das telas).
 // ============================================================================
 
+// paleta categórica alinhada à identidade (petróleo, ocre…), distinguível também no escuro
 export const CORES = [
-  '#2E5E4E', '#B98A3C', '#6FA287', '#C9A24B', '#3E7C63',
-  '#8C6BB1', '#D98C5F', '#5B8DB8', '#A8B545', '#9C5A5A', '#7A7A7A',
+  '#1D6378', '#C98A3A', '#5FA39A', '#4C6FA8', '#B5574B',
+  '#8E9A45', '#7D5A9C', '#D2B06A', '#2F8C7E', '#6E8794', '#9AA3A8',
 ];
 
 /** Caminho SVG de um anel entre dois ângulos (R = raio externo, r = interno). */

@@ -191,7 +191,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
     <div>
       {aPagar.length > 0 && (
         <div className="card" style={{ padding: '14px 18px', marginBottom: 14, borderLeft: '3px solid var(--amber)' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--amber)', letterSpacing: '.02em' }}>A PAGAR (vencidas ou deste mês)</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--amber)', letterSpacing: '.02em' }}>A pagar (vencidas ou deste mês)</div>
           <div style={{ marginTop: 4, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20 }}>
             {fmt(aPagarTotal)}
             {aPagarSeu !== aPagarTotal && (

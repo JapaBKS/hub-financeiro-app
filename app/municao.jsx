@@ -52,15 +52,13 @@ export default async function Municao() {
     <section className="card" style={{ padding: '14px 20px 16px', marginBottom: 14 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: 11, color: 'var(--ink-faint)', letterSpacing: '.03em', textTransform: 'uppercase' }}>
-            Disponível para investir
-          </div>
+          <div className="eyebrow">Disponível para investir</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, color: 'var(--forest-2)', marginTop: 2 }}>
             {fmt(municao)}
           </div>
         </div>
         <a href="/recomendacoes" style={{ fontSize: 12, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>
-          ver recomendações →
+          Ver recomendações
         </a>
       </div>
 

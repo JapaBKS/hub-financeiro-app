@@ -87,7 +87,7 @@ export default function GerenciarCartoes({ cards }) {
 
         {inativos.length > 0 && (
           <>
-            <div style={{ padding: '10px 16px 4px', fontSize: 11, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.03em' }}>
+            <div style={{ padding: '10px 16px 4px', fontSize: 11, color: 'var(--ink-faint)' }}>
               Guardados ({inativos.length})
             </div>
             {inativos.map((c) => linhaCartao(c))}
