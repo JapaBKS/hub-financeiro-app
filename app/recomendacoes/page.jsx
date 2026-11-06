@@ -1,5 +1,6 @@
 import { supabaseServer } from '../../lib/supabase';
-import { brl, brlShort, pct } from '../../lib/format';
+import { hojeISO as hojeDeBrasilia } from '../../lib/dominio/datas';
+import { brl } from '../../lib/format';
 import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import { detectarPadraoPagamento } from '../../lib/dominio/proventos';
 import { distribuirAporte } from '../../lib/dominio/aporte';
@@ -43,7 +44,7 @@ export default async function Recomendacoes() {
   for (const [tk, datas] of Object.entries(datasDe)) padraoDe[tk] = detectarPadraoPagamento(datas);
 
   // provento JÁ DECLARADO: a data-com passou, então vender depois não faz perdê-lo
-  const hojeISO = new Date().toISOString().slice(0, 10);
+  const hojeISO = hojeDeBrasilia();
   const aReceberDe = {};
   (pendentes || []).forEach((p) => {
     const tk = (p.ticker || '').toUpperCase();

@@ -96,12 +96,16 @@ export interface Historico {
 }
 
 const CLASSES_CRIPTO = ['BTC', 'SOLANA', 'PENDLE', 'CRIPTO'];
+// ETFs de ações da B3 (terminam em 11 como as units, mas não têm a isenção de R$ 20 mil)
+const ETFS_B3 = ['BOVA11', 'BOVV11', 'SMAL11', 'IVVB11', 'PIBB11', 'DIVO11', 'BRAX11', 'ECOO11', 'SPXI11', 'XBOV11', 'BOVX11'];
 
 export function categoria(ticker: string, classe?: string | null): Categoria {
   const t = (ticker || '').toUpperCase();
   const c = (classe || '').toUpperCase();
   if (CLASSES_CRIPTO.includes(c)) return 'cripto';
   if (c === 'FIIS') return 'fii';
+  // units (TAEE11, KLBN11…) terminam em 11 mas são ações: valem a isenção de R$ 20 mil
+  if (c === 'AÇÕES BR' && /11$/.test(t) && !ETFS_B3.includes(t)) return 'acao';
   if (/^[A-Z0-9]{4}3[2-9]$/.test(t)) return 'bdr';
   if (/11$/.test(t)) return 'etf';
   return 'acao';

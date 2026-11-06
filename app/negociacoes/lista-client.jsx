@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apagarNegociacao, atualizarNegociacao } from './actions';
 import { brl as fmt } from '../../lib/format';
 
@@ -7,6 +7,8 @@ const fmtData = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/')
 
 export default function ListaNegociacoes({ trades }) {
   const [lista, setLista] = useState(trades);
+  // depois de lançar uma negociação a página recarrega os dados: acompanha
+  useEffect(() => { setLista(trades); }, [trades]);
   const [busy, setBusy] = useState(null);
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({});
@@ -58,7 +60,7 @@ async function apagar(id) {
     const res = await atualizarNegociacao(id, form);
     
     if (res.ok) {
-      setLista((l) => l.map((t) => (t.id === id ? { ...t, ...form } : t)));
+      setLista((l) => l.map((t) => (t.id === id ? { ...t, ...form, quantity: Number(form.quantity), price: Number(form.price) } : t)));
       setEditId(null);
     } else {
       alert(res.erro || 'Falha ao salvar.');

@@ -41,9 +41,10 @@ export default function Recentes({ purchases, cards }) {
   }
 
   async function salvar(id) {
-    setBusy(id);
     const nParc = Math.max(1, Number(form.installments_count) || 1);
     const valorParcela = Number(form.parcela) || 0;
+    if (!(valorParcela > 0)) { alert('O valor da parcela precisa ser maior que zero.'); return; }
+    setBusy(id);
     const paiPctCalc = form.pagador === 'eu' ? 0 : form.pagador === 'pai' ? 100 : Math.min(100, Math.max(0, Number(form.paiPct) || 0));
     const res = await fetch('/api/card-purchases', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },

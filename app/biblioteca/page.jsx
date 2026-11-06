@@ -1,5 +1,7 @@
 import { supabaseServer } from '../../lib/supabase';
-import { calcularHistorico, fatorDesde } from '../../lib/dominio/posicoes';
+import { calcularHistorico } from '../../lib/dominio/posicoes';
+import { criarResolvedorDePreco } from '../../lib/dominio/precos';
+import { detectarPadraoPagamento } from '../../lib/dominio/proventos';
 import BibliotecaLista from './lista-client';
 import { hojeISO } from '../../lib/dominio/datas';
 
@@ -29,22 +31,8 @@ export default async function Biblioteca() {
 
   // posição, custo médio, agregados e movimentos: tudo do domínio
   const { posicoes } = calcularHistorico(trades, eventos);
-  const fator = fatorDesde(eventos);
 
-  // Biblioteca mostra o último preço conhecido mesmo antigo: cair no preço médio
-  // zeraria o retorno das posições abertas. Marcamos a data quando está velho.
-  const FRESCO_MS = 48 * 3600 * 1000;
-  const AGORA = Date.now();
-  const autoDe = {}, attDe = {}, velhoDe = {};
-  (precos || []).forEach((p) => {
-    if (!(Number(p.price) > 0)) return;
-    autoDe[p.ticker] = Number(p.price);
-    attDe[p.ticker] = p.updated_at || null;
-    const idade = p.updated_at ? (AGORA - new Date(p.updated_at).getTime()) : Infinity;
-    velhoDe[p.ticker] = idade >= FRESCO_MS;
-  });
-  const manualDe = {};
-  (manuais || []).forEach((m) => { manualDe[m.ticker] = Number(m.price); });
+  const resolverPreco = criarResolvedorDePreco(precos, manuais);
 
   // proventos por ticker
   const provDe = {};
@@ -73,12 +61,11 @@ export default async function Biblioteca() {
     const aberto = qtdAtual > 0.0000001;
     const pm = P.precoMedio || (P.qtdComprada > 0 ? P.totalComprado / P.qtdComprada : 0);
 
-    const precoAuto = autoDe[ticker] ?? null;
-    const precoRef = precoAuto ?? manualDe[ticker] ?? pm;
-    const origemPreco = precoAuto != null
-      ? (velhoDe[ticker] ? 'auto-velho' : 'auto')
-      : (manualDe[ticker] != null ? 'manual' : 'pm');
-    const precoEm = precoAuto != null && attDe[ticker] ? String(attDe[ticker]).slice(0, 10) : null;
+    // mesma regra do resto do app: cotação recente > manual > cotação antiga > preço médio
+    const r = resolverPreco(ticker, pm);
+    const precoRef = r.preco;
+    const origemPreco = r.origem === 'nenhum' ? 'pm' : r.origem;
+    const precoEm = r.atualizadoEm ? String(r.atualizadoEm).slice(0, 10) : null;
     const valorAtual = aberto ? qtdAtual * precoRef : 0;
 
     // dividendo por cota: posição (em cotas de hoje) na data de cada pagamento
@@ -120,6 +107,7 @@ export default async function Biblioteca() {
       nDividendos: prov.n,
       qtdAtual, aberto, pm, precoRef, origemPreco, precoEm, valorAtual, retorno, retornoPct,
       porCotaMedio, porCotaMes, rendaMensal, yieldMes, mesesPagos, nComPosicao,
+      padrao: detectarPadraoPagamento(pagos.map((x) => x.dia)),
       primeiroPagamento: pagos[0]?.dia || null,
       ultimoPagamento: pagos[pagos.length - 1]?.dia || null,
     };

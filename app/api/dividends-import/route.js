@@ -15,7 +15,9 @@ export async function POST(req) {
 
   // o que já existe nas datas importadas (dedup por ticker+data+tipo, ignorando valor)
   const datas = [...new Set(itens.map((i) => (i.paid_at || '').slice(0, 10)))];
-  const { data: existentes } = await sb.from('dividends').select('ticker, paid_at, kind').in('paid_at', datas);
+  const { data: existentes, error: erroExist } = await sb.from('dividends').select('ticker, paid_at, kind').in('paid_at', datas);
+  // sem saber o que já existe, importar duplicaria tudo
+  if (erroExist) return NextResponse.json({ ok: false, erro: 'Não foi possível conferir duplicados. Tente de novo.' }, { status: 500 });
   const jaTem = new Set((existentes || []).map((d) => chave(d.ticker, d.paid_at, d.kind)));
 
   const novos = [];
