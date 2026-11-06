@@ -2,6 +2,7 @@ import { supabaseServer } from '../../lib/supabase';
 import RecebidosMes from './recebidos-client';
 import ImportarB3 from './importar-b3-client';
 import ImportarB3Receber from './importar-b3-receber-client';
+import ImportarPainel from './importar-painel';
 import EvolucaoProventos from './evolucao-client';
 import { hojeISO } from '../../lib/dominio/datas';
 
@@ -86,8 +87,10 @@ export default async function Dividendos() {
           <div><b>Proventos</b><span>recebidos e a receber</span></div>
         </div>
       </header>
-      <ImportarB3Receber />
-      <ImportarB3 />
+      <ImportarPainel>
+        <ImportarB3Receber />
+        <ImportarB3 />
+      </ImportarPainel>
       <EvolucaoProventos porMes={porMes} porAno={porAno} />
       <RecebidosMes meses={mesesComFuturo} />
     </div>

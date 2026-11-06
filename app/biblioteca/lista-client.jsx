@@ -60,12 +60,7 @@ export default function BibliotecaLista({ ativos }) {
   }), [lista]);
 
   const btn = (val, label) => (
-    <button onClick={() => setFiltro(val)} style={{
-      padding: '7px 13px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
-      border: '1px solid ' + (filtro === val ? 'var(--forest)' : 'var(--line)'),
-      background: filtro === val ? 'var(--forest)' : 'var(--surface)',
-      color: filtro === val ? '#fff' : 'var(--ink-soft)',
-    }}>{label}</button>
+    <button type="button" className="chip" aria-pressed={filtro === val} onClick={() => setFiltro(val)}>{label}</button>
   );
 
   return (
