@@ -411,6 +411,8 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .status-cotacoes.velho i{background:var(--amber)}
 .painel-par{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;margin-bottom:18px;align-items:stretch}
 .painel-par > section{margin-bottom:0 !important;height:100%}
+/* sem saldo para investir o card "Disponível" some: os cofres ocupam a linha inteira, lado a lado */
+.painel-par > section:only-child{grid-column:1 / -1}
 @media(max-width:900px){.painel-par{grid-template-columns:1fr;gap:14px;margin-bottom:14px}}
 .hero-destaque{border:0;background:var(--forest);color:#fff;box-shadow:0 18px 40px -24px rgba(15,59,76,.7)}
 .hero-destaque .eyebrow{color:rgba(255,255,255,.7)}
