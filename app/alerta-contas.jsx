@@ -1,5 +1,5 @@
 import { supabaseServer } from '../lib/supabase';
-import { hojeISO } from '../lib/dominio/datas';
+import { hojeISO, somarDias } from '../lib/dominio/datas';
 
 import { brl as fmt } from '../lib/format';
 const brDia = (iso) => (iso || '').slice(0, 10).split('-').reverse().slice(0, 2).join('/');
@@ -8,9 +8,7 @@ const brDia = (iso) => (iso || '').slice(0, 10).split('-').reverse().slice(0, 2)
 export default async function AlertaContas({ dias = 3, compact = false }) {
   const sb = supabaseServer();
   const hoje = hojeISO();
-  const limite = new Date();
-  limite.setDate(limite.getDate() + dias);
-  const limiteISO = limite.toISOString().slice(0, 10);
+  const limiteISO = somarDias(hoje, dias);
 
   const { data: rows } = await sb
     .from('cashbook')
@@ -55,6 +53,12 @@ export default async function AlertaContas({ dias = 3, compact = false }) {
         <div style={{ display: 'flex', gap: 14, marginBottom: proximas.length ? 8 : 0, fontSize: 12.5 }}>
           {vencidas.length > 0 && <span style={{ color: 'var(--down)', fontWeight: 600 }}>{vencidas.length} vencida{vencidas.length > 1 ? 's' : ''} · {fmt(totalVenc)}</span>}
           {deHoje.length > 0 && <span style={{ color: cor, fontWeight: 600 }}>{deHoje.length} hoje · {fmt(totalHoje)}</span>}
+        </div>
+      )}
+
+      {compact && vencidas.length === 0 && deHoje.length === 0 && proximas.length > 0 && (
+        <div style={{ fontSize: 12.5, color: cor, fontWeight: 600 }}>
+          {proximas.length} nos próximos {dias} dias · {fmt(proximas.reduce((s, c) => s + Number(c.amount || 0), 0))}
         </div>
       )}
 

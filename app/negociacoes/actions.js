@@ -3,6 +3,16 @@
 import { supabaseServer } from '../../lib/supabase';
 import { revalidatePath } from 'next/cache';
 
+// quantidade/preço vazios virariam 0 e a negociação sumiria do cálculo da carteira
+function validar(f) {
+  const q = Number(f.quantity), p = Number(f.price);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.traded_at || '')) return 'Informe a data.';
+  if (f.side !== 'compra' && f.side !== 'venda') return 'Escolha compra ou venda.';
+  if (!Number.isFinite(q) || q <= 0) return 'A quantidade precisa ser maior que zero.';
+  if (!Number.isFinite(p) || p <= 0) return 'O preço precisa ser maior que zero.';
+  return null;
+}
+
 export async function apagarNegociacao(id) {
   const sb = supabaseServer();
   const { error } = await sb.from('trades').delete().eq('id', id);
@@ -17,6 +27,8 @@ export async function apagarNegociacao(id) {
 }
 
 export async function atualizarNegociacao(id, form) {
+  const invalido = validar(form);
+  if (invalido) return { ok: false, erro: invalido };
   const sb = supabaseServer();
   const { error } = await sb.from('trades').update({
     traded_at: form.traded_at,
@@ -39,6 +51,8 @@ export async function criarNegociacao(dados) {
   const tk = (dados.ticker || '').trim().toUpperCase();
   
   if (!tk) return { ok: false, erro: 'Informe o ticker.' };
+  const invalido = validar(dados);
+  if (invalido) return { ok: false, erro: invalido };
 
   // 1. Achar ou criar o ativo (equivalente à rota original robusta)
   const { data: existente } = await sb.from('assets').select('id').eq('ticker', tk).maybeSingle();

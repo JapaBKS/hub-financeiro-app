@@ -1,10 +1,10 @@
 import { supabaseServer } from '../../../lib/supabase';
 import { rota, ok, checar, ErroDeUso } from '../../../lib/api';
+import { inicioDoMes } from '../../../lib/dominio/datas';
 
 export const POST = rota(async () => {
   const sb = supabaseServer();
-  const hoje = new Date();
-  const mesAtual = `${hoje.getUTCFullYear()}-${String(hoje.getUTCMonth() + 1).padStart(2, '0')}-01`;
+  const mesAtual = inicioDoMes(); // mês de Brasília (às 22h do dia 31 ainda é o mês corrente)
 
   const [alloc, classes] = await Promise.all([
     sb.from('v_class_allocation').select('classe, valor'),

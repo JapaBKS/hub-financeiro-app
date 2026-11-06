@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { brl as fmt } from '../../lib/format';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
-import { CORES, arcPath, fatiar } from '../ui/donut';
+import { arcPath, fatiar } from '../ui/donut';
+import { hojeISO } from '../../lib/dominio/datas';
 
 
 
@@ -11,15 +12,14 @@ function rotuloMes(iso) {
   const [a, m] = iso.split('-');
   return `${MESES[Number(m) - 1]}/${a.slice(2)}`;
 }
+// datas sempre no fuso de Brasília: o servidor (UTC) e o celular precisam concordar
 function mesAtualISO() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  return `${hojeISO().slice(0, 7)}-01`;
 }
 function mesAlvoISO() {
-  const d = new Date();
-  let y = d.getFullYear();
-  let m = d.getMonth(); // 0-based
-  if (d.getDate() >= 25) { m += 1; if (m > 11) { m = 0; y += 1; } }
+  const [y0, m0, d] = hojeISO().split('-').map(Number);
+  let y = y0, m = m0 - 1; // 0-based
+  if (d >= 25) { m += 1; if (m > 11) { m = 0; y += 1; } }
   return `${y}-${String(m + 1).padStart(2, '0')}-01`;
 }
 
@@ -87,6 +87,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
   }
   async function salvarItem(it) {
     const f = editForm;
+    if (!(Number(f.valor) > 0)) { alert('O valor precisa ser maior que zero.'); return; }
     const paiPct = f.pagador === 'eu' ? 0 : f.pagador === 'pai' ? 100 : Math.min(100, Math.max(0, Number(f.paiPct) || 0));
     const pagadorCalc = paiPct <= 0 ? 'eu' : paiPct >= 100 ? 'pai' : 'dividido';
 

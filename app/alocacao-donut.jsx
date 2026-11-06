@@ -29,7 +29,8 @@ function fatias(dados, chave, R, r) {
 export default function AlocacaoDonut({ dados, total }) {
   const [sel, setSel] = useState(null);
 
-  const reais = fatias(dados, 'real', 92, 58);
+  // fatias pelo valor em R$: o % "real" mistura bases diferentes (patrimônio x investimentos)
+  const reais = fatias(dados, 'valor', 92, 58);
   const escolhido = sel != null ? dados.find((d) => d.classe === sel) : null;
 
   const anel = (f, opacidade, chave) => (

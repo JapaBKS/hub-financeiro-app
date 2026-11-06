@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 
+import { numeroBR } from '../lib/format';
 const brl = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 // Cada cofre é um bloco com a MESMA estrutura (nome + variação / valor / alvo), numa grade
@@ -12,11 +13,15 @@ export default function CofresClient({ cofres }) {
   const [busy, setBusy] = useState(false);
 
   async function salvar(id) {
+    const n = numeroBR(valor);
+    // vazio ou inválido apagaria o alvo e o cofre sumiria da tela
+    if (!Number.isFinite(n) || n <= 0) { alert('Digite um valor maior que zero (ex.: 15.000,00).'); return; }
     setBusy(true);
-    await fetch('/api/classes', {
+    const res = await fetch('/api/classes', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, alvo_valor: Number(String(valor).replace(',', '.')) }),
+      body: JSON.stringify({ id, alvo_valor: n }),
     });
+    if (!res.ok) { setBusy(false); alert('Não foi possível salvar o alvo. Tente de novo.'); return; }
     window.location.reload();
   }
 

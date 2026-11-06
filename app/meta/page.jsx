@@ -1,8 +1,9 @@
 import HistoricoMensal from './historico-mensal';
 import CalculadoraAporte from './calculadora-aporte';
 import SimulacaoAporte from './simulacao-aporte';
-import { supabaseServer } from '../../lib/supabase';
-import { brl, brlShort, pct } from '../../lib/format';
+import { supabaseServer, lerTudo } from '../../lib/supabase';
+import { hojeISO } from '../../lib/dominio/datas';
+import { brl, pct } from '../../lib/format';
 import MetaForm from './meta-client';
 import MetaChart from './meta-chart';
 
@@ -10,12 +11,11 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const ymIndex = (s) => { const [y, m] = s.slice(0, 7).split('-').map(Number); return y * 12 + (m - 1); };
-const idxLabel = (i) => `${String((i % 12) + 1).padStart(2, '0')}/${Math.floor(i / 12)}`;
 const idxYear = (i) => Math.floor(i / 12);
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const mesLabel = (i) => `${MESES[i % 12]}/${Math.floor(i / 12)}`;
 const ORDEM = ['Ações BR', 'Global', 'FIIS', 'BTC', 'PENDLE', 'SOLANA', 'Tesouro', 'Fundos de Investimentos', 'Reserva', 'Proventos'];
-const CURTO = { 'Ações BR': 'Ações BR', 'Global': 'Global', 'FIIS': 'FIIs', 'BTC': 'BTC', 'PENDLE': 'PENDLE', 'SOLANA': 'SOLANA', 'Tesouro': 'Tesouro', 'Fundos de Investimentos': 'Fundos', 'Reserva': 'Reserva', 'Proventos': 'Prov.' };
+const CURTO = { 'Ações BR': 'Ações BR', 'Global': 'Global', 'FIIS': 'FIIs', 'BTC': 'BTC', 'PENDLE': 'PENDLE', 'SOLANA': 'SOLANA', 'Tesouro': 'Tesouro', 'Fundos de Investimentos': 'Fundos', 'Reserva': 'Reserva', 'Proventos': 'Prov.', 'Reserva de Emergência': 'Reserva', 'A Investir': 'A investir' };
 const valor = (v) => (v ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—');
 
 export default async function Meta() {
@@ -26,7 +26,7 @@ export default async function Meta() {
     sb.from('v_class_allocation').select('classe, valor'),
     sb.from('asset_classes').select('name, alvo_valor'),
     sb.from('cards').select('id, name, due_day'),
-    sb.from('v_card_invoice_items').select('card_id, bill_month, amount, amount_pai'),
+    lerTudo((de, ate) => sb.from('v_card_invoice_items').select('card_id, bill_month, amount, amount_pai').order('purchase_id').order('parcela_idx').range(de, ate)),
     sb.from('invoice_payments').select('card_id, bill_month'),
   ]);
 
@@ -66,13 +66,13 @@ export default async function Meta() {
         <div className="card" style={{ padding: 20, marginBottom: 16, fontSize: 13, color: 'var(--ink-soft)' }}>
           Defina sua meta para ver a projeção. Patrimônio atual: <b>{brl(realNow)}</b>.
         </div>
-        <MetaForm goal={{ target_value: realNow * 2, monthly_contribution: 1000, assumed_annual_return: 0.1, started_at: new Date().toISOString().slice(0, 10), starting_value: realNow }} />
+        <MetaForm goal={{ target_value: realNow * 2, monthly_contribution: 1000, assumed_annual_return: 0.1, started_at: hojeISO(), starting_value: realNow }} />
       </div>
     );
   }
 
-  const hoje = new Date();
-  const todayIdx = hoje.getUTCFullYear() * 12 + hoje.getUTCMonth();
+  const [anoHoje, mesHoje] = hojeISO().split('-').map(Number);
+  const todayIdx = anoHoje * 12 + (mesHoje - 1);
 
   // ---- projeção personalizada ----
   // Começa jul/2024 com 8.200. Cada mês: saldo = saldo_ant × 1,01 + aporte(ano) + dividendos_mês_anterior.
@@ -174,7 +174,8 @@ export default async function Meta() {
 
   const presentes = new Set();
   Object.values(porMesClasse).forEach((o) => Object.keys(o).forEach((n) => { if ((o[n] || 0) > 0) presentes.add(n); }));
-  const colunas = ORDEM.filter((n) => presentes.has(n));
+  // classes fora da ORDEM (ex.: Reserva de Emergência, Fluxo) entram no fim: o total precisa bater com o patrimônio
+  const colunas = [...ORDEM.filter((n) => presentes.has(n)), ...[...presentes].filter((n) => !ORDEM.includes(n)).sort()];
   const mesesComp = Object.keys(porMesClasse).map(Number).sort((a, b) => b - a);
 
   // projeção atinge a meta (1mi)

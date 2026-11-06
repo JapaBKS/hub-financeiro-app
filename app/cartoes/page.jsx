@@ -1,4 +1,4 @@
-import { supabaseServer } from '../../lib/supabase';
+import { supabaseServer, lerTudo } from '../../lib/supabase';
 import CartoesTabs from './tabs-client';
 
 export const dynamic = 'force-dynamic';
@@ -8,12 +8,13 @@ export default async function Cartoes() {
   const sb = supabaseServer();
   const [{ data: cards }, { data: recentes }, { data: invoices }, { data: items }, { data: payments }] = await Promise.all([
     sb.from('cards').select('id, name, due_day, ativo').order('name'),
-    sb.from('card_purchases')
+    lerTudo((de, ate) => sb.from('card_purchases')
       .select('id, description, categoria, pagador, pai_pct, purchased_at, installment_amount, installments_count, first_billed_month, card_id, cards(name)')
       .order('first_billed_month', { ascending: false })
-      .order('id', { ascending: false }),
+      .order('id', { ascending: false })
+      .range(de, ate)),
     sb.from('v_card_invoice').select('*'),
-    sb.from('v_card_invoice_items').select('purchase_id, parcela_idx, card_id, bill_month, description, categoria, pagador, pai_pct, purchased_at, parcela, amount, amount_pai'),
+    lerTudo((de, ate) => sb.from('v_card_invoice_items').select('purchase_id, parcela_idx, card_id, bill_month, description, categoria, pagador, pai_pct, purchased_at, parcela, amount, amount_pai').order('purchase_id').order('parcela_idx').range(de, ate)),
     sb.from('invoice_payments').select('card_id, bill_month, paid_at'),
   ]);
 

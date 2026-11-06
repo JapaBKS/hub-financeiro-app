@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import SeletorCategoria from '../ui/seletor-categoria';
 import { brl as fmt } from '../../lib/format';
-import { CORES, arcPath, fatiar } from '../ui/donut';
+import { arcPath, fatiar } from '../ui/donut';
 import { hojeISO } from '../../lib/dominio/datas';
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -48,7 +48,7 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
   }, []);
 
   // agrupa meses por ano (asc), com anos anteriores recolhidos
-  const anoAtual = String(new Date().getFullYear());
+  const anoAtual = hojeISO().slice(0, 4);
   const porAno = {};
   mesesDisponiveis.forEach((m) => { const a = m.slice(0, 4); (porAno[a] = porAno[a] || []).push(m); });
   const anos = Object.keys(porAno).sort();
@@ -143,7 +143,8 @@ export default function CaixaView({ resumo, categorias, bills = [] }) {
   }
 
   async function confirmarValor(it) {
-    const novo = revVals[it.id] != null ? Number(revVals[it.id]) : Number(it.amount);
+    const novo = revVals[it.id] != null && revVals[it.id] !== '' ? Number(revVals[it.id]) : Number(it.amount);
+    if (!(novo > 0)) { alert('O valor precisa ser maior que zero.'); return; }
     await fetch('/api/cashbook', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: it.id, amount: novo, needs_review: false }) });
     window.location.reload();
   }

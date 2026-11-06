@@ -1,4 +1,4 @@
-import { supabaseServer } from '../../lib/supabase';
+import { supabaseServer, lerTudo } from '../../lib/supabase';
 import CaixaView from './view-client';
 import AlertaContas from '../alerta-contas';
 
@@ -7,10 +7,12 @@ export const revalidate = 0;
 
 export default async function Caixa() {
   const sb = supabaseServer();
-  const [{ data: rows }, { data: bills }] = await Promise.all([
-    sb.from('cashbook').select('*').order('entry_date', { ascending: true }),
+  const [{ data: rows, error: erroCaixa }, { data: bills }] = await Promise.all([
+    lerTudo((de, ate) => sb.from('cashbook').select('*').order('entry_date', { ascending: true }).order('id', { ascending: true }).range(de, ate)),
     sb.from('recurring_bills').select('*').eq('active', true).order('name'),
   ]);
+
+  if (erroCaixa) throw new Error('Não foi possível carregar o caixa.');
 
   // agrupa por mês (YYYY-MM) e calcula saldo acumulado (só pagos entram no saldo)
   const porMes = {};

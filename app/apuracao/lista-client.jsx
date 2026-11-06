@@ -62,8 +62,9 @@ export default function ApuracaoLista({ meses, pagos = {}, eventos = [], suspeit
   const acumulado = {};
   cron.forEach((m) => {
     const isentoAcao = m.vendasAcao > 0 && m.vendasAcao <= LIMITE_ISENCAO;
-    // vendas de ação isentas não entram na compensação
-    const rvMes = (isentoAcao ? 0 : m.resAcao) + m.resBdrEtf;
+    // lucro de ação em mês isento (vendas até R$ 20 mil) não é tributado, mas o prejuízo
+    // desse mês continua podendo ser compensado depois
+    const rvMes = (isentoAcao ? Math.min(0, m.resAcao) : m.resAcao) + m.resBdrEtf;
 
     let tribRV = 0;
     if (rvMes >= 0) { tribRV = Math.max(0, rvMes - saldoRV); saldoRV = Math.max(0, saldoRV - rvMes); }
@@ -107,10 +108,11 @@ export default function ApuracaoLista({ meses, pagos = {}, eventos = [], suspeit
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return { iso, br: iso.split('-').reverse().join('/') };
   }
+  const hoje = hojeISO();
   const darfsComVenc = darfs.map((d) => {
     const v = vencimentoDe(d.mesApuracao);
     const pagoEm = pagos[d.mesApuracao] || null;
-    return { ...d, venc: v, pagoEm, vencido: !pagoEm && v.iso < hojeISO };
+    return { ...d, venc: v, pagoEm, vencido: !pagoEm && v.iso < hoje };
   });
   const totalAtrasado = darfsComVenc.filter((d) => d.vencido).reduce((s, d) => s + d.valor, 0);
   const totalPago = darfsComVenc.filter((d) => d.pagoEm).reduce((s, d) => s + d.valor, 0);
@@ -321,8 +323,8 @@ export default function ApuracaoLista({ meses, pagos = {}, eventos = [], suspeit
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: info.rvMes >= 0 ? 'var(--up)' : 'var(--down)' }}>
-                    {brl(info.rvMes)}
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: (m.resAcao + m.resBdrEtf + m.resFii) >= 0 ? 'var(--up)' : 'var(--down)' }}>
+                    {brl(m.resAcao + m.resBdrEtf + m.resFii)}
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--ink-faint)' }}>resultado do mês</div>
                 </div>
