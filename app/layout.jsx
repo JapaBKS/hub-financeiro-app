@@ -4,12 +4,16 @@ import Nav from './nav';
 export const metadata = {
   title: 'Hub Financeiro',
   description: 'Patrimônio, carteira, cartões e caixa num lugar só',
+  // instalado no iPhone/Android: abre sem a barra do navegador
+  appleWebApp: { capable: true, title: 'Hub', statusBarStyle: 'black-translucent' },
+  icons: { apple: '/icones/apple-touch-icon.png' },
 };
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: '#0F3B4C',
+  viewportFit: 'cover', // app instalado no iPhone: ocupa a tela toda (topo respeita o entalhe)
 };
 
 export default function RootLayout({ children }) {

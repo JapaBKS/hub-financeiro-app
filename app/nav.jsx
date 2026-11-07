@@ -9,6 +9,7 @@ import ThemeToggle from './theme-toggle';
 const ICONES = {
   painel: <><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></>,
   carteira: <><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" /><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" /></>,
+  desempenho: <><path d="M3 3v18h18" /><path d="m7 15 4-4 3 3 6-7" /></>,
   meta: <><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></>,
   recomendacoes: <><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" /></>,
   alvos: <><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></>,
@@ -42,6 +43,7 @@ const GRUPOS = [
     { href: '/', label: 'Visão geral', icone: 'painel' },
     { href: '/carteira', label: 'Carteira', icone: 'carteira' },
     { href: '/meta', label: 'Meta', icone: 'meta' },
+    { href: '/desempenho', label: 'Desempenho', icone: 'desempenho' },
   ] },
   { titulo: 'Investir', itens: [
     { href: '/recomendacoes', label: 'Recomendações', icone: 'recomendacoes' },
