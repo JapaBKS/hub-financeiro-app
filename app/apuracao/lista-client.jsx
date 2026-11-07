@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { hojeISO } from '../../lib/dominio/datas';
+import { compensarPrejuizos, LIMITE_ISENCAO_ACOES as LIMITE_ISENCAO } from '../../lib/dominio/apuracao';
 
 const brl = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const rotulo = (ym) => { const [a, m] = ym.split('-'); return `${MESES[Number(m) - 1]}/${a}`; };
 const diaBR = (iso) => (iso || '').split('-').reverse().slice(0, 2).join('/');
-const LIMITE_ISENCAO = 20000;
 
 const CAT = { acao: 'ação', bdr: 'BDR', etf: 'ETF', fii: 'FII', cripto: 'cripto' };
 const campoEv = {
@@ -57,29 +57,7 @@ export default function ApuracaoLista({ meses, pagos = {}, eventos = [], suspeit
   }
 
   // saldo de prejuízo a compensar: cresce em meses negativos, é CONSUMIDO nos positivos
-  const cron = [...meses].sort((a, b) => a.mes.localeCompare(b.mes));
-  let saldoRV = 0, saldoFii = 0;   // prejuízo disponível (positivo = tem a usar)
-  const acumulado = {};
-  cron.forEach((m) => {
-    const isentoAcao = m.vendasAcao > 0 && m.vendasAcao <= LIMITE_ISENCAO;
-    // lucro de ação em mês isento (vendas até R$ 20 mil) não é tributado, mas o prejuízo
-    // desse mês continua podendo ser compensado depois
-    const rvMes = (isentoAcao ? Math.min(0, m.resAcao) : m.resAcao) + m.resBdrEtf;
-
-    let tribRV = 0;
-    if (rvMes >= 0) { tribRV = Math.max(0, rvMes - saldoRV); saldoRV = Math.max(0, saldoRV - rvMes); }
-    else { saldoRV += -rvMes; }
-
-    let tribFii = 0;
-    if (m.resFii >= 0) { tribFii = Math.max(0, m.resFii - saldoFii); saldoFii = Math.max(0, saldoFii - m.resFii); }
-    else { saldoFii += -m.resFii; }
-
-    acumulado[m.mes] = {
-      rv: saldoRV, fii: saldoFii, rvMes, isentoAcao,
-      impostoRV: tribRV * 0.15,
-      impostoFii: tribFii * 0.20,
-    };
-  });
+  const { cron, acumulado } = compensarPrejuizos(meses);
 
   const ultimo = acumulado[cron[cron.length - 1].mes];
   const impostoTotal = cron.reduce((s, m) => s + acumulado[m.mes].impostoRV + acumulado[m.mes].impostoFii, 0);

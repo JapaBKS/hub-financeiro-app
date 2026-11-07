@@ -20,6 +20,7 @@ const ICONES = {
   caixa: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></>,
   saldos: <><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></>,
   seta: <path d="m6 9 6 6 6-6" />,
+  recibo: <><path d="M5 2v20l2.5-1.5L10 22l2-1.5 2 1.5 2.5-1.5L19 22V2l-2.5 1.5L14 2l-2 1.5L10 2 7.5 3.5Z" /><path d="M9 8h6M9 12h6M9 16h4" /></>,
   mais: <><circle cx="5" cy="12" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="19" cy="12" r="1.4" /></>,
   sair: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>,
   fechar: <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,
@@ -49,6 +50,7 @@ const GRUPOS = [
     { href: '/dividendos', label: 'Proventos', icone: 'proventos' },
     { href: '/biblioteca', label: 'Biblioteca', icone: 'biblioteca' },
     { href: '/apuracao', label: 'Apuração', icone: 'apuracao' },
+    { href: '/imposto-renda', label: 'Imposto de Renda', icone: 'recibo' },
   ] },
   { titulo: 'Dinheiro', itens: [
     { href: '/cartoes', label: 'Cartões', icone: 'cartoes' },
