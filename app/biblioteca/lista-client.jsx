@@ -21,7 +21,8 @@ export default function BibliotecaLista({ ativos }) {
     return ativos.filter((a) => {
       if (filtro === 'atuais' && !a.aberto) return false;
       if (filtro === 'encerrados' && a.aberto) return false;
-      if (cat !== 'todas' && a.cat !== cat) return false;
+      // ETF de renda fixa aparece junto dos ETFs no filtro
+      if (cat !== 'todas' && (a.cat === 'etf_rf' ? 'etf' : a.cat) !== cat) return false;
       if (classe !== 'todas' && a.classe !== classe) return false;
       if (!q) return true;
       return a.ticker.includes(q) || (a.classe || '').toUpperCase().includes(q);
@@ -42,7 +43,7 @@ export default function BibliotecaLista({ ativos }) {
     () => [...new Set(ativos.map((a) => a.classe).filter((c) => c && c !== '—'))].sort(),
     [ativos],
   );
-  const contaCat = (c) => ativos.filter((a) => a.cat === c).length;
+  const contaCat = (c) => ativos.filter((a) => (a.cat === 'etf_rf' ? 'etf' : a.cat) === c).length;
   const CATS = [
     ['todas', 'Todos os tipos'],
     ['acao', 'Ações'],

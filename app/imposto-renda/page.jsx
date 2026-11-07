@@ -19,7 +19,7 @@ function codigoBem(p) {
   if (p.cat === 'cripto') return p.ticker === 'BTC'
     ? { grupo: '08', codigo: '01', nome: 'Bitcoin' }
     : { grupo: '08', codigo: '02', nome: 'Outras criptomoedas' };
-  if (p.cat === 'etf') return { grupo: '07', codigo: '?', nome: 'ETF (código conforme o informe)', conferir: true };
+  if (p.cat === 'etf' || p.cat === 'etf_rf') return { grupo: '07', codigo: '?', nome: 'ETF (código conforme o informe)', conferir: true };
   return { grupo: '04', codigo: '?', nome: 'BDR (código conforme o informe)', conferir: true };
 }
 
@@ -69,7 +69,7 @@ export default async function ImpostoRenda({ searchParams }) {
   const anterior = posicaoEm(ano - 1);
   const tickers = [...new Set([...Object.keys(atual), ...Object.keys(anterior)])]
     .filter((t) => (atual[t]?.quantidade || 0) > 0 || (anterior[t]?.quantidade || 0) > 0);
-  const ORDEM_CAT = { acao: 0, fii: 1, etf: 2, bdr: 3, cripto: 4 };
+  const ORDEM_CAT = { acao: 0, fii: 1, etf: 2, etf_rf: 2, bdr: 3, cripto: 4 };
   const bens = tickers.map((t) => {
     const p = atual[t] || { ...anterior[t], quantidade: 0, custoTotal: 0, precoMedio: 0 };
     return { ...p, ticker: t, antes: anterior[t]?.quantidade > 0 ? anterior[t].custoTotal : 0, agora: atual[t]?.quantidade > 0 ? atual[t].custoTotal : 0, cod: codigoBem(p) };
@@ -230,6 +230,9 @@ export default async function ImpostoRenda({ searchParams }) {
           <div><span>Operações comuns</span><b>{brl(prejRV)}</b></div>
           <div><span>Fundos imobiliários</span><b>{brl(prejFii)}</b></div>
         </div>
+        {mesesAno.some((m) => m.vendasRf > 0) && (
+          <p className="ir-nota">ETFs de renda fixa (B5P211 e parecidos) ficam fora desta ficha: o imposto da venda já foi retido na fonte.</p>
+        )}
         {vendasCriptoAno > 0 && (
           <p className="ir-nota">Cripto: {brl(vendasCriptoAno)} vendidos em {ano}. Meses com vendas até {brl(LIMITE_ISENCAO_CRIPTO)} são isentos; acima disso o ganho é apurado à parte (GCAP).</p>
         )}
