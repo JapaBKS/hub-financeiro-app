@@ -34,5 +34,6 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/((?!login|api/login|api/logout|_next/static|_next/image|favicon.ico).*)'],
+  // manifest e ícones ficam públicos: o celular precisa deles para instalar o app
+  matcher: ['/((?!login|api/login|api/logout|_next/static|_next/image|favicon.ico|icon.png|manifest.webmanifest|icones/).*)'],
 };
