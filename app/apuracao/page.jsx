@@ -1,5 +1,6 @@
 import { supabaseServer } from '../../lib/supabase';
 import { calcularHistorico } from '../../lib/dominio/posicoes';
+import { agruparVendasPorMes } from '../../lib/dominio/apuracao';
 import ApuracaoLista from './lista-client';
 
 export const dynamic = 'force-dynamic';
@@ -23,25 +24,7 @@ export default async function Apuracao() {
   // vem do domínio — esta página só AGRUPA o resultado por mês.
   const { vendas, negativos } = calcularHistorico(trades, eventos);
 
-  const meses = {};
-  for (const v of vendas) {
-    const M = (meses[v.mes] ||= {
-      mes: v.mes,
-      vendasAcao: 0, vendasBdrEtf: 0, vendasFii: 0, vendasCripto: 0,
-      resAcao: 0, resBdrEtf: 0, resFii: 0, resCripto: 0,
-      vendas: [],
-    });
-    // cada grupo apura separado: FII (20%), cripto (regra própria) e o resto (15%)
-    if (v.cat === 'fii') { M.vendasFii += v.bruto; M.resFii += v.resultado; }
-    else if (v.cat === 'cripto') { M.vendasCripto += v.bruto; M.resCripto += v.resultado; }
-    else if (v.cat === 'acao') { M.vendasAcao += v.bruto; M.resAcao += v.resultado; }
-    else { M.vendasBdrEtf += v.bruto; M.resBdrEtf += v.resultado; }
-    M.vendas.push(v);
-  }
-
-  const lista = Object.values(meses)
-    .map((m) => ({ ...m, vendas: m.vendas.sort((a, b) => a.dia.localeCompare(b.dia)) }))
-    .sort((a, b) => b.mes.localeCompare(a.mes));
+  const lista = agruparVendasPorMes(vendas);
 
   return (
     <div className="wrap" style={{ maxWidth: 760 }}>

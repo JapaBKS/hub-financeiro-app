@@ -466,3 +466,54 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .vd-num{text-align:right;white-space:nowrap}
 .vd-num b{font-family:var(--font-display);font-size:14px;font-variant-numeric:tabular-nums}
 @media(max-width:720px){.vd-grade{grid-template-columns:1fr;gap:10px;padding:8px 16px 14px}}
+
+/* ---------- Imposto de Renda ---------- */
+.ir-anos{display:flex;gap:6px;flex-wrap:wrap;margin:-6px 0 14px}
+.ir-anos a{text-decoration:none}
+.ir-aviso{padding:16px 20px;margin-bottom:18px;background:var(--brass-bg);border-color:var(--brass-soft)}
+.ir-aviso b{font-family:var(--font-display);font-size:15px}
+.ir-aviso p{margin:6px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink-soft);max-width:70ch}
+.ir-vazio{font-size:13px;color:var(--ink-faint);margin:0;padding:8px 0}
+.ir-nota{font-size:12.5px;color:var(--ink-faint);line-height:1.5;margin:0;padding:0 20px 16px;max-width:75ch}
+.ir-nota a{color:var(--forest-2)}
+.ir-bens-cab,.ir-bem-topo,.ir-total{display:grid;grid-template-columns:minmax(0,1fr) 120px 120px;gap:10px;align-items:baseline}
+.ir-bens-cab{padding:12px 20px 6px;font-size:12px;color:var(--ink-faint);text-align:right}
+.ir-bens-cab span:first-child{text-align:left}
+.ir-bem{padding:12px 20px;border-top:1px solid var(--line-soft)}
+.ir-bem-ativo b{font-family:var(--font-display);font-size:15px;margin-right:8px}
+.ir-cod{display:inline-block;font-size:11.5px;font-weight:600;color:var(--forest-2);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:1px 7px}
+.ir-cod.conferir{color:var(--amber);background:var(--amber-bg);border-color:transparent}
+.ir-cod-nome{display:block;font-size:12px;color:var(--ink-faint);margin-top:3px}
+.ir-valor{text-align:right;font-family:var(--font-display);font-variant-numeric:tabular-nums;color:var(--ink-soft);white-space:nowrap}
+.ir-valor.forte{color:var(--ink);font-weight:600}
+.ir-discr{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:8px;padding:8px 10px;border-radius:9px;background:var(--surface-2);font-size:12.5px;color:var(--ink-soft)}
+.ir-total{padding:12px 20px 14px;border-top:1px solid var(--line);font-weight:600;font-family:var(--font-display)}
+.ir-total span:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+.ir-prov{padding:4px 20px 12px;display:flex;flex-direction:column;gap:14px}
+.ir-prov-grupo{border-top:1px solid var(--line-soft);padding-top:10px}
+.ir-prov-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px}
+.ir-prov-cab b{font-size:14px}
+.ir-prov-cab span{display:block;font-size:12px;color:var(--forest-2);font-weight:500}
+.ir-linha{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.ir-rv-cab,.ir-rv{display:grid;grid-template-columns:52px repeat(3,minmax(0,1fr));gap:10px;padding:8px 20px;align-items:baseline}
+.ir-rv-cab{font-size:12px;color:var(--ink-faint);padding-top:12px}
+.ir-rv-cab span:not(:first-child),.ir-rv span:not(:first-child){text-align:right}
+.ir-rv{border-top:1px solid var(--line-soft);font-family:var(--font-display);font-size:13.5px;font-variant-numeric:tabular-nums}
+.ir-rv small{display:block;font-family:var(--font-body);font-size:11px;color:var(--ink-faint)}
+.ir-rv .pos{color:var(--up)} .ir-rv .neg{color:var(--down)}
+.ir-rv-mes{font-family:var(--font-body);font-weight:600;color:var(--ink-soft)}
+.ir-prej{display:flex;flex-direction:column;gap:2px;margin:6px 20px 14px;padding:12px 14px;border-radius:10px;background:var(--surface-2)}
+.ir-prej div{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.ir-prej span{color:var(--ink-soft)}
+.ir-prej .ir-prej-tit{font-size:12px;font-weight:600;color:var(--ink-faint);margin-bottom:4px}
+.ir-prej b{font-family:var(--font-display);font-variant-numeric:tabular-nums}
+@media(max-width:560px){
+  .ir-bens-cab,.ir-bem-topo,.ir-total{grid-template-columns:minmax(0,1fr) 92px 92px;gap:6px}
+  .ir-bens-cab,.ir-bem,.ir-total{padding-left:14px;padding-right:14px}
+  .ir-valor{font-size:12.5px}
+  .ir-total{font-size:12.5px}
+  .ir-discr{flex-direction:column;align-items:stretch}
+  .ir-rv-cab,.ir-rv{padding-left:14px;padding-right:14px;gap:6px;font-size:12.5px}
+  .ir-prov{padding-left:14px;padding-right:14px}
+  .ir-nota{padding-left:14px;padding-right:14px}
+}
