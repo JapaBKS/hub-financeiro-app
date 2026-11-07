@@ -7,7 +7,7 @@ export default function manifest() {
     start_url: '/',
     scope: '/',
     display: 'standalone',
-    orientation: 'portrait',
+    orientation: 'any', // celular e tablet giram livremente
     background_color: '#0F3B4C',
     theme_color: '#0F3B4C',
     lang: 'pt-BR',
