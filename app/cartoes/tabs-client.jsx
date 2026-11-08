@@ -1,12 +1,17 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FormCartao from './form-client';
 import Recentes from './recentes-client';
 import FaturasView from '../faturas/view-client';
 import GerenciarCartoes from './gerenciar-cartoes-client';
 
 export default function CartoesTabs({ cards, recentes, invoices, items, payments }) {
-  const [aba, setAba] = useState('faturas'); // 'faturas' | 'lancar' | 'cartoes'
+  const [aba, setAbaEstado] = useState('faturas'); // 'faturas' | 'lancar' | 'cartoes'
+  // volta na mesma aba depois de salvar (a tela recarrega para todas as abas mostrarem o valor novo)
+  useEffect(() => {
+    try { const a = sessionStorage.getItem('cartoes_aba'); if (a) setAbaEstado(a); } catch {}
+  }, []);
+  const setAba = (a) => { setAbaEstado(a); try { sessionStorage.setItem('cartoes_aba', a); } catch {} };
 
   const tab = (val, label) => (
     <button type="button" className="chip chip-grande" onClick={() => setAba(val)} aria-pressed={aba === val} style={{ minWidth: 0 }}>{label}</button>

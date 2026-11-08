@@ -4,6 +4,7 @@ import { brl as fmt } from '../../lib/format';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
 import { arcPath, fatiar } from '../ui/donut';
 import { hojeISO } from '../../lib/dominio/datas';
+import { numeroBR } from '../../lib/format';
 
 
 
@@ -87,7 +88,8 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
   }
   async function salvarItem(it) {
     const f = editForm;
-    if (!(Number(f.valor) > 0)) { alert('O valor precisa ser maior que zero.'); return; }
+    const valorNovo = Math.round(numeroBR(f.valor) * 100) / 100;
+    if (!(valorNovo > 0)) { alert('Digite o valor desta parcela (ex.: 45,90).'); return; }
     const paiPct = f.pagador === 'eu' ? 0 : f.pagador === 'pai' ? 100 : Math.min(100, Math.max(0, Number(f.paiPct) || 0));
     const pagadorCalc = paiPct <= 0 ? 'eu' : paiPct >= 100 ? 'pai' : 'dividido';
 
@@ -101,14 +103,16 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
     if (f.valor !== f.valorOrig) {
       const r2 = await fetch('/api/installment', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ purchase_id: it.purchase_id, n: it.parcela_idx, amount: Number(f.valor) }),
+        body: JSON.stringify({ purchase_id: it.purchase_id, n: it.parcela_idx, amount: valorNovo }),
       });
       okVal = r2.ok;
+      if (!r2.ok) { const d = await r2.json().catch(() => ({})); alert(d.erro || 'Não foi possível salvar o valor.'); }
     }
+    if (!r1.ok) { const d = await r1.json().catch(() => ({})); alert(d.erro || 'Não foi possível salvar a compra.'); }
     if (r1.ok && okVal) {
       setItens((arr) => arr.map((x) => {
         if (x.purchase_id !== it.purchase_id) return x;
-        const novoAmount = itKey(x) === itKey(it) ? Number(f.valor) : Number(x.amount);
+        const novoAmount = itKey(x) === itKey(it) ? valorNovo : Number(x.amount);
         return {
           ...x, description: f.description, categoria: f.categoria, pagador: pagadorCalc, pai_pct: paiPct,
           amount: novoAmount, amount_pai: Math.round(novoAmount * paiPct) / 100,
@@ -299,7 +303,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                         {editForm.pagador === 'dividido' && (
                           <input className="campo campo-sm" type="number" min="0" max="100" value={editForm.paiPct} onChange={(e) => setEditForm({ ...editForm, paiPct: e.target.value })} placeholder="% do pai" />
                         )}
-                        <input className="campo campo-sm" type="number" step="any" value={editForm.valor} onChange={(e) => setEditForm({ ...editForm, valor: e.target.value })} placeholder="Valor desta parcela" />
+                        <input className="campo campo-sm" type="text" inputMode="decimal" value={editForm.valor} onChange={(e) => setEditForm({ ...editForm, valor: e.target.value })} placeholder="Valor desta parcela" />
                       </div>
                       <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 6 }}>
                         Descrição, categoria e quem paga valem pra compra toda · o valor é só desta parcela ({it.parcela})

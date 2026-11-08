@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
-import { brl as fmt } from '../../lib/format';
+import { brl as fmt, numeroBR } from '../../lib/format';
 
 export default function Recentes({ purchases, cards }) {
   const [lista, setLista] = useState(purchases);
@@ -42,8 +42,9 @@ export default function Recentes({ purchases, cards }) {
 
   async function salvar(id) {
     const nParc = Math.max(1, Number(form.installments_count) || 1);
-    const valorParcela = Number(form.parcela) || 0;
-    if (!(valorParcela > 0)) { alert('O valor da parcela precisa ser maior que zero.'); return; }
+    const valorParcela = Math.round(numeroBR(form.parcela) * 100) / 100;
+    if (!(valorParcela > 0)) { alert('Digite o valor da parcela (ex.: 45,90).'); return; }
+    if (!/^\d{4}-\d{2}$/.test(form.mes || '')) { alert('Escolha o mês da 1ª parcela.'); return; }
     setBusy(id);
     const paiPctCalc = form.pagador === 'eu' ? 0 : form.pagador === 'pai' ? 100 : Math.min(100, Math.max(0, Number(form.paiPct) || 0));
     const res = await fetch('/api/card-purchases', {
@@ -55,18 +56,14 @@ export default function Recentes({ purchases, cards }) {
         installments_count: nParc, first_billed_month: form.mes + '-01',
       }),
     });
-    if (res.ok) {
-      const pagadorCalc = paiPctCalc <= 0 ? 'eu' : paiPctCalc >= 100 ? 'pai' : 'dividido';
-      setLista((l) => l.map((p) => (p.id === id ? {
-        ...p, card_id: Number(form.card_id),
-        cartao: cards.find((c) => String(c.id) === form.card_id)?.name || p.cartao,
-        description: form.description, categoria: form.categoria, pagador: pagadorCalc, pai_pct: paiPctCalc,
-        installments_count: nParc,
-        installment_amount: valorParcela, first_billed_month: form.mes + '-01',
-      } : p)));
-      setEditId(null);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      alert(d.erro || 'Não foi possível salvar a compra. Tente de novo.');
+      setBusy(null);
+      return;
     }
-    setBusy(null);
+    // recarrega: a fatura (outra aba) e os totais também passam a mostrar o valor novo
+    window.location.reload();
   }
 
   if (!lista.length) return null;
@@ -104,7 +101,7 @@ export default function Recentes({ purchases, cards }) {
                       <button type="button" key={v} className="chip" aria-pressed={form.pagador === v} onClick={() => setForm({ ...form, pagador: v })} style={{ flex: 1 }}>{l}</button>
                     ))}
                   </div>
-                  <input className="campo" type="number" step="any" value={form.parcela} onChange={(e) => setForm({ ...form, parcela: e.target.value })} placeholder="Valor da parcela" />
+                  <input className="campo" type="text" inputMode="decimal" value={form.parcela} onChange={(e) => setForm({ ...form, parcela: e.target.value })} placeholder="Valor da parcela" />
                   <input className="campo" type="number" min="1" value={form.installments_count} onChange={(e) => setForm({ ...form, installments_count: e.target.value })} placeholder="Parcelas" />
                 </div>
                 {form.pagador === 'dividido' && (
