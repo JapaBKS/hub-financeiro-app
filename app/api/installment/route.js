@@ -3,7 +3,8 @@ import { rota, ok, checar, id, numero } from '../../../lib/api';
 
 export const POST = rota(async (b) => {
   const compra = id(b.purchase_id, 'a compra');
-  const parcela = numero(b.n, 'A parcela', { min: 1, inteiro: true });
+  // índice da parcela começa em 0 (a 1ª parcela é n = 0), igual ao parcela_idx da v_card_invoice_items
+  const parcela = numero(b.n, 'A parcela', { min: 0, inteiro: true });
   const valor = numero(b.amount, 'O valor', { min: 0 });
 
   const sb = supabaseServer();
@@ -17,7 +18,8 @@ export const POST = rota(async (b) => {
 // remove o ajuste, voltando ao valor padrão da parcela
 export const DELETE = rota(async (b) => {
   const compra = id(b.purchase_id, 'a compra');
-  const parcela = numero(b.n, 'A parcela', { min: 1, inteiro: true });
+  // índice da parcela começa em 0 (a 1ª parcela é n = 0), igual ao parcela_idx da v_card_invoice_items
+  const parcela = numero(b.n, 'A parcela', { min: 0, inteiro: true });
 
   const sb = supabaseServer();
   checar(await sb.from('installment_overrides').delete()
