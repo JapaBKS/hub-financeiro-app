@@ -6,6 +6,7 @@ import { hojeISO } from '../../lib/dominio/datas';
 import { brl, pct } from '../../lib/format';
 import MetaForm from './meta-client';
 import MetaChart from './meta-chart';
+import SimularRenda from './simular-renda';
 
 // ---- premissas do plano: FIXAS de propósito ----
 // A projeção é a régua para saber se você está mais perto ou mais longe. Por isso nada aqui
@@ -137,6 +138,18 @@ export default async function Meta() {
     }
   }
   const targetIdx = proj[proj.length - 1].idx;
+  // a mesma projeção, continuada além do R$ 1 mi, para o simulador de renda
+  const projLonga = proj.map((p) => [p.idx, Math.round(p.value)]);
+  {
+    const ult = proj[proj.length - 1];
+    let saldo = ult.nominal; let div = ult.div; let idx = ult.idx; let g = 0;
+    while (emDinheiroDeHoje(saldo, idx) < 20e6 && g < 900) {
+      idx++; g++;
+      saldo = saldo * (1 + CRESC_MES) + aporteDoAno(idx) + div;
+      div = saldo * DIV_PCT;
+      projLonga.push([idx, Math.round(emDinheiroDeHoje(saldo, idx))]);
+    }
+  }
   const projByIdx = {};
   proj.forEach((p) => { projByIdx[p.idx] = p.value; });
   const projAt = (idx) => {
@@ -329,6 +342,8 @@ export default async function Meta() {
                 Hoje: seus FIIs atuais ({brl(fiisNow)}) rendendo {(RENDIMENTO_FII_MES * 100).toLocaleString('pt-BR')}% ao mês. Na meta: a premissa do plano ({(PROVENTOS_MES * 100).toLocaleString('pt-BR')}% ao mês).
                 Reserva de emergência e fluxo ficam de fora.
               </p>
+              <h3 className="sim-titulo">Simular uma renda</h3>
+              <SimularRenda pontos={projLonga.filter(([i]) => i >= todayIdx)} hojeIdx={todayIdx} temHoje={investidoNow} proventosMes={PROVENTOS_MES} />
             </div>
           </section>
         );
