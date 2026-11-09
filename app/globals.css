@@ -570,3 +570,6 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .ir-sub{font-size:13px;color:var(--ink-faint);margin:-4px 0 10px}
 .secao-titulo{font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:-.01em;margin:0 2px 2px}
 .secao-sub{font-size:13px;color:var(--ink-faint);margin:0 2px 12px}
+.receber-previa{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--line)}
+.receber-previa li{display:grid;grid-template-columns:72px 1fr auto;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.receber-previa li span:nth-child(2){color:var(--ink-faint)}
