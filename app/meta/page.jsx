@@ -7,6 +7,18 @@ import { brl, pct } from '../../lib/format';
 import MetaForm from './meta-client';
 import MetaChart from './meta-chart';
 
+// IPCA acumulado em 12 meses (Banco Central, série 13522). Sem resposta, a tela segue sem a coluna corrigida.
+async function ipca12Meses() {
+  try {
+    const r = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados/ultimos/1?formato=json', { cache: 'no-store', signal: AbortSignal.timeout(6000) });
+    const d = r.ok ? await r.json() : null;
+    const v = Number(d?.[0]?.valor);
+    return Number.isFinite(v) && v > 0 ? { taxa: v / 100, ref: d[0].data.slice(3) } : null;
+  } catch { return null; }
+}
+
+const brlCompacto = (n) => (n >= 999500 ? `R$ ${(n / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} mi` : `R$ ${(n / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} mil`);
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -113,11 +125,17 @@ export default async function Meta() {
   };
   const plannedNow = projAt(todayIdx);
 
+  // inflação: o alvo "em dinheiro de hoje" cresce todo mês pelo IPCA dos últimos 12 meses
+  const ipca = await ipca12Meses();
+  const infMes = ipca ? Math.pow(1 + ipca.taxa, 1 / 12) - 1 : 0;
+  const alvoCorrigido = (alvo, idx) => alvo * Math.pow(1 + infMes, Math.max(0, idx - todayIdx));
+
   // roda a mesma fórmula a partir de um ponto qualquer até alcançar um alvo -> retorna o idx
-  const alcancaIdx = (startVal, startIdx, alvo) => {
+  // (comInflacao: o alvo vai sendo corrigido pelo IPCA a partir de hoje)
+  const alcancaIdx = (startVal, startIdx, alvo, comInflacao = false) => {
     if (startVal >= alvo) return startIdx;
     let saldo = startVal, div = saldo * DIV_PCT, idx = startIdx, g = 0;
-    while (saldo < alvo && g < 1200) {
+    while (saldo < (comInflacao ? alvoCorrigido(alvo, idx) : alvo) && g < 1200) {
       idx++; g++;
       saldo = saldo * (1 + CRESC_MES) + aporteDoAno(idx) + div;
       div = saldo * DIV_PCT;
@@ -136,7 +154,8 @@ export default async function Meta() {
     atingido: realNow >= alvo,
     seuRitmo: alcancaIdx(realNow, todayIdx, alvo),
     pelaProj: projAlcancaIdx(alvo),
-  }));
+    comInflacao: ipca ? alcancaIdx(realNow, todayIdx, alvo, true) : null,
+  })).map((m) => ({ ...m, valorNaEpoca: m.comInflacao != null ? alvoCorrigido(m.alvo, m.comInflacao) : null }));
 
   // quantos meses à frente da projeção: onde a projeção alcançaria o seu valor de hoje
   const idxProjIgualHoje = projAlcancaIdx(realNow);
@@ -276,14 +295,21 @@ export default async function Meta() {
           <div style={{ display: 'flex', padding: '6px 20px', fontSize: 11, color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>
             <span style={{ flex: 1 }}>Marco</span>
             <span style={{ flex: 1, textAlign: 'right' }}>No seu ritmo</span>
+            {ipca && <span style={{ flex: 1.2, textAlign: 'right' }}>Com inflação</span>}
             <span style={{ flex: 1, textAlign: 'right' }}>Pela projeção</span>
           </div>
           {marcos.map((m) => (
             <div key={m.alvo} style={{ display: 'flex', alignItems: 'center', padding: '9px 20px', fontSize: 13, borderBottom: '1px solid var(--line-soft)' }}>
-              <span style={{ flex: 1, fontWeight: 600 }}>{brl(m.alvo)}</span>
+              <span style={{ flex: 1, fontWeight: 600, whiteSpace: 'nowrap' }}>{brlCompacto(m.alvo)}</span>
               <span style={{ flex: 1, textAlign: 'right', fontWeight: 600, color: m.atingido ? 'var(--up)' : 'var(--forest-2)', textTransform: 'capitalize' }}>
                 {m.atingido ? '✓ atingido' : mesLabel(m.seuRitmo)}
               </span>
+              {ipca && (
+                <span style={{ flex: 1.2, textAlign: 'right', fontWeight: 600, color: m.atingido ? 'var(--up)' : 'var(--ink)', textTransform: 'capitalize', lineHeight: 1.25 }}>
+                  {m.atingido ? '✓' : mesLabel(m.comInflacao)}
+                  {!m.atingido && <small style={{ display: 'block', fontSize: 10.5, fontWeight: 500, color: 'var(--ink-faint)', textTransform: 'none', whiteSpace: 'nowrap' }}>= {brlCompacto(m.valorNaEpoca)}</small>}
+                </span>
+              )}
               <span style={{ flex: 1, textAlign: 'right', color: 'var(--brass)', textTransform: 'capitalize' }}>
                 {mesLabel(m.pelaProj)}
               </span>
@@ -291,7 +317,7 @@ export default async function Meta() {
           ))}
         </div>
         <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>
-          "No seu ritmo" parte do seu valor de hoje seguindo a mesma fórmula. "Pela projeção" é o plano puro desde jul/2024.
+          "No seu ritmo" parte do seu valor de hoje seguindo a mesma fórmula. "Com inflação" é quando você chega ao marco em dinheiro de hoje (abaixo, quanto ele vai valer na época): o alvo sobe todo mês pelo IPCA{ipca ? ` (${pct(ipca.taxa, 2)} nos 12 meses até ${ipca.ref}, Banco Central)` : ''}. "Pela projeção" é o plano puro desde jul/2024.
         </p>
       </section>
 
@@ -300,7 +326,7 @@ export default async function Meta() {
 
       {/* simulação: quando chego nos marcos com um aporte fixo (ex.: os 30%) */}
       <SimulacaoAporte valorHoje={realNow} idxHoje={todayIdx} cresc={CRESC_MES} divPct={DIV_PCT}
-        marcos={marcos.map((m) => ({ alvo: m.alvo, plano: m.seuRitmo }))} aporteInicial={1196} />
+        marcos={marcos.map((m) => ({ alvo: m.alvo, plano: m.seuRitmo, planoReal: m.comInflacao ?? m.seuRitmo }))} aporteInicial={1196} infMes={infMes} />
 
       {/* regra dos 30%: calculadora */}
       <CalculadoraAporte reservaFalta={reservaFalta} faturasDia15={faturasDia15} faturasDia30={faturasDia30} diaInicial={diaInicial} />
