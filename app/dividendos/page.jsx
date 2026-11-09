@@ -5,7 +5,6 @@ import ImportarB3Receber from './importar-b3-receber-client';
 import ImportarPainel from './importar-painel';
 import { PROVENTOS_MES, MARCOS } from '../../lib/dominio/plano';
 import { brl } from '../../lib/format';
-import { detectarPadraoPagamento } from '../../lib/dominio/proventos';
 import EvolucaoProventos from './evolucao-client';
 import { hojeISO } from '../../lib/dominio/datas';
 
@@ -102,17 +101,6 @@ export default async function Dividendos() {
   const esteMes = (totalPorMes[mesAtualKey] || 0) + (pendPorMes[mesAtualKey] || 0);
   const anual = fechados.reduce((s, m) => s + m.total, 0);
 
-  // quando cada FII costuma pagar (vinha da antiga Biblioteca): padrão dos últimos 12 meses
-  const desde = `${Number(hoje.slice(0, 4)) - 1}${hoje.slice(4, 10)}`;
-  const datasPorFii = {};
-  (recebidos || []).forEach((d) => {
-    if (d.assets?.asset_classes?.name !== 'FIIS' || !d.paid_at || d.paid_at.slice(0, 10) < desde) return;
-    (datasPorFii[d.ticker] ||= []).push(d.paid_at.slice(0, 10));
-  });
-  const quandoPaga = Object.entries(datasPorFii)
-    .map(([ticker, datas]) => ({ ticker, padrao: detectarPadraoPagamento(datas) }))
-    .filter((x) => x.padrao.tipo !== 'irregular')
-    .sort((a, b) => (a.padrao.diaTipico || 99) - (b.padrao.diaTipico || 99));
 
   return (
     <div className="wrap" style={{ maxWidth: 680 }}>
@@ -139,12 +127,6 @@ export default async function Dividendos() {
             </div>
           ))}
         </div>
-        {quandoPaga.length > 0 && (
-          <div className="rp-dias">
-            <span>Quando cada FII costuma pagar</span>
-            <div>{quandoPaga.map((x) => <span key={x.ticker} className="chip" style={{ cursor: 'default' }}><b>{x.ticker}</b>&nbsp;{x.padrao.descricao}</span>)}</div>
-          </div>
-        )}
         <p className="ir-nota">Nos marcos, a mesma taxa da Meta: proventos de {(PROVENTOS_MES * 100).toLocaleString('pt-BR')}% do patrimônio por mês (FIIs rendendo ~0,8% e sendo 15% da carteira), em dinheiro de nov/2026.</p>
       </section>
       <EvolucaoProventos porMes={porMes} porAno={porAno} />
