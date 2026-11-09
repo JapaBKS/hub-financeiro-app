@@ -53,7 +53,7 @@ export default function AlocacaoDonut({ dados, total }) {
         <svg viewBox="0 0 200 200" style={{ width: 190, height: 190, flex: 'none' }} onMouseLeave={() => setSel(null)}>
           {reais.map((f) => anel(f, 1, `r-${f.classe}`))}
           <text x="100" y="95" textAnchor="middle" fontSize="9" fill="var(--ink-faint)">
-            {escolhido ? escolhido.classe : 'patrimônio'}
+            {escolhido ? escolhido.classe : 'investidos'}
           </text>
           <text x="100" y="110" textAnchor="middle" fontSize="13" fontWeight="600" fill="var(--ink)" fontFamily="var(--font-display)">
             {escolhido ? brl(escolhido.valor) : brl(total)}
