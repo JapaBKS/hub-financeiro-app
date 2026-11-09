@@ -1,4 +1,5 @@
 'use client';
+import Logo from '../ui/logo';
 import { useState } from 'react';
 
 export default function Login() {
@@ -28,10 +29,7 @@ export default function Login() {
   return (
     <div className="login">
       <form onSubmit={entrar} className="login-cartao">
-        <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true" style={{ marginBottom: 18 }}>
-          <rect width="32" height="32" rx="9" fill="var(--brass)" />
-          <path d="M10 9v14M22 9v14M10 16h12" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
-        </svg>
+        <Logo tamanho={56} style={{ marginBottom: 16 }} />
         <h1>Hub Financeiro</h1>
         <p>Digite a senha para entrar.</p>
         <label htmlFor="senha" className="login-rotulo">Senha</label>

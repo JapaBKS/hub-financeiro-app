@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import ThemeToggle from './theme-toggle';
+import Logo from './ui/logo';
 
 // Ícones de traço (24x24, herdam a cor do texto). Um conjunto só, no lugar dos
 // caracteres soltos (◎ ▣ ☰ ...) que variavam de tamanho entre aparelhos.
@@ -75,14 +76,7 @@ function rosacea(R, r, d, voltas, passos = 900) {
 }
 const ROSACEA = [rosacea(120, 33, 62, 33), rosacea(120, 45, 30, 3), rosacea(96, 27, 52, 27)];
 
-function Marca({ tamanho = 30 }) {
-  return (
-    <svg width={tamanho} height={tamanho} viewBox="0 0 32 32" aria-hidden="true" className="marca">
-      <rect width="32" height="32" rx="9" fill="var(--brass)" />
-      <path d="M10 9v14M22 9v14M10 16h12" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
-    </svg>
-  );
-}
+const Marca = Logo;
 
 // atalhos fixos da barra inferior no celular; o resto fica em "Mais"
 const ABAS_CELULAR = ['/', '/carteira', '/cartoes', '/caixa'];
