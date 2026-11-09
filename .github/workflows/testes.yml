@@ -1,0 +1,19 @@
+name: Testes
+# Confere as contas (custo médio, apuração/DARF, preços, aporte, validações) a cada PR.
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Testes dos cálculos
+        run: npm test
+      - name: Tipos
+        run: npx tsc --noEmit
