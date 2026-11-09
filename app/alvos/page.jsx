@@ -33,9 +33,9 @@ export default async function Alvos() {
     <div className="wrap" style={{ maxWidth: 600 }}>
       <header className="topbar">
         <div className="brand">
-          <div><b>Carteira recomendada</b><span>abas e pesos por ativo</span></div>
+          <div><b>Alvos</b><span>quanto cada classe e cada ativo deve ter</span></div>
         </div>
-        <a href="/recomendacoes" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>ver sinais →</a>
+        <a href="/recomendacoes">← Recomendações</a>
       </header>
       <MetasClasse classes={todasClasses || []} />
       <AlvosClient grupos={grupos} />

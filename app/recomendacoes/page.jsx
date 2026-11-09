@@ -275,7 +275,7 @@ export default async function Recomendacoes() {
         <div className="brand">
           <div><b>Recomendações</b><span>o que comprar e reduzir</span></div>
         </div>
-        <a href="/carteira" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>carteira →</a>
+        <a href="/alvos">Editar alvos</a>
       </header>
 
       <RecomendacoesLista

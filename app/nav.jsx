@@ -38,7 +38,7 @@ function Icone({ nome, tamanho = 17, className = '' }) {
   );
 }
 
-// 12 telas em 3 grupos: mesma ordem na barra lateral (desktop) e no menu "Mais" (celular)
+// 10 telas em 3 grupos: mesma ordem na barra lateral (desktop) e no menu "Mais" (celular)
 const GRUPOS = [
   { titulo: 'Painel', itens: [
     { href: '/', label: 'Visão geral', icone: 'painel' },
@@ -48,17 +48,13 @@ const GRUPOS = [
   ] },
   { titulo: 'Investir', itens: [
     { href: '/recomendacoes', label: 'Recomendações', icone: 'recomendacoes' },
-    { href: '/alvos', label: 'Alvos', icone: 'alvos' },
     { href: '/negociacoes', label: 'Negociações', icone: 'negociacoes' },
     { href: '/dividendos', label: 'Proventos', icone: 'proventos' },
-    { href: '/biblioteca', label: 'Biblioteca', icone: 'biblioteca' },
-    { href: '/apuracao', label: 'Apuração', icone: 'apuracao' },
-    { href: '/imposto-renda', label: 'Imposto de Renda', icone: 'recibo' },
+    { href: '/impostos', label: 'Impostos', icone: 'recibo' },
   ] },
   { titulo: 'Dinheiro', itens: [
     { href: '/cartoes', label: 'Cartões', icone: 'cartoes' },
     { href: '/caixa', label: 'Caixa', icone: 'caixa' },
-    { href: '/saldos', label: 'Saldos', icone: 'saldos' },
   ] },
 ];
 

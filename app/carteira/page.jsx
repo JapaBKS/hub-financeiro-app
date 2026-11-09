@@ -3,6 +3,8 @@ import { brl, pct } from '../../lib/format';
 import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import PrecoManual from '../preco-manual-client';
 
+import SaldosClient from './saldos-client';
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -10,13 +12,19 @@ const fmtNum = (n, d = 2) => Number(n).toLocaleString('pt-BR', { minimumFraction
 
 export default async function Carteira() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: manuais }, { data: precos }, { data: divs }, { data: resumoTrades }] = await Promise.all([
+  const [{ data: pos }, { data: manuais }, { data: precos }, { data: divs }, { data: resumoTrades }, { data: holdings }, { data: classesTodas }] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('manual_prices').select('ticker, price'),
     sb.from('prices').select('ticker, price, updated_at'),
     sb.from('dividends').select('ticker, amount'),
     sb.from('v_resumo_trades').select('*').single(),
+    sb.from('manual_holdings').select('id, label, amount, class_id, asset_classes(name)').order('id'),
+    sb.from('asset_classes').select('id, name').order('name'),
   ]);
+  // saldos lançados à mão (Tesouro, reserva, Mercado Pago…): antes eram a tela Saldos
+  const saldosManuais = (holdings || []).map((h) => ({
+    id: h.id, label: h.label, amount: h.amount, class_id: h.class_id, classe: h.asset_classes?.name,
+  }));
   const provDe = {};
   (divs || []).forEach((d) => {
     if (!d.ticker) return;
@@ -137,7 +145,7 @@ export default async function Carteira() {
         <div className="brand">
           <div><b>Carteira</b><span>{ativos.length} ativos{aguardando > 0 ? ` · ${aguardando} s/ cotação` : ''}</span></div>
         </div>
-        <a href="/registrar" style={{ fontSize: 13, color: 'var(--forest-2)', textDecoration: 'none', fontWeight: 500 }}>+ negociação</a>
+        <a href="/negociacoes">+ negociação</a>
       </header>
 
       <section className="card" style={{ padding: '20px 22px', marginBottom: 16, display: 'flex', gap: 28, flexWrap: 'wrap' }}>
@@ -210,6 +218,12 @@ export default async function Carteira() {
       {ativos.length === 0 && (
         <div className="card" style={{ padding: 20, fontSize: 13, color: 'var(--ink-faint)' }}>Nenhuma posição no momento.</div>
       )}
+
+      <section id="saldos" style={{ marginTop: 22, scrollMarginTop: 80 }}>
+        <h2 className="secao-titulo">Saldos manuais</h2>
+        <p className="secao-sub">Tesouro, fundos, reserva, Mercado Pago… o que não vem das negociações.</p>
+        <SaldosClient holdings={saldosManuais} classes={classesTodas || []} />
+      </section>
     </div>
   );
 }
