@@ -1,7 +1,7 @@
 import HistoricoMensal from './historico-mensal';
 import CalculadoraAporte from './calculadora-aporte';
 import { supabaseServer, lerTudo } from '../../lib/supabase';
-import { PROVENTOS_MES } from '../../lib/dominio/plano';
+import { PROVENTOS_MES, RENDIMENTO_FII_MES } from '../../lib/dominio/plano';
 import { hojeISO } from '../../lib/dominio/datas';
 import { brl, pct } from '../../lib/format';
 import MetaForm from './meta-client';
@@ -31,7 +31,7 @@ const valor = (v) => (v ? Number(v).toLocaleString('pt-BR', { minimumFractionDig
 
 export default async function Meta() {
   const sb = supabaseServer();
-  const [{ data: goal }, { data: snaps }, { data: alloc }, { data: classesAlvo }, { data: cartoes }, { data: itensFatura }, { data: pagFaturas }, { data: provs12 }] = await Promise.all([
+  const [{ data: goal }, { data: snaps }, { data: alloc }, { data: classesAlvo }, { data: cartoes }, { data: itensFatura }, { data: pagFaturas }] = await Promise.all([
     sb.from('goal_config').select('*').eq('id', 1).maybeSingle(),
     sb.from('portfolio_snapshots').select('snapshot_month, value, asset_classes(name)'),
     sb.from('v_class_allocation').select('classe, valor'),
@@ -39,7 +39,6 @@ export default async function Meta() {
     sb.from('cards').select('id, name, due_day'),
     lerTudo((de, ate) => sb.from('v_card_invoice_items').select('card_id, bill_month, amount, amount_pai').order('purchase_id').order('parcela_idx').range(de, ate)),
     sb.from('invoice_payments').select('card_id, bill_month'),
-    sb.from('dividends').select('amount, paid_at').gte('paid_at', `${Number(hojeISO().slice(0, 4)) - 1}${hojeISO().slice(4, 10)}`),
   ]);
 
   const realNow = (alloc || []).reduce((s, c) => s + Number(c.valor), 0);
@@ -54,7 +53,9 @@ export default async function Meta() {
     const prov = Math.min(total, provMes);
     return { total, prov, venda: total - prov };
   };
-  const provMesHoje = (provs12 || []).reduce((s, d) => s + Number(d.amount || 0), 0) / 12;
+  // proventos de hoje pelos FIIs atuais (o histórico tem dividendos de ações da estratégia antiga)
+  const fiisNow = Number((alloc || []).find((c) => c.classe === 'FIIS')?.valor) || 0;
+  const provMesHoje = fiisNow * RENDIMENTO_FII_MES;
 
   // quanto falta para a reserva de emergência chegar no alvo (alvo em R$ cadastrado em Alvos)
   const NOME_RESERVA = 'Reserva de Emergência';
@@ -325,7 +326,7 @@ export default async function Meta() {
               {linha('Na meta', naMeta, `sobre ${brl(target)}, em dinheiro de hoje`)}
               <p className="ir-nota" style={{ margin: '10px 0 0' }}>
                 Retirada de 4% ao ano, corrigida pela inflação (Trinity Study). Os proventos contam dentro dos 4%: o que eles não cobrem sai da venda de cotas.
-                Hoje: média dos proventos dos últimos 12 meses. Na meta: a premissa do plano ({(PROVENTOS_MES * 100).toLocaleString('pt-BR')}% ao mês).
+                Hoje: seus FIIs atuais ({brl(fiisNow)}) rendendo {(RENDIMENTO_FII_MES * 100).toLocaleString('pt-BR')}% ao mês. Na meta: a premissa do plano ({(PROVENTOS_MES * 100).toLocaleString('pt-BR')}% ao mês).
                 Reserva de emergência e fluxo ficam de fora.
               </p>
             </div>
