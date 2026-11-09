@@ -552,3 +552,15 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .nota-transicao{font-size:12px;color:var(--ink-faint);margin:0;padding:8px 20px 14px;border-top:1px solid var(--line-soft)}
 .vd-tk em{font-style:normal;font-weight:600}
 .vd-tk em.acima{color:var(--up)} .vd-tk em.abaixo{color:var(--down)}
+
+/* ---------- Proventos · renda passiva ---------- */
+.rp{margin-bottom:16px}
+.rp-hoje{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:6px 20px 12px}
+.rp-hoje div,.rp-marcos div{display:flex;flex-direction:column;gap:2px}
+.rp-hoje span,.rp-marcos span{font-size:12.5px;color:var(--ink-faint)}
+.rp-hoje b{font-family:var(--font-display);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--up)}
+.rp-hoje small{font-size:11.5px;color:var(--ink-faint)}
+.rp-marcos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 20px 12px;padding:12px 14px;border-radius:12px;background:var(--surface-2)}
+.rp-marcos b{font-family:var(--font-display);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.rp-marcos b small{font-size:11px;font-weight:500;color:var(--ink-faint);margin-left:2px}
+@media(max-width:560px){.rp-hoje{padding:6px 14px 12px}.rp-marcos{margin:0 14px 12px;padding:10px}.rp-marcos b{font-size:15px}}
