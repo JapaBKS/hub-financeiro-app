@@ -31,17 +31,30 @@ const valor = (v) => (v ? Number(v).toLocaleString('pt-BR', { minimumFractionDig
 
 export default async function Meta() {
   const sb = supabaseServer();
-  const [{ data: goal }, { data: snaps }, { data: alloc }, { data: classesAlvo }, { data: cartoes }, { data: itensFatura }, { data: pagFaturas }] = await Promise.all([
+  const [{ data: goal }, { data: snaps }, { data: alloc }, { data: classesAlvo }, { data: cartoes }, { data: itensFatura }, { data: pagFaturas }, { data: provs12 }] = await Promise.all([
     sb.from('goal_config').select('*').eq('id', 1).maybeSingle(),
     sb.from('portfolio_snapshots').select('snapshot_month, value, asset_classes(name)'),
     sb.from('v_class_allocation').select('classe, valor'),
-    sb.from('asset_classes').select('name, alvo_valor'),
+    sb.from('asset_classes').select('name, alvo_valor, fora_rateio'),
     sb.from('cards').select('id, name, due_day'),
     lerTudo((de, ate) => sb.from('v_card_invoice_items').select('card_id, bill_month, amount, amount_pai').order('purchase_id').order('parcela_idx').range(de, ate)),
     sb.from('invoice_payments').select('card_id, bill_month'),
+    sb.from('dividends').select('amount, paid_at').gte('paid_at', `${Number(hojeISO().slice(0, 4)) - 1}${hojeISO().slice(4, 10)}`),
   ]);
 
   const realNow = (alloc || []).reduce((s, c) => s + Number(c.valor), 0);
+
+  // Regra dos 4% (Trinity Study): retirar 4% do patrimônio por ano, corrigido pela inflação.
+  // Os proventos entram DENTRO dos 4%: o que eles não cobrem sai de venda de cotas.
+  // Base: o que está investido (sem reserva de emergência e fluxo, que não são para gastar).
+  const foraRegra = new Set((classesAlvo || []).filter((c) => c.fora_rateio).map((c) => c.name));
+  const investidoNow = (alloc || []).filter((c) => !foraRegra.has(c.classe)).reduce((s, c) => s + Number(c.valor), 0);
+  const regra4 = (base, provMes) => {
+    const total = (base * 0.04) / 12;
+    const prov = Math.min(total, provMes);
+    return { total, prov, venda: total - prov };
+  };
+  const provMesHoje = (provs12 || []).reduce((s, d) => s + Number(d.amount || 0), 0) / 12;
 
   // quanto falta para a reserva de emergência chegar no alvo (alvo em R$ cadastrado em Alvos)
   const NOME_RESERVA = 'Reserva de Emergência';
@@ -292,6 +305,33 @@ export default async function Meta() {
           </div>
         </div>
       </section>
+
+      {/* regra dos 4% */}
+      {(() => {
+        const hoje = regra4(investidoNow, provMesHoje);
+        const naMeta = regra4(target, target * PROVENTOS_MES);
+        const linha = (rot, r, nota) => (
+          <div className="r4-linha">
+            <span>{rot}<small>{nota}</small></span>
+            <b>{brl(r.total)}<small>/mês</small></b>
+            <span className="r4-div">proventos {brl(r.prov)} · venda de cotas {brl(r.venda)}</span>
+          </div>
+        );
+        return (
+          <section className="card" style={{ marginBottom: 16 }}>
+            <div className="card-h"><h2>Regra dos 4%</h2></div>
+            <div style={{ padding: '0 20px 14px' }}>
+              {linha('Hoje', hoje, `sobre ${brl(investidoNow)} investidos`)}
+              {linha('Na meta', naMeta, `sobre ${brl(target)}, em dinheiro de hoje`)}
+              <p className="ir-nota" style={{ margin: '10px 0 0' }}>
+                Retirada de 4% ao ano, corrigida pela inflação (Trinity Study). Os proventos contam dentro dos 4%: o que eles não cobrem sai da venda de cotas.
+                Hoje: média dos proventos dos últimos 12 meses. Na meta: a premissa do plano ({(PROVENTOS_MES * 100).toLocaleString('pt-BR')}% ao mês).
+                Reserva de emergência e fluxo ficam de fora.
+              </p>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* marcos */}
       <section className="card" style={{ marginBottom: 16 }}>
