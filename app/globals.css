@@ -386,11 +386,6 @@ img, svg, table, pre { max-width: 100%; }
 .calc30-dia{padding:9px 6px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 .calc30-dia.ativo{background:var(--forest);border-color:var(--forest);color:#fff}
 
-/* ---------- Meta · simulação de aporte ---------- */
-.sim-linha{display:grid;grid-template-columns:1.1fr 1.3fr 1fr;gap:8px;align-items:start;padding:9px 20px;border-bottom:1px solid var(--line-soft);font-size:13px;font-variant-numeric:tabular-nums}
-.sim-linha > span:not(:first-child){text-align:right}
-.sim-linha small{font-size:11px;font-weight:500;color:var(--ink-faint)}
-.sim-cab{font-size:11px;font-weight:600;color:var(--ink-faint);border-bottom:1px solid var(--line);padding-top:6px;padding-bottom:6px}
 
 /* ---------- Login ---------- */
 .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--lateral);position:fixed;inset:0;z-index:100;overflow:hidden}

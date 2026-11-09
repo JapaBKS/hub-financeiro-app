@@ -1,6 +1,5 @@
 import HistoricoMensal from './historico-mensal';
 import CalculadoraAporte from './calculadora-aporte';
-import SimulacaoAporte from './simulacao-aporte';
 import { supabaseServer, lerTudo } from '../../lib/supabase';
 import { hojeISO } from '../../lib/dominio/datas';
 import { brl, pct } from '../../lib/format';
@@ -322,10 +321,6 @@ export default async function Meta() {
 
       {/* gráfico */}
       <MetaChart proj={proj} realPts={realPts} target={target} todayIdx={todayIdx} realNow={realNow} />
-
-      {/* simulação: quando chego nos marcos com um aporte fixo (ex.: os 30%) */}
-      <SimulacaoAporte valorHoje={realNow} idxHoje={todayIdx} cresc={CRESC_MES} divPct={DIV_PCT}
-        marcos={marcos.map((m) => ({ alvo: m.alvo, plano: m.seuRitmo }))} aporteInicial={1196} infMes={infMes} />
 
       {/* regra dos 30%: calculadora */}
       <CalculadoraAporte reservaFalta={reservaFalta} faturasDia15={faturasDia15} faturasDia30={faturasDia30} diaInicial={diaInicial} />
