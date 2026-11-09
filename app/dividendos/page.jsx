@@ -3,6 +3,8 @@ import RecebidosMes from './recebidos-client';
 import ImportarB3 from './importar-b3-client';
 import ImportarB3Receber from './importar-b3-receber-client';
 import ImportarPainel from './importar-painel';
+import { PROVENTOS_MES, MARCOS } from '../../lib/dominio/plano';
+import { brl } from '../../lib/format';
 import EvolucaoProventos from './evolucao-client';
 import { hojeISO } from '../../lib/dominio/datas';
 
@@ -93,6 +95,12 @@ export default async function Dividendos() {
   Object.entries(pendPorMes).forEach(([k, v]) => { const a = k.slice(0, 4); if (!anoMap[a]) anoMap[a] = { total: 0, pendente: 0 }; anoMap[a].pendente += v; });
   const porAno = Object.entries(anoMap).map(([key, o]) => ({ key, total: o.total, pendente: o.pendente })).sort((a, b) => a.key.localeCompare(b.key));
 
+  // ---- renda passiva: média real dos últimos 12 meses fechados e o que o plano prevê nos marcos ----
+  const fechados = porMes.filter((m) => m.key < mesAtualKey).slice(-12);
+  const mediaMes = fechados.length ? fechados.reduce((s, m) => s + m.total, 0) / fechados.length : 0;
+  const esteMes = (totalPorMes[mesAtualKey] || 0) + (pendPorMes[mesAtualKey] || 0);
+  const anual = fechados.reduce((s, m) => s + m.total, 0);
+
   return (
     <div className="wrap" style={{ maxWidth: 680 }}>
       <header className="topbar">
@@ -104,6 +112,22 @@ export default async function Dividendos() {
         <ImportarB3Receber />
         <ImportarB3 />
       </ImportarPainel>
+      <section className="card rp">
+        <div className="card-h"><h2>Renda passiva</h2></div>
+        <div className="rp-hoje">
+          <div><span>Média por mês</span><b>{brl(mediaMes)}</b><small>{fechados.length ? `últimos ${fechados.length} meses · ${brl(anual)} no total` : 'sem histórico ainda'}</small></div>
+          <div><span>Este mês</span><b>{brl(esteMes)}</b><small>recebido + a receber</small></div>
+        </div>
+        <div className="rp-marcos">
+          {MARCOS.map((m) => (
+            <div key={m}>
+              <span>Com {m >= 1e6 ? 'R$ 1 mi' : `R$ ${m / 1000} mil`}</span>
+              <b>R$ {(m * PROVENTOS_MES).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}<small>/mês</small></b>
+            </div>
+          ))}
+        </div>
+        <p className="ir-nota">Nos marcos, a mesma taxa da Meta: proventos de {(PROVENTOS_MES * 100).toLocaleString('pt-BR')}% do patrimônio por mês (FIIs rendendo ~0,8% e sendo 15% da carteira), em dinheiro de nov/2026.</p>
+      </section>
       <EvolucaoProventos porMes={porMes} porAno={porAno} />
       <RecebidosMes meses={mesesComFuturo} />
     </div>

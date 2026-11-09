@@ -1,6 +1,7 @@
 import HistoricoMensal from './historico-mensal';
 import CalculadoraAporte from './calculadora-aporte';
 import { supabaseServer, lerTudo } from '../../lib/supabase';
+import { PROVENTOS_MES } from '../../lib/dominio/plano';
 import { hojeISO } from '../../lib/dominio/datas';
 import { brl, pct } from '../../lib/format';
 import MetaForm from './meta-client';
@@ -97,7 +98,7 @@ export default async function Meta() {
   const PROJ_INICIO = ymIndex('2024-07-01');
   const PROJ_SALDO0 = 8200;
   const CRESC_MES = 0.01;
-  const DIV_PCT = 0.0012;
+  const DIV_PCT = PROVENTOS_MES;
   const APORTE_BASE = 1000;
   const APORTE_ANO0 = 2024;
   const APORTE_CRESC = 0.10;
