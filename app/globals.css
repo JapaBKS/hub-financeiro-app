@@ -592,3 +592,5 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .sim-saida small{font-size:11.5px;font-weight:400;color:var(--ink-faint);margin-left:3px}
 .sim-saida .sim-destaque{background:var(--up-bg)}
 @media(max-width:420px){.sim-saida{grid-template-columns:1fr}}
+.sim-epoca{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:2px}
+.sim-inflacao{font-size:12.5px;color:var(--ink-soft);margin:12px 0 0}

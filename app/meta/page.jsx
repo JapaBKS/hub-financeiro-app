@@ -343,7 +343,7 @@ export default async function Meta() {
                 Reserva de emergência e fluxo ficam de fora.
               </p>
               <h3 className="sim-titulo">Simular uma renda</h3>
-              <SimularRenda pontos={projLonga.filter(([i]) => i >= todayIdx)} hojeIdx={todayIdx} temHoje={investidoNow} proventosMes={PROVENTOS_MES} />
+              <SimularRenda pontos={projLonga.filter(([i]) => i >= todayIdx)} hojeIdx={todayIdx} temHoje={investidoNow} proventosMes={PROVENTOS_MES} inflacaoAno={PLANO.inflacaoAno} baseIdx={baseIdx} />
             </div>
           </section>
         );
