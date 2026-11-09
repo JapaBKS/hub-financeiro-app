@@ -5,7 +5,9 @@ export const metadata = {
   title: 'Hub Financeiro',
   description: 'Patrimônio, carteira, cartões e caixa num lugar só',
   // instalado no iPhone/Android: abre sem a barra do navegador
-  appleWebApp: { capable: true, title: 'Hub', statusBarStyle: 'black-translucent' },
+  // barra de status sólida, na cor do tema (petróleo): a translúcida deixava o iOS desenhar uma
+  // faixa degradê/desfocada em cima do logo
+  appleWebApp: { capable: true, title: 'Hub', statusBarStyle: 'default' },
   icons: { apple: '/icones/apple-touch-icon.png' },
 };
 
