@@ -22,7 +22,7 @@ export default async function Home() {
     sb.from('dividends_pending').select('amount, classe, pay_date'),
     sb.from('v_card_invoice').select('*'),
     sb.from('goal_config').select('*').single(),
-    sb.from('v_positions').select('ticker, quantidade, preco_atual'),
+    sb.from('v_positions').select('ticker, quantidade, preco_atual, preco_medio'),
     sb.from('prices').select('ticker, previous_close, updated_at'),
     sb.from('invoice_payments').select('card_id, bill_month'),
     sb.from('asset_classes').select('name, alvo_valor, fora_rateio'),
@@ -135,7 +135,7 @@ export default async function Home() {
     .filter((p) => Number(p.quantidade) > 0 && Number(prevMap[p.ticker]) > 0 && p.preco_atual != null)
     .map((p) => {
       const prev = Number(prevMap[p.ticker]); const atual = Number(p.preco_atual);
-      return { ticker: p.ticker, preco: atual, pct: atual / prev - 1, rs: Number(p.quantidade) * (atual - prev) };
+      return { ticker: p.ticker, preco: atual, pm: Number(p.preco_medio) || null, pct: atual / prev - 1, rs: Number(p.quantidade) * (atual - prev) };
     })
     .filter((m) => Math.abs(m.pct) > 0.00005);
   // cotação de outro dia (fim de semana/feriado): avisa que é a variação do último pregão
