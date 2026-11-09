@@ -34,6 +34,9 @@
   --shadow:0 1px 0 rgba(0,0,0,.2),0 10px 30px -18px rgba(0,0,0,.6);
 }
 html{transition:background .2s}
+/* no celular, o fundo atrás da barra de status (hora, bateria) e o desfoque que o iPhone põe
+   no topo usam a cor do html: petróleo, igual ao topo do app, em vez do cinza da página */
+@media(max-width:720px){html{background:var(--lateral)}}
 body,.card,input,select,textarea,button{transition:background .2s,border-color .2s,color .2s}
 input,select,textarea{color:var(--ink);min-width:0;max-width:100%;box-sizing:border-box}
 input[type="date"],input[type="month"]{-webkit-appearance:none;appearance:none}
