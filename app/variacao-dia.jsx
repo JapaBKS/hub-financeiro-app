@@ -12,7 +12,7 @@ function Lista({ titulo, itens, cor, vazio }) {
         <div key={i.ticker} className="vd-linha">
           <div className="vd-tk">
             <b>{i.ticker}</b>
-            <span>{brl(i.preco)}</span>
+            <span>{brl(i.preco)}{i.pm ? <> · PM <em className={i.preco >= i.pm ? 'acima' : 'abaixo'}>{brl(i.pm)}</em></> : null}</span>
           </div>
           <div className="vd-barra" aria-hidden="true"><i style={{ width: `${(Math.abs(i.pct) / maior) * 100}%`, background: cor }} /></div>
           <div className="vd-num">
