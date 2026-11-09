@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../lib/supabase';
 import { hojeISO } from '../../../lib/dominio/datas';
+import { detectarPadraoPagamento } from '../../../lib/dominio/proventos';
 
 // Importa a aba "a receber" da B3 -> dividends_pending.
 // A B3 é a fonte da verdade do que está POR VIR: substitui todos os pendentes
@@ -17,12 +18,34 @@ export async function POST(req) {
   (assets || []).forEach((a) => { idDe[a.ticker] = a.id; });
 
   const hoje = hojeISO();
+
+  // cópia do celular: só o mês. O dia vem do padrão de pagamento do ativo (últimos
+  // proventos); sem histórico, último dia do mês. Nunca antes de hoje (ainda não pagou).
+  const semDia = [...new Set(itens.filter((it) => !it.pay_date && it.mes).map((it) => it.ticker))];
+  const diaDe = {};
+  if (semDia.length) {
+    const { data: hist } = await sb.from('dividends').select('ticker, paid_at').in('ticker', semDia)
+      .order('paid_at', { ascending: false }).limit(500);
+    const porTicker = {};
+    (hist || []).forEach((d) => { (porTicker[d.ticker] ||= []).push(String(d.paid_at).slice(0, 10)); });
+    Object.entries(porTicker).forEach(([t, datas]) => {
+      const p = detectarPadraoPagamento(datas.slice(0, 12));
+      diaDe[t] = p.tipo === 'dia-fixo' ? p.diaTipico : Number(datas[0].slice(8, 10));
+    });
+  }
+  const estimarData = (it) => {
+    const [a, m] = it.mes.split('-').map(Number);
+    const ultimo = new Date(Date.UTC(a, m, 0)).getUTCDate();
+    const d = `${it.mes}-${String(Math.min(diaDe[it.ticker] || ultimo, ultimo)).padStart(2, '0')}`;
+    return d < hoje ? hoje : d;
+  };
+
   const linhas = itens
-    .filter((it) => it.ticker && it.pay_date)
+    .filter((it) => it.ticker && (it.pay_date || /^\d{4}-\d{2}$/.test(it.mes || '')))
     .map((it) => ({
       ticker: it.ticker,
       asset_id: idDe[it.ticker] || null,
-      pay_date: it.pay_date,
+      pay_date: it.pay_date || estimarData(it),
       kind: it.kind,
       amount: Number(it.amount),
       classe: it.classe || (/11$/.test(it.ticker) ? 'fiis' : 'acoes'),

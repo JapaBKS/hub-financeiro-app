@@ -25,15 +25,29 @@ function normKind(s) {
 //   Instituicao
 //   Qtd  R$ preco  R$ valor liquido
 // Agrupamos por linha de ticker e extraimos data/evento/valor do bloco todo.
-const ehLinhaTicker = (l) => /^[A-Z][A-Z0-9]{3,4}\d\b/.test(l) && l.includes('-');
+// No celular a B3 mostra outra tela: o mês como título ("NOVEMBRO DE 2026") e só
+//   TICKER - Nome   R$ valor
+// sem data. Aí o item leva o mês e o servidor estima o dia pelo histórico do ativo.
+const ehLinhaTicker = (l) => /^[A-Z][A-Z0-9]{3,4}\d{1,2}\b/.test(l) && /[-–]/.test(l);
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+function linhaMes(l) {
+  const m = l.toLowerCase().match(/^([a-zç]+)\s+de\s+(\d{4})$/);
+  const i = m ? MESES.indexOf(m[1]) : -1;
+  return i >= 0 ? `${m[2]}-${String(i + 1).padStart(2, '0')}` : null;
+}
+
+const rotuloMes = (ym) => `${MESES[Number(ym.slice(5)) - 1].slice(0, 3)}/${ym.slice(2, 4)}`;
 
 function parseReceber(raw) {
-  const linhas = raw.split('\n').map((l) => l.replace(/\r$/, '').replace(/\t/g, ' ').trim()).filter(Boolean);
+  const linhas = raw.split('\n').map((l) => l.replace(/\r$/, '').replace(/[\t\u00a0]/g, ' ').trim()).filter(Boolean);
   const registros = [];
   let atual = null;
+  let mes = null;
   for (const l of linhas) {
-    if (/produto/i.test(l) && /pagamento/i.test(l)) continue; // cabecalho
-    if (ehLinhaTicker(l)) { if (atual) registros.push(atual); atual = [l]; }
+    if (/^produto\b/i.test(l)) continue; // cabecalho (PC ou celular)
+    const m = linhaMes(l);
+    if (m) { if (atual) registros.push(atual); atual = null; mes = m; continue; }
+    if (ehLinhaTicker(l)) { if (atual) registros.push(atual); atual = [l]; atual.mes = mes; }
     else if (atual) atual.push(l);
   }
   if (atual) registros.push(atual);
@@ -41,15 +55,20 @@ function parseReceber(raw) {
   const out = [];
   for (const reg of registros) {
     const texto = reg.join('  ');
-    const tk = texto.match(/^([A-Z][A-Z0-9]{3,4}\d)/);
+    const tk = texto.match(/^([A-Z][A-Z0-9]{3,4}\d{1,2})\b/);
     const ticker = tk ? tk[1] : '';
     const pay_date = parseData(texto);
-    if (!ticker || !pay_date) continue;
+    if (!ticker) continue;
     const kindCol = (texto.match(/rendimento|juros sobre capital|jcp|jscp|dividendo/i) || [])[0];
     const rs = texto.match(/R\$\s*[\d.]+,\d{2}/g) || [];
     const amount = parseValor(rs[rs.length - 1]); // ultimo R$ = valor liquido
     const ehFundo = /fundo/i.test(texto) || /11$/.test(ticker);
-    out.push({ ticker, pay_date, kind: normKind(kindCol), amount, classe: ehFundo ? 'fiis' : 'acoes' });
+    if (!amount) continue;
+    // sem coluna de tipo (celular): fundo paga rendimento, ação paga dividendo
+    const kind = kindCol ? normKind(kindCol) : (ehFundo ? 'rendimento' : 'dividendo');
+    // sem título de mês: mês atual
+    const mes = pay_date ? null : (reg.mes || new Date().toISOString().slice(0, 7));
+    out.push({ ticker, pay_date, mes, kind, amount, classe: ehFundo ? 'fiis' : 'acoes' });
   }
   return out;
 }
@@ -84,7 +103,7 @@ export default function ImportarB3Receber() {
       <div className="card-h"><h2>Importar a receber da B3</h2></div>
       <div style={{ padding: '8px 20px 0' }}>
         <p style={{ fontSize: 12, color: 'var(--ink-faint)', margin: '0 0 8px' }}>
-          Cole a aba “a receber” COMPLETA copiada do site da B3 (com o cabeçalho). A B3 é a fonte da verdade: isto substitui todos os “a receber” pelos da B3 (os já recebidos não são afetados).
+          Cole a aba “a receber” copiada da B3, do computador ou do celular. No celular a B3 não mostra o dia: ele é estimado pelo histórico de cada ativo. A B3 é a fonte da verdade: isto substitui todos os “a receber” pelos da B3 (os já recebidos não são afetados).
         </p>
         <textarea className="campo campo-colagem" value={texto} onChange={(e) => setTexto(e.target.value)}
           placeholder="Produto&#9;Tipo&#9;Previsão de Pagamento&#9;Tipo de Evento&#9;Instituição&#9;Quantidade&#9;Preço Unitário&#9;Valor Líquido" />
@@ -92,6 +111,15 @@ export default function ImportarB3Receber() {
         {itens.length > 0 && (
           <div style={{ marginTop: 10, fontSize: 12.5, color: 'var(--ink-soft)' }}>
             Detectados <b>{itens.length}</b> proventos · total <b style={{ fontFamily: 'var(--font-display)', color: 'var(--up)' }}>{fmt(total)}</b>
+            <ul className="receber-previa">
+              {itens.map((p, i) => (
+                <li key={i}>
+                  <b>{p.ticker}</b>
+                  <span>{p.pay_date ? p.pay_date.split('-').reverse().join('/') : `${rotuloMes(p.mes)} · dia estimado`}</span>
+                  <span>{fmt(p.amount)}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
