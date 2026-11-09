@@ -6,15 +6,14 @@ import { brl, pct } from '../../lib/format';
 import MetaForm from './meta-client';
 import MetaChart from './meta-chart';
 
-// IPCA acumulado em 12 meses (Banco Central, série 13522). Sem resposta, a tela segue sem a coluna corrigida.
-async function ipca12Meses() {
-  try {
-    const r = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados/ultimos/1?formato=json', { cache: 'no-store', signal: AbortSignal.timeout(6000) });
-    const d = r.ok ? await r.json() : null;
-    const v = Number(d?.[0]?.valor);
-    return Number.isFinite(v) && v > 0 ? { taxa: v / 100, ref: d[0].data.slice(3) } : null;
-  } catch { return null; }
-}
+// ---- premissas do plano: FIXAS de propósito ----
+// A projeção é a régua para saber se você está mais perto ou mais longe. Por isso nada aqui
+// vem de fora nem muda sozinho: inflação fixa, com base fixa em nov/2026 ("R$ 1 mi" = R$ 1 mi
+// com o poder de compra de nov/2026). Só mude se quiser refazer o plano.
+const PLANO = {
+  inflacaoAno: 0.045,      // 4,5% ao ano (teto da meta do Banco Central; IPCA 12m em set/26 era 4,58%)
+  baseInflacao: '2026-11', // mês a partir do qual a meta passa a ser corrigida
+};
 
 const brlCompacto = (n) => (n >= 999500 ? `R$ ${(n / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} mi` : `R$ ${(n / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} mil`);
 
@@ -86,9 +85,9 @@ export default async function Meta() {
 
   // inflação: daqui para frente tudo é mostrado em DINHEIRO DE HOJE, descontando o IPCA dos
   // últimos 12 meses (Banco Central). Meses passados ficam como foram. Sem o IPCA, segue nominal.
-  const ipca = await ipca12Meses();
-  const infMes = ipca ? Math.pow(1 + ipca.taxa, 1 / 12) - 1 : 0;
-  const fatorInflacao = (idx) => Math.pow(1 + infMes, Math.max(0, idx - todayIdx));
+  const infMes = Math.pow(1 + PLANO.inflacaoAno, 1 / 12) - 1;
+  const baseIdx = ymIndex(`${PLANO.baseInflacao}-01`);
+  const fatorInflacao = (idx) => Math.pow(1 + infMes, Math.max(0, idx - baseIdx));
   const emDinheiroDeHoje = (valor, idx) => valor / fatorInflacao(idx);
 
   // ---- projeção personalizada ----
@@ -307,7 +306,7 @@ export default async function Meta() {
               <span style={{ flex: 1, fontWeight: 600, whiteSpace: 'nowrap' }}>{brlCompacto(m.alvo)}</span>
               <span style={{ flex: 1, textAlign: 'right', fontWeight: 600, color: m.atingido ? 'var(--up)' : 'var(--forest-2)', textTransform: 'capitalize' }}>
                 {m.atingido ? '✓ atingido' : mesLabel(m.seuRitmo)}
-                {!m.atingido && ipca && <small style={{ display: 'block', fontSize: 10.5, fontWeight: 500, color: 'var(--ink-faint)', textTransform: 'none', whiteSpace: 'nowrap' }}>= {brlCompacto(m.valorNaEpoca)} na época</small>}
+                {!m.atingido && <small style={{ display: 'block', fontSize: 10.5, fontWeight: 500, color: 'var(--ink-faint)', textTransform: 'none', whiteSpace: 'nowrap' }}>= {brlCompacto(m.valorNaEpoca)} na época</small>}
               </span>
               <span style={{ flex: 1, textAlign: 'right', color: 'var(--brass)', textTransform: 'capitalize' }}>
                 {mesLabel(m.pelaProj)}
@@ -316,7 +315,8 @@ export default async function Meta() {
           ))}
         </div>
         <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>
-          Valores em dinheiro de hoje: daqui para frente a projeção desconta a inflação{ipca ? ` (IPCA de ${pct(ipca.taxa, 2)} nos 12 meses até ${ipca.ref}, Banco Central)` : ' (IPCA indisponível agora: valores sem correção)'}; embaixo da data, quanto o marco vai valer em reais na época. "No seu ritmo" parte do seu valor de hoje; "Pela projeção" é o plano puro desde jul/2024.
+          Plano travado: valores em dinheiro de nov/2026, descontando inflação fixa de {pct(PLANO.inflacaoAno, 1)} ao ano; embaixo da data, quanto o marco vai valer em reais na época.
+          "Pela projeção" não muda mês a mês (é a régua); "No seu ritmo" parte do seu valor de hoje e mostra se você está chegando antes ou depois.
         </p>
       </section>
 
