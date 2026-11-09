@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { brl, pct } from '../../lib/format';
 import FormNegociacao from '../negociacoes/form-client';
 import PrecoManual from '../preco-manual-client';
+import { segmento } from '../../lib/dominio/segmentos';
 
 export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, municao = 0, reservaAporte = 0, tol, assets, classes }) {
   const [preset, setPreset] = useState(null);
@@ -43,7 +44,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
           {i.nova && (
             <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: '#fff', background: 'var(--up)', borderRadius: 4, padding: '1px 6px' }}>NOVA</span>
           )}
-          <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{i.classe}</span>
+          {segmento(i.ticker) ? <span className="seg">{segmento(i.ticker)}</span> : <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{i.classe}</span>}
         </div>
         <div style={{ fontSize: 12, marginTop: 2, color: i.atencao ? 'var(--amber)' : 'var(--ink-soft)' }}>
           {i.atencao ? '⚠ ' : ''}{i.motivo}

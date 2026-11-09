@@ -3,6 +3,7 @@ import { brl, pct } from '../../lib/format';
 import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import PrecoManual from '../preco-manual-client';
 
+import { segmento } from '../../lib/dominio/segmentos';
 import SaldosClient from './saldos-client';
 
 export const dynamic = 'force-dynamic';
@@ -101,6 +102,7 @@ export default async function Carteira() {
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <b style={{ fontFamily: 'var(--font-display)', fontSize: 14 }}>{p.ticker}</b>
+            {segmento(p.ticker) && <span className="seg">{segmento(p.ticker)}</span>}
             {p.usouManual && (
               <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--forest-2)', background: 'var(--up-bg)', borderRadius: 5, padding: '1px 6px' }}>preço manual</span>
             )}
