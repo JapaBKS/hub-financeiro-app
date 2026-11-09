@@ -23,7 +23,6 @@ function mesesAte(valorHoje, alvo, aporte, cresc, divPct, infMes = 0) {
 
 export default function SimulacaoAporte({ valorHoje, idxHoje, cresc, divPct, marcos, aporteInicial = 1196, infMes = 0 }) {
   const [aporte, setAporte] = useState(String(aporteInicial));
-  const [real, setReal] = useState(false); // em dinheiro de hoje (corrige o alvo pela inflação)
   const ap = num(aporte);
 
   return (
@@ -40,20 +39,15 @@ export default function SimulacaoAporte({ valorHoje, idxHoje, cresc, divPct, mar
         <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '6px 0 0' }}>
           Começa com os 30% do salário líquido (≈ R$ 1.196). Mude para testar com valor extra.
         </p>
-        {infMes > 0 && (
-          <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-            <button type="button" className="chip" aria-pressed={!real} onClick={() => setReal(false)}>Sem inflação</button>
-            <button type="button" className="chip" aria-pressed={real} onClick={() => setReal(true)}>Em dinheiro de hoje</button>
-          </div>
-        )}
+
       </div>
 
       <div style={{ marginTop: 10 }}>
         <div className="sim-linha sim-cab"><span>Marco</span><span>Com {brl(ap)}/mês</span><span>Plano atual</span></div>
         {marcos.map((m) => {
-          const meses = mesesAte(valorHoje, m.alvo, ap, cresc, divPct, real ? infMes : 0);
+          const meses = mesesAte(valorHoje, m.alvo, ap, cresc, divPct, infMes); // alvo em dinheiro de hoje
           const atingido = valorHoje >= m.alvo;
-          const plano = real ? m.planoReal : m.plano; // compara com o plano na mesma base (com ou sem inflação)
+          const plano = m.plano;
           const dif = meses == null ? null : idxHoje + meses - plano; // + = depois do plano
           return (
             <div key={m.alvo} className="sim-linha">
@@ -76,7 +70,7 @@ export default function SimulacaoAporte({ valorHoje, idxHoje, cresc, divPct, mar
         })}
       </div>
       <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '8px 20px 0' }}>
-        Mesma fórmula da projeção (valorização de 1% ao mês + proventos de 0,12%), sem reajuste do aporte. A diferença é contra o "No seu ritmo" do plano (aporte de R$ 1.000 em 2024 com +10% ao ano).
+        Mesma fórmula da projeção (valorização de 1% ao mês + proventos de 0,12%), com os marcos em dinheiro de hoje (descontando a inflação) e sem reajuste do aporte. A diferença é contra o "No seu ritmo" do plano (aporte de R$ 1.000 em 2024 com +10% ao ano).
       </p>
     </section>
   );

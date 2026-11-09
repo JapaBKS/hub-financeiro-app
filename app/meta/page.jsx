@@ -85,6 +85,13 @@ export default async function Meta() {
   const [anoHoje, mesHoje] = hojeISO().split('-').map(Number);
   const todayIdx = anoHoje * 12 + (mesHoje - 1);
 
+  // inflação: daqui para frente tudo é mostrado em DINHEIRO DE HOJE, descontando o IPCA dos
+  // últimos 12 meses (Banco Central). Meses passados ficam como foram. Sem o IPCA, segue nominal.
+  const ipca = await ipca12Meses();
+  const infMes = ipca ? Math.pow(1 + ipca.taxa, 1 / 12) - 1 : 0;
+  const fatorInflacao = (idx) => Math.pow(1 + infMes, Math.max(0, idx - todayIdx));
+  const emDinheiroDeHoje = (valor, idx) => valor / fatorInflacao(idx);
+
   // ---- projeção personalizada ----
   // Começa jul/2024 com 8.200. Cada mês: saldo = saldo_ant × 1,01 + aporte(ano) + dividendos_mês_anterior.
   // dividendos = 0,12% do saldo do mês (0,8% ao mês nos FIIs × 15% do alvo). Aporte: 1.000 em 2024, +10% a cada virada de ano. Vai até 1 milhão.
@@ -105,14 +112,15 @@ export default async function Meta() {
     let saldo = PROJ_SALDO0;
     let div = saldo * DIV_PCT;
     let idx = PROJ_INICIO;
-    proj.push({ idx, value: saldo, aporte: 0, div });
+    proj.push({ idx, value: saldo, nominal: saldo, aporte: 0, div });
     let g = 0;
-    while (saldo < META && g < 1200) {
+    // vai até o R$ 1 mi em dinheiro de hoje (value = corrigido; nominal = reais da época)
+    while (emDinheiroDeHoje(saldo, idx) < META && g < 1200) {
       idx++; g++;
       const ap = aporteDoAno(idx);
       saldo = saldo * (1 + CRESC_MES) + ap + div;
       div = saldo * DIV_PCT;
-      proj.push({ idx, value: saldo, aporte: ap, div });
+      proj.push({ idx, value: emDinheiroDeHoje(saldo, idx), nominal: saldo, aporte: ap, div });
     }
   }
   const targetIdx = proj[proj.length - 1].idx;
@@ -125,17 +133,13 @@ export default async function Meta() {
   };
   const plannedNow = projAt(todayIdx);
 
-  // inflação: o alvo "em dinheiro de hoje" cresce todo mês pelo IPCA dos últimos 12 meses
-  const ipca = await ipca12Meses();
-  const infMes = ipca ? Math.pow(1 + ipca.taxa, 1 / 12) - 1 : 0;
-  const alvoCorrigido = (alvo, idx) => alvo * Math.pow(1 + infMes, Math.max(0, idx - todayIdx));
+  const alvoCorrigido = (alvo, idx) => alvo * fatorInflacao(idx);
 
-  // roda a mesma fórmula a partir de um ponto qualquer até alcançar um alvo -> retorna o idx
-  // (comInflacao: o alvo vai sendo corrigido pelo IPCA a partir de hoje)
-  const alcancaIdx = (startVal, startIdx, alvo, comInflacao = false) => {
+  // roda a mesma fórmula a partir de um ponto qualquer até alcançar um alvo (em dinheiro de hoje) -> idx
+  const alcancaIdx = (startVal, startIdx, alvo) => {
     if (startVal >= alvo) return startIdx;
     let saldo = startVal, div = saldo * DIV_PCT, idx = startIdx, g = 0;
-    while (saldo < (comInflacao ? alvoCorrigido(alvo, idx) : alvo) && g < 1200) {
+    while (saldo < alvoCorrigido(alvo, idx) && g < 1200) {
       idx++; g++;
       saldo = saldo * (1 + CRESC_MES) + aporteDoAno(idx) + div;
       div = saldo * DIV_PCT;
@@ -154,8 +158,7 @@ export default async function Meta() {
     atingido: realNow >= alvo,
     seuRitmo: alcancaIdx(realNow, todayIdx, alvo),
     pelaProj: projAlcancaIdx(alvo),
-    comInflacao: ipca ? alcancaIdx(realNow, todayIdx, alvo, true) : null,
-  })).map((m) => ({ ...m, valorNaEpoca: m.comInflacao != null ? alvoCorrigido(m.alvo, m.comInflacao) : null }));
+  })).map((m) => ({ ...m, valorNaEpoca: alvoCorrigido(m.alvo, m.seuRitmo) }));
 
   // quantos meses à frente da projeção: onde a projeção alcançaria o seu valor de hoje
   const idxProjIgualHoje = projAlcancaIdx(realNow);
@@ -295,7 +298,6 @@ export default async function Meta() {
           <div style={{ display: 'flex', padding: '6px 20px', fontSize: 11, color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>
             <span style={{ flex: 1 }}>Marco</span>
             <span style={{ flex: 1, textAlign: 'right' }}>No seu ritmo</span>
-            {ipca && <span style={{ flex: 1.2, textAlign: 'right' }}>Com inflação</span>}
             <span style={{ flex: 1, textAlign: 'right' }}>Pela projeção</span>
           </div>
           {marcos.map((m) => (
@@ -303,13 +305,8 @@ export default async function Meta() {
               <span style={{ flex: 1, fontWeight: 600, whiteSpace: 'nowrap' }}>{brlCompacto(m.alvo)}</span>
               <span style={{ flex: 1, textAlign: 'right', fontWeight: 600, color: m.atingido ? 'var(--up)' : 'var(--forest-2)', textTransform: 'capitalize' }}>
                 {m.atingido ? '✓ atingido' : mesLabel(m.seuRitmo)}
+                {!m.atingido && ipca && <small style={{ display: 'block', fontSize: 10.5, fontWeight: 500, color: 'var(--ink-faint)', textTransform: 'none', whiteSpace: 'nowrap' }}>= {brlCompacto(m.valorNaEpoca)} na época</small>}
               </span>
-              {ipca && (
-                <span style={{ flex: 1.2, textAlign: 'right', fontWeight: 600, color: m.atingido ? 'var(--up)' : 'var(--ink)', textTransform: 'capitalize', lineHeight: 1.25 }}>
-                  {m.atingido ? '✓' : mesLabel(m.comInflacao)}
-                  {!m.atingido && <small style={{ display: 'block', fontSize: 10.5, fontWeight: 500, color: 'var(--ink-faint)', textTransform: 'none', whiteSpace: 'nowrap' }}>= {brlCompacto(m.valorNaEpoca)}</small>}
-                </span>
-              )}
               <span style={{ flex: 1, textAlign: 'right', color: 'var(--brass)', textTransform: 'capitalize' }}>
                 {mesLabel(m.pelaProj)}
               </span>
@@ -317,7 +314,7 @@ export default async function Meta() {
           ))}
         </div>
         <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>
-          "No seu ritmo" parte do seu valor de hoje seguindo a mesma fórmula. "Com inflação" é quando você chega ao marco em dinheiro de hoje (abaixo, quanto ele vai valer na época): o alvo sobe todo mês pelo IPCA{ipca ? ` (${pct(ipca.taxa, 2)} nos 12 meses até ${ipca.ref}, Banco Central)` : ''}. "Pela projeção" é o plano puro desde jul/2024.
+          Valores em dinheiro de hoje: daqui para frente a projeção desconta a inflação{ipca ? ` (IPCA de ${pct(ipca.taxa, 2)} nos 12 meses até ${ipca.ref}, Banco Central)` : ' (IPCA indisponível agora: valores sem correção)'}; embaixo da data, quanto o marco vai valer em reais na época. "No seu ritmo" parte do seu valor de hoje; "Pela projeção" é o plano puro desde jul/2024.
         </p>
       </section>
 
@@ -326,7 +323,7 @@ export default async function Meta() {
 
       {/* simulação: quando chego nos marcos com um aporte fixo (ex.: os 30%) */}
       <SimulacaoAporte valorHoje={realNow} idxHoje={todayIdx} cresc={CRESC_MES} divPct={DIV_PCT}
-        marcos={marcos.map((m) => ({ alvo: m.alvo, plano: m.seuRitmo, planoReal: m.comInflacao ?? m.seuRitmo }))} aporteInicial={1196} infMes={infMes} />
+        marcos={marcos.map((m) => ({ alvo: m.alvo, plano: m.seuRitmo }))} aporteInicial={1196} infMes={infMes} />
 
       {/* regra dos 30%: calculadora */}
       <CalculadoraAporte reservaFalta={reservaFalta} faturasDia15={faturasDia15} faturasDia30={faturasDia30} diaInicial={diaInicial} />
