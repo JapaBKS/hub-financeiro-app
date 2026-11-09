@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { segmento } from '../../lib/dominio/segmentos';
 
 
 export default function AlvosClient({ grupos: gruposIniciais }) {
@@ -125,7 +126,10 @@ export default function AlvosClient({ grupos: gruposIniciais }) {
           <section className="card" style={{ marginBottom: 12 }}>
             {g.itens.map((it, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: '1px solid var(--line-soft)', flexWrap: 'wrap' }}>
-                <b style={{ fontFamily: 'var(--font-display)', flex: 1, minWidth: 70 }}>{it.ticker}</b>
+                <span style={{ flex: 1, minWidth: 70, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+                  <b style={{ fontFamily: 'var(--font-display)' }}>{it.ticker}</b>
+                  {segmento(it.ticker) && <span className="seg">{segmento(it.ticker)}</span>}
+                </span>
                 <input className="campo" style={{ width: 90, textAlign: 'right' }} type="number" step="any" value={it.pct}
                   onChange={(e) => mudarPct(idx, e.target.value)} />
                 <span style={{ color: 'var(--ink-faint)', fontSize: 13 }}>%</span>
