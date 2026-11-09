@@ -195,8 +195,9 @@ export default async function Meta() {
   const presentes = new Set();
   Object.values(porMesClasse).forEach((o) => Object.keys(o).forEach((n) => { if ((o[n] || 0) > 0) presentes.add(n); }));
   // classes fora da ORDEM (ex.: Reserva de Emergência, Fluxo) entram no fim: o total precisa bater com o patrimônio
-  // "A Investir" é dinheiro de passagem até virar aporte: fica fora da composição (e do total da linha)
-  presentes.delete('A Investir');
+  // "A Investir" (dinheiro de passagem até virar aporte) e "Renda Fixa Vencendo" ficam fora da
+  // composição (e do total da linha)
+  ['A Investir', 'Renda Fixa Vencendo'].forEach((n) => presentes.delete(n));
   const colunas = [...ORDEM.filter((n) => presentes.has(n)), ...[...presentes].filter((n) => !ORDEM.includes(n)).sort()];
   const mesesComp = Object.keys(porMesClasse).map(Number).sort((a, b) => b - a);
 
