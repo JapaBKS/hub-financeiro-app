@@ -21,7 +21,7 @@ export async function apagarNegociacao(id) {
   
   revalidatePath('/negociacoes');
   revalidatePath('/carteira');
-  revalidatePath('/apuracao');
+  revalidatePath('/impostos');
   
   return { ok: true };
 }
@@ -41,7 +41,7 @@ export async function atualizarNegociacao(id, form) {
   
   revalidatePath('/negociacoes');
   revalidatePath('/carteira');
-  revalidatePath('/apuracao');
+  revalidatePath('/impostos');
   
   return { ok: true };
 }
@@ -85,7 +85,7 @@ export async function criarNegociacao(dados) {
   // 3. Atualizar as caches das páginas afetadas
   revalidatePath('/negociacoes');
   revalidatePath('/carteira');
-  revalidatePath('/apuracao');
+  revalidatePath('/impostos');
   revalidatePath('/recomendacoes');
   
   return { ok: true };
