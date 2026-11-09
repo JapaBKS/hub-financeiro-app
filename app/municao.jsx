@@ -1,4 +1,5 @@
 import { supabaseServer } from '../lib/supabase';
+import { emTransicao } from '../lib/dominio/classes';
 
 // "Munição": dinheiro que já é seu mas ainda não foi alocado (classes fora do
 // rateio, ex.: "A investir"), + para onde ele deveria ir — a classe/ativo mais
@@ -15,11 +16,11 @@ export default async function Municao() {
   const valorDe = {};
   (alloc || []).forEach((a) => { valorDe[a.classe] = Number(a.valor || 0); });
 
-  const foraDoRateio = (c) => !!c.fora_rateio || (c.alvo_valor != null && Number(c.alvo_valor) > 0);
+  const foraDoRateio = (c) => !!c.fora_rateio || (c.alvo_valor != null && Number(c.alvo_valor) > 0) || emTransicao(c.name);
 
   // munição = soma das classes marcadas como "fora do rateio" (sem alvo em R$)
   const partes = (classes || [])
-    .filter((c) => c.fora_rateio && !(c.alvo_valor != null && Number(c.alvo_valor) > 0))
+    .filter((c) => c.fora_rateio && !(c.alvo_valor != null && Number(c.alvo_valor) > 0) && !emTransicao(c.name))
     .map((c) => ({ nome: c.name, valor: valorDe[c.name] || 0 }))
     .filter((p) => p.valor > 0)
     .sort((a, b) => b.valor - a.valor);

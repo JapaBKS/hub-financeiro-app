@@ -1,6 +1,7 @@
 import { supabaseServer } from '../../lib/supabase';
 import { hojeISO as hojeDeBrasilia } from '../../lib/dominio/datas';
 import { brl } from '../../lib/format';
+import { emTransicao } from '../../lib/dominio/classes';
 import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import { detectarPadraoPagamento } from '../../lib/dominio/proventos';
 import { distribuirAporte } from '../../lib/dominio/aporte';
@@ -73,7 +74,7 @@ export default async function Recomendacoes() {
   // classes com alvo em R$ (ex.: reserva) ficam FORA do rateio de % e das sugestões
   const classesValorFixo = new Set(
     (classes || [])
-      .filter((c) => (c.alvo_valor != null && Number(c.alvo_valor) > 0) || c.fora_rateio)
+      .filter((c) => (c.alvo_valor != null && Number(c.alvo_valor) > 0) || c.fora_rateio || emTransicao(c.name))
       .map((c) => c.name),
   );
 
@@ -83,7 +84,7 @@ export default async function Recomendacoes() {
   // (Antes, o select abaixo não trazia a coluna `classe` e o filtro não excluía nada:
   // os % eram aplicados sobre o patrimônio inteiro, reserva inclusa.)
   const classesComAlvoRs = new Set(
-    (classes || []).filter((c) => c.alvo_valor != null && Number(c.alvo_valor) > 0).map((c) => c.name),
+    (classes || []).filter((c) => (c.alvo_valor != null && Number(c.alvo_valor) > 0) || emTransicao(c.name)).map((c) => c.name),
   );
   const totalDaView = (allocPorClasse || [])
     .filter((c) => !classesComAlvoRs.has(c.classe))

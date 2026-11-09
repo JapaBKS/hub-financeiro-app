@@ -7,6 +7,7 @@ import CoberturaEmergencia from './cobertura-emergencia';
 import VariacaoDia from './variacao-dia';
 import Municao from './municao';
 import AlocacaoDonut from './alocacao-donut';
+import { emTransicao } from '../lib/dominio/classes';
 import { hojeISO, inicioDoMes, FUSO } from '../lib/dominio/datas';
 
 export const dynamic = 'force-dynamic';
@@ -43,9 +44,11 @@ export default async function Home() {
   // Classes com alvo em R$ (reserva, fluxo) ficam fora dessa base; o "A investir"
   // entra, porque é dinheiro que está prestes a virar investimento. Antes, as duas
   // telas aplicavam os % sobre o patrimônio inteiro e inflavam todos os buracos.
-  const totalRebal = classes
-    .filter((c) => alvoFixoDe[c.classe] == null)
-    .reduce((s, c) => s + Number(c.valor), 0);
+  // reserva e fluxo (alvo em R$) e classes em transição (renda fixa vencendo) não entram nos %:
+  // aparecem nos Cofres / numa nota à parte
+  const classesCarteira = classes.filter((c) => alvoFixoDe[c.classe] == null && !emTransicao(c.classe));
+  const emTransicaoLista = classes.filter((c) => emTransicao(c.classe));
+  const totalRebal = classesCarteira.reduce((s, c) => s + Number(c.valor), 0);
   const realDe = (c) => (alvoFixoDe[c.classe] != null
     ? Number(c.pct_real)
     : (totalRebal > 0 ? Number(c.valor) / totalRebal : 0));
@@ -54,7 +57,7 @@ export default async function Home() {
     : Number(c.pct_alvo || 0) * totalRebal - Number(c.valor));
 
   const alvoPctDe = (c) => (alvoFixoDe[c.classe] != null ? (total > 0 ? alvoFixoDe[c.classe] / total : 0) : Number(c.pct_alvo || 0));
-  const maxPct = Math.max(0.01, ...classes.map((c) => Math.max(realDe(c), alvoPctDe(c))));
+  const maxPct = Math.max(0.01, ...classesCarteira.map((c) => Math.max(realDe(c), alvoPctDe(c))));
 
   // dividendos: ano, total, por ano
   const anoAtual = Number(hojeISO().slice(0, 4));
@@ -224,9 +227,9 @@ export default async function Home() {
         <div className="col">
           <div className="so-desktop">
           <section className="card">
-            <div className="card-h"><h2>Carteira por classe · real vs. alvo</h2></div>
+            <div className="card-h"><h2>Carteira por classe · real vs. alvo</h2><span className="sub">{brl(totalRebal)} investidos</span></div>
             <div>
-              {classes.map((c, i) => {
+              {classesCarteira.map((c, i) => {
                 const real = realDe(c);
                 const fixo = alvoFixoDe[c.classe];
                 const temFixo = fixo != null;
@@ -252,13 +255,18 @@ export default async function Home() {
                 );
               })}
             </div>
+            {emTransicaoLista.length > 0 && (
+              <p className="nota-transicao">
+                Fora dos %: {emTransicaoLista.map((c) => `${c.classe} ${brl(Number(c.valor))}`).join(' · ')} (em transição). Reserva e fluxo estão nos Cofres.
+              </p>
+            )}
           </section>
           </div>
 
           <div className="so-mobile">
             <AlocacaoDonut
-              total={total}
-              dados={classes.map((c) => {
+              total={totalRebal}
+              dados={classesCarteira.map((c) => {
                 const real = realDe(c);
                 const fixo = alvoFixoDe[c.classe];
                 const temFixo = fixo != null;
@@ -272,6 +280,11 @@ export default async function Home() {
                 return { classe: c.classe, valor: Number(c.valor), real, alvo, temFixo, fixo, ajuste, tag, tagTxt };
               })}
             />
+            {emTransicaoLista.length > 0 && (
+              <p className="nota-transicao" style={{ border: 0, padding: '0 4px 12px' }}>
+                Fora dos %: {emTransicaoLista.map((c) => `${c.classe} ${brl(Number(c.valor))}`).join(' · ')} (em transição). Reserva e fluxo estão nos Cofres.
+              </p>
+            )}
           </div>
 
           <section className="card">
