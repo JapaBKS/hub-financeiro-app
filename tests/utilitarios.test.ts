@@ -54,13 +54,13 @@ describe('preço usado nas telas', () => {
 
 describe('divisão do aporte', () => {
   it('reparte pelo tamanho do buraco e não passa do buraco', () => {
-    const r = distribuirAporte([
+    const r: Record<string, number> = distribuirAporte([
       { ticker: 'A', buraco: 300, preco: 1, inteiro: false },
       { ticker: 'B', buraco: 100, preco: 1, inteiro: false },
     ], 200);
     expect(r.A).toBeCloseTo(150, 6);
     expect(r.B).toBeCloseTo(50, 6);
-    const sobra = distribuirAporte([{ ticker: 'A', buraco: 100, preco: 1, inteiro: false }], 500);
+    const sobra: Record<string, number> = distribuirAporte([{ ticker: 'A', buraco: 100, preco: 1, inteiro: false }], 500);
     expect(sobra.A).toBeCloseTo(100, 6);
   });
 });
