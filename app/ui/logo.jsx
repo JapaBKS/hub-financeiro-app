@@ -11,17 +11,19 @@ function rosacea(R, r, d, voltas, passos, escala) {
   }
   return p;
 }
-const TRACO = rosacea(100, 27, 46, 27, 900, 0.82);
+// escala 0,76: a rosácea fica inteira dentro da moeda (antes vazava e fazia um anel escuro em volta)
+const TRACO = rosacea(100, 27, 46, 27, 900, 0.76);
 
-export default function Logo({ tamanho = 30, className = 'marca', style }) {
+// fundo=false: só a moeda (no menu, que já é petróleo, o quadrado aparecia como uma sombra)
+export default function Logo({ tamanho = 30, className = 'marca', style, fundo = true }) {
   return (
     <svg width={tamanho} height={tamanho} viewBox="-128 -128 256 256" aria-hidden="true" className={className} style={style}>
-      <rect x="-128" y="-128" width="256" height="256" rx="56" fill="#0F3B4C" />
-      <circle r="92" fill="#B8752A" />
+      {fundo && <rect x="-128" y="-128" width="256" height="256" rx="56" fill="#0F3B4C" />}
+      <circle r={fundo ? 92 : 124} fill="#B8752A" />
       {/* em tamanho pequeno a rosácea vira só textura; acima de 40px aparece o desenho */}
-      <path d={TRACO} fill="none" stroke="#fff" strokeOpacity={tamanho >= 40 ? 0.28 : 0.18} strokeWidth="1.1" />
-      <circle r="58" fill="#B8752A" />
-      <path d="M-26 -36V36M26 -36V36M-26 0H26" stroke="#fff" strokeWidth="15" strokeLinecap="round" fill="none" />
+      <path d={TRACO} transform={fundo ? undefined : 'scale(1.3)'} fill="none" stroke="#fff" strokeOpacity={tamanho >= 40 ? 0.28 : 0.18} strokeWidth="1.1" />
+      <circle r={fundo ? 58 : 78} fill="#B8752A" />
+      <path d="M-26 -36V36M26 -36V36M-26 0H26" transform={fundo ? undefined : 'scale(1.3)'} stroke="#fff" strokeWidth="15" strokeLinecap="round" fill="none" />
     </svg>
   );
 }

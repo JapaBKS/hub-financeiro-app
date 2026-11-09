@@ -76,7 +76,8 @@ function rosacea(R, r, d, voltas, passos = 900) {
 }
 const ROSACEA = [rosacea(120, 33, 62, 33), rosacea(120, 45, 30, 3), rosacea(96, 27, 52, 27)];
 
-const Marca = Logo;
+// no menu (fundo petróleo) vai só a moeda
+const Marca = (props) => <Logo {...props} fundo={false} />;
 
 // atalhos fixos da barra inferior no celular; o resto fica em "Mais"
 const ABAS_CELULAR = ['/', '/carteira', '/cartoes', '/caixa'];
