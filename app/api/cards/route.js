@@ -2,6 +2,7 @@ import { supabaseServer } from '../../../lib/supabase';
 import { rota, ok, checar, ErroDeUso, texto, numero, id } from '../../../lib/api';
 
 const diaFechamento = (v) => (v === null || v === '' || v === 0 ? null : numero(v, 'O dia de fechamento', { min: 1, max: 31, inteiro: true }));
+const diasAntes = (v) => (v === null || v === '' || v === 0 ? null : numero(v, 'Os dias antes do vencimento', { min: 1, max: 28, inteiro: true }));
 const diaVencimento = (v) => numero(v, 'O dia de vencimento', { min: 1, max: 31, inteiro: true });
 
 async function nomeLivre(sb, nome, exceto = null) {
@@ -32,6 +33,7 @@ export const PATCH = rota(async (b) => {
   }
   if (b.due_day !== undefined) patch.due_day = diaVencimento(b.due_day);
   if (b.closing_day !== undefined) patch.closing_day = diaFechamento(b.closing_day);
+  if (b.fecha_dias_antes !== undefined) patch.fecha_dias_antes = diasAntes(b.fecha_dias_antes);
   if (b.ativo !== undefined) patch.ativo = !!b.ativo;
   if (Object.keys(patch).length === 0) throw new ErroDeUso('Nada para alterar.');
 
