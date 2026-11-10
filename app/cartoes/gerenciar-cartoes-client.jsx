@@ -23,7 +23,7 @@ export default function GerenciarCartoes({ cards }) {
   }
 
   const criar = () => chamar('POST', { name: novo.name, due_day: Number(novo.due_day) });
-  const salvar = (id) => chamar('PATCH', { id, name: edit.name, due_day: Number(edit.due_day) });
+  const salvar = (id) => chamar('PATCH', { id, name: edit.name, due_day: Number(edit.due_day), closing_day: edit.closing_day === '' || edit.closing_day == null ? null : Number(edit.closing_day) });
   const alternarAtivo = (c) => chamar('PATCH', { id: c.id, ativo: !c.ativo });
   const excluir = (c) => {
     if (!window.confirm(`Excluir o cartão "${c.name}"? Só funciona se ele não tiver histórico.`)) return;
@@ -53,6 +53,9 @@ export default function GerenciarCartoes({ cards }) {
             <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>vence dia</span>
             <input className="campo" style={{ width: 66, textAlign: 'right' }} type="number" min="1" max="31" value={edit.due_day}
               onChange={(e) => setEdit((f) => ({ ...f, due_day: e.target.value }))} />
+            <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>fecha dia</span>
+            <input className="campo" style={{ width: 66, textAlign: 'right' }} type="number" min="1" max="31" value={edit.closing_day ?? ''} placeholder="—"
+              onChange={(e) => setEdit((f) => ({ ...f, closing_day: e.target.value }))} />
             <button onClick={() => salvar(c.id)} disabled={busy} style={btn({ background: 'var(--forest)', color: '#fff', border: 0 })}>salvar</button>
             <button onClick={() => setEditId(null)} style={btn()}>cancelar</button>
           </>
@@ -63,9 +66,9 @@ export default function GerenciarCartoes({ cards }) {
               {c.ativo === false && (
                 <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ink-faint)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 5px', marginLeft: 6 }}>INATIVO</span>
               )}
-              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 1 }}>vence todo dia {c.due_day}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 1 }}>vence todo dia {c.due_day}{c.closing_day ? ` · fecha dia ${c.closing_day}` : ' · fechamento não cadastrado'}</div>
             </div>
-            <button onClick={() => { setEditId(c.id); setEdit({ name: c.name, due_day: c.due_day }); }} style={btn()}>editar</button>
+            <button onClick={() => { setEditId(c.id); setEdit({ name: c.name, due_day: c.due_day, closing_day: c.closing_day ?? '' }); }} style={btn()}>editar</button>
             <button onClick={() => alternarAtivo(c)} disabled={busy} style={btn({ color: c.ativo === false ? 'var(--forest-2)' : 'var(--ink-faint)' })}>
               {c.ativo === false ? 'reativar' : 'desativar'}
             </button>
