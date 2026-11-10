@@ -43,6 +43,15 @@ function corCartao(nome) {
   const achou = CORES_BANCO.find(([re]) => re.test(nome || ''));
   return achou ? achou[1] : ['#0F3B4C', '#082430'];
 }
+// foto do cartão de verdade (public/cartoes); sem foto, fica o cartão desenhado
+const FOTOS = [
+  [/nubank|nu\b/i, '/cartoes/nubank.jpg'],
+  [/inter\b/i, '/cartoes/inter.jpg'],
+  [/rico/i, '/cartoes/rico.jpg'],
+  [/mercado ?pago|mp\b/i, '/cartoes/mercado-pago.jpg'],
+];
+const fotoCartao = (nome) => FOTOS.find(([re]) => re.test(nome || ''))?.[1] || null;
+
 // chip dourado desenhado (sem imagem)
 function ChipCartao() {
   return (
@@ -247,6 +256,20 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
           const valor = totaisDe(c.id, m).total;
           const [ay, am] = (m || mesHoje).split('-');
           const vence = `${String(c.due_day).padStart(2, '0')}/${am}`;
+          const foto = fotoCartao(c.name);
+          const status = temFatura ? (paga ? '✓ Paga' : norm(m) <= mesHoje ? 'Aberta' : 'Futura') : null;
+          if (foto) {
+            return (
+              <button type="button" role="tab" key={c.id} aria-selected={c.id === cardId} onClick={() => trocarCartao(c.id)}
+                aria-label={c.name} className={`cc-foto${c.ativo === false ? ' cc-inativo' : ''}`}>
+                <img src={foto} alt="" className="cc cc-img" />
+                <span className="cc-legenda">
+                  <span>{status && <b className="cc-legenda-status">{status}</b>} vence {vence}</span>
+                  <b>{temFatura ? fmt(valor) : '—'}</b>
+                </span>
+              </button>
+            );
+          }
           return (
             <button type="button" role="tab" key={c.id} aria-selected={c.id === cardId} onClick={() => trocarCartao(c.id)}
               className={`cc${c.ativo === false ? ' cc-inativo' : ''}`} style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
