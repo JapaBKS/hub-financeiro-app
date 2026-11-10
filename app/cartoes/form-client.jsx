@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
 import { hojeISO } from '../../lib/dominio/datas';
-import { mesDaFatura } from '../../lib/dominio/fatura';
+import { mesDaFatura, dataFechamento } from '../../lib/dominio/fatura';
 
 
 const inputStyle = {
@@ -136,6 +136,30 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
             onChange={(e) => { setMesInicio(e.target.value); setMesManual(true); }} required />
         </div>
       </div>
+      {(() => {
+        // explica por que caiu nesse mês (ou avisa que falta o fechamento do cartão)
+        const card = cartaoDe(cardId);
+        if (!card) return null;
+        const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+        const rot = (ym) => `${MESES[Number(ym.slice(5, 7)) - 1]}/${ym.slice(2, 4)}`;
+        const dm = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
+        const sugerido = mesSugerido(card, purchasedAt);
+        if (!card.closing_day) {
+          return <div className="fc-dica fc-aviso">{card.name} sem dia de fechamento: cadastre em Meus cartões para a fatura certa cair sozinha.</div>;
+        }
+        const anterior = (() => { const [y, m] = sugerido.split('-').map(Number); return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`; })();
+        const fechou = dataFechamento(card, anterior);
+        const fecha = dataFechamento(card, sugerido);
+        return (
+          <div className="fc-dica">
+            {purchasedAt >= fechou ? `A fatura de ${rot(anterior)} fechou ${dm(fechou)}; ` : ''}
+            compra entra na fatura de <b>{rot(sugerido)}</b> (fecha {dm(fecha)}).
+            {mesManual && mesInicio !== sugerido && (
+              <button type="button" onClick={() => { setMesInicio(sugerido); setMesManual(false); }}>usar {rot(sugerido)}</button>
+            )}
+          </div>
+        );
+      })()}
 
       {Number(valorTotal) > 0 && (
         <div style={{ marginTop: 14, fontSize: 13, color: 'var(--ink-soft)' }}>

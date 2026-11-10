@@ -639,3 +639,6 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .cc-foto:not([aria-selected="true"]) .cc-legenda{opacity:.6}
 .cc-todos{border:0;background:none;color:var(--ink-faint);font-size:12px;text-decoration:underline;cursor:pointer;padding:0 2px;margin:-4px 0 12px}
 .pf-fechada{color:var(--brass);background:color-mix(in srgb,var(--brass) 14%,var(--surface))}
+.fc-dica{font-size:12px;color:var(--ink-soft);margin-top:6px;line-height:1.45}
+.fc-dica button{border:0;background:none;color:var(--forest);font-weight:600;text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;padding:0}
+.fc-aviso{color:var(--amber)}
