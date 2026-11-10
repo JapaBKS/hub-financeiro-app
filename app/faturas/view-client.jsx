@@ -24,6 +24,35 @@ function mesAlvoISO() {
   return `${y}-${String(m + 1).padStart(2, '0')}-01`;
 }
 
+// cor do cartão pelo nome do banco (só a cor; o nome aparece escrito)
+const CORES_BANCO = [
+  [/nubank|nu\b/i, ['#8A05BE', '#5B0480']],
+  [/ita[uú]/i, ['#EC7000', '#C25500']],
+  [/inter\b/i, ['#FF7A00', '#E05A00']],
+  [/santander/i, ['#2B2B2E', '#111114']],
+  [/bradesco/i, ['#CC092F', '#8E0620']],
+  [/c6/i, ['#242424', '#0A0A0A']],
+  [/xp\b/i, ['#1F1F1F', '#000000']],
+  [/brasil|bb\b|ourocard/i, ['#2E5BA8', '#1C3D78']],
+  [/caixa/i, ['#1C60AB', '#0E3F7A']],
+  [/mercado ?pago|mp\b/i, ['#00A6E4', '#0077B6']],
+  [/picpay/i, ['#21C25E', '#118A40']],
+  [/btg/i, ['#0B2346', '#05142A']],
+];
+function corCartao(nome) {
+  const achou = CORES_BANCO.find(([re]) => re.test(nome || ''));
+  return achou ? achou[1] : ['#0F3B4C', '#082430'];
+}
+// chip dourado desenhado (sem imagem)
+function ChipCartao() {
+  return (
+    <svg width="34" height="26" viewBox="0 0 34 26" aria-hidden="true">
+      <rect x="0.5" y="0.5" width="33" height="25" rx="5" fill="#E9D39A" stroke="#C9AE6A" />
+      <path d="M11 1v24M23 1v24M1 9h10M23 9h10M1 17h10M23 17h10M11 13h12" stroke="#B89A55" strokeWidth="1" fill="none" />
+    </svg>
+  );
+}
+
 export default function FaturasView({ cards, invoices, items, payments = [] }) {
   const norm = (iso) => (iso || '').slice(0, 10);
   const mesHoje = mesAtualISO();
@@ -208,11 +237,31 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
         </div>
       )}
 
-      {/* abas de cartão */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
-        {cards.map((c) => (
-          <button type="button" key={c.id} className="chip" aria-pressed={c.id === cardId} onClick={() => trocarCartao(c.id)}>{c.name}</button>
-        ))}
+      {/* cartões desenhados: tocar escolhe o cartão */}
+      <div className="cc-fila" role="tablist" aria-label="Cartões">
+        {cards.map((c) => {
+          const [c1, c2] = corCartao(c.name);
+          const m = c.id === cardId ? mes : mesPadrao(c.id);
+          const temFatura = invoices.some((i) => i.card_id === c.id && norm(i.bill_month) === m);
+          const paga = !!pagoDe(c.id, m);
+          const valor = totaisDe(c.id, m).total;
+          const [ay, am] = (m || mesHoje).split('-');
+          const vence = `${String(c.due_day).padStart(2, '0')}/${am}`;
+          return (
+            <button type="button" role="tab" key={c.id} aria-selected={c.id === cardId} onClick={() => trocarCartao(c.id)}
+              className={`cc${c.ativo === false ? ' cc-inativo' : ''}`} style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
+              <span className="cc-topo">
+                <span className="cc-nome">{c.name}</span>
+                {temFatura && <span className="cc-status">{paga ? '✓ Paga' : norm(m) <= mesHoje ? 'Aberta' : 'Futura'}</span>}
+              </span>
+              <span className="cc-meio"><ChipCartao /><span className="cc-ondas" aria-hidden="true">)))</span></span>
+              <span className="cc-base">
+                <span><small>Vence</small>{vence}/{ay.slice(2)}</span>
+                <span style={{ textAlign: 'right' }}><small>Fatura {rotuloMes(m || mesHoje)}</small>{temFatura ? fmt(valor) : '—'}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {meses.length === 0 && (
@@ -223,22 +272,25 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
 
       {meses.length > 0 && (
         <>
-          {/* faixa de meses */}
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 14 }}>
-            {mesesVisiveis.map((m) => {
-              const ativo = m === mes;
-              return (
-                <button type="button" key={m} className="chip chip-mes" aria-pressed={ativo} onClick={() => setMes(m)}>
-                  <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize' }}>{rotuloMes(m)}</div>
-                  <div style={{ fontSize: 12, fontFamily: 'var(--font-display)', fontWeight: 600, marginTop: 2 }}>
-                    {fmt(totaisDe(cardId, m).total).replace('R$', '').trim()}
-                  </div>
-                  {pagoDe(cardId, m) && (
-                    <div style={{ fontSize: 9, fontWeight: 700, marginTop: 1, color: ativo ? '#fff' : 'var(--up)' }}>✓ paga</div>
-                  )}
-                </button>
-              );
-            })}
+          {/* próximas faturas: a altura do preenchimento é o tamanho da fatura */}
+          <div className="pf-titulo">Faturas</div>
+          <div className="pf-fila">
+            {(() => {
+              const maior = Math.max(1, ...mesesVisiveis.map((x) => totaisDe(cardId, x).total));
+              return mesesVisiveis.map((m) => {
+                const ativo = m === mes;
+                const total = totaisDe(cardId, m).total;
+                const paga = pagoDe(cardId, m);
+                return (
+                  <button type="button" key={m} className="pf" aria-pressed={ativo} onClick={() => setMes(m)}>
+                    <span className="pf-nivel" style={{ height: `${Math.max(6, (total / maior) * 62)}%` }} aria-hidden="true" />
+                    <span className="pf-mes">{rotuloMes(m)}</span>
+                    {paga ? <span className="pf-tag pf-paga">✓ paga</span> : norm(m) <= mesHoje ? <span className="pf-tag">aberta</span> : null}
+                    <span className="pf-valor">{fmt(total)}</span>
+                  </button>
+                );
+              });
+            })()}
             {pagasEscondidas.length > 0 && (
               <button onClick={() => setVerPagas((v) => !v)} title="mostrar/ocultar faturas pagas" style={{
                 flex: 'none', padding: '8px 12px', borderRadius: 9, cursor: 'pointer', minWidth: 76,

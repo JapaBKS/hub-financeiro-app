@@ -594,3 +594,35 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 @media(max-width:420px){.sim-saida{grid-template-columns:1fr}}
 .sim-epoca{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:2px}
 .sim-inflacao{font-size:12.5px;color:var(--ink-soft);margin:12px 0 0}
+
+/* Cartões desenhados como cartão físico */
+.cc-fila{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 12px;margin-bottom:6px;scroll-snap-type:x mandatory}
+.cc{flex:none;width:300px;aspect-ratio:1.586;border:0;border-radius:16px;padding:16px 18px;color:#fff;text-align:left;cursor:pointer;
+  display:flex;flex-direction:column;justify-content:space-between;scroll-snap-align:start;position:relative;overflow:hidden;
+  box-shadow:0 6px 18px rgba(15,30,40,.18);opacity:.7;transform:scale(.96);transition:opacity .2s,transform .2s;font:inherit}
+.cc::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 100% 0%,rgba(255,255,255,.16),transparent 60%);pointer-events:none}
+.cc[aria-selected="true"]{opacity:1;transform:none;outline:2px solid var(--brass);outline-offset:3px}
+.cc:focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+.cc-inativo{filter:grayscale(.8)}
+.cc-topo{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cc-nome{font-family:var(--font-display);font-weight:600;font-size:17px;letter-spacing:-.01em}
+.cc-status{font-size:11px;font-weight:600;background:rgba(255,255,255,.18);border-radius:999px;padding:3px 10px}
+.cc-meio{display:flex;align-items:center;justify-content:space-between}
+.cc-ondas{font-size:15px;letter-spacing:-3px;opacity:.75;transform:scaleY(1.3)}
+.cc-base{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;font-family:var(--font-display);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.cc-base small{display:block;font-family:var(--font-body,inherit);font-size:9.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:2px}
+@media(max-width:520px){.cc{width:82vw;max-width:320px}}
+
+/* Faturas mês a mês */
+.pf-titulo{font-size:12px;font-weight:600;color:var(--ink-faint);margin:2px 0 8px}
+.pf-fila{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px}
+.pf{flex:none;width:116px;height:104px;border:1px solid var(--line);border-radius:12px;background:var(--surface);position:relative;overflow:hidden;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:10px 6px;gap:4px;font:inherit;color:var(--ink)}
+.pf-nivel{position:absolute;left:0;right:0;bottom:0;background:var(--line-soft);border-top:2px dashed var(--line);transition:height .25s}
+.pf[aria-pressed="true"]{border:2px solid var(--forest)}
+.pf[aria-pressed="true"] .pf-nivel{background:color-mix(in srgb,var(--forest) 14%,transparent);border-top:2px solid var(--forest)}
+.pf-mes,.pf-tag,.pf-valor{position:relative}
+.pf-mes{font-size:12.5px;font-weight:600;text-transform:capitalize}
+.pf-tag{font-size:10px;font-weight:600;color:var(--forest);background:color-mix(in srgb,var(--forest) 12%,var(--surface));border-radius:999px;padding:1px 8px}
+.pf-paga{color:var(--up);background:var(--up-bg)}
+.pf-valor{margin-top:auto;font-family:var(--font-display);font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
