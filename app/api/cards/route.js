@@ -1,6 +1,7 @@
 import { supabaseServer } from '../../../lib/supabase';
 import { rota, ok, checar, ErroDeUso, texto, numero, id } from '../../../lib/api';
 
+const diaFechamento = (v) => (v === null || v === '' || v === 0 ? null : numero(v, 'O dia de fechamento', { min: 1, max: 31, inteiro: true }));
 const diaVencimento = (v) => numero(v, 'O dia de vencimento', { min: 1, max: 31, inteiro: true });
 
 async function nomeLivre(sb, nome, exceto = null) {
@@ -14,7 +15,9 @@ export const POST = rota(async (b) => {
 
   const sb = supabaseServer();
   await nomeLivre(sb, nome);
-  checar(await sb.from('cards').insert({ name: nome, due_day: dia, ativo: true }));
+  const novo = { name: nome, due_day: dia, ativo: true };
+  if (b.closing_day !== undefined && b.closing_day !== '') novo.closing_day = diaFechamento(b.closing_day);
+  checar(await sb.from('cards').insert(novo));
   return ok();
 });
 
@@ -28,6 +31,7 @@ export const PATCH = rota(async (b) => {
     await nomeLivre(sb, patch.name, cartaoId);
   }
   if (b.due_day !== undefined) patch.due_day = diaVencimento(b.due_day);
+  if (b.closing_day !== undefined) patch.closing_day = diaFechamento(b.closing_day);
   if (b.ativo !== undefined) patch.ativo = !!b.ativo;
   if (Object.keys(patch).length === 0) throw new ErroDeUso('Nada para alterar.');
 

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
 import { hojeISO } from '../../lib/dominio/datas';
+import { mesDaFatura } from '../../lib/dominio/fatura';
 
 
 const inputStyle = {
@@ -10,15 +11,8 @@ const inputStyle = {
 };
 const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '14px 0 6px' };
 
-// 1ª fatura sugerida: cartão que vence no começo do mês (Inter, dia 1) cobra a compra
-// na fatura do mês seguinte; os que vencem a partir do dia 15 cobram no próprio mês.
-function mesSugerido(card, dataCompra) {
-  const [y, m] = (dataCompra || hojeISO()).split('-').map(Number);
-  if (card && Number(card.due_day) < 15) {
-    return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
-  }
-  return `${y}-${String(m).padStart(2, '0')}`;
-}
+// 1ª fatura sugerida pelo dia de fechamento do cartão (sem ele, pela regra antiga do vencimento)
+const mesSugerido = (card, dataCompra) => mesDaFatura(card, dataCompra || hojeISO());
 
 export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }) {
   const hoje = hojeISO();

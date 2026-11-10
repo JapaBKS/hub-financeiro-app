@@ -4,6 +4,7 @@ import { brl as fmt } from '../../lib/format';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
 import { arcPath, fatiar } from '../ui/donut';
 import { hojeISO } from '../../lib/dominio/datas';
+import { dataFechamento } from '../../lib/dominio/fatura';
 import { numeroBR } from '../../lib/format';
 
 
@@ -75,6 +76,21 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
   });
   const pagoDe = (cid, m) => pagos[payKey(cid, m)];
   const fmtData = (iso) => norm(iso).split('-').reverse().join('/');
+  // situação de uma fatura não paga: Fechada (já passou do fechamento), Aberta ou Futura
+  const hojeDia = hojeISO();
+  function situacao(card, m) {
+    if (pagoDe(card.id, m)) return 'paga';
+    const fecha = dataFechamento(card, m);
+    if (fecha) {
+      if (hojeDia >= fecha) return 'fechada';
+      // aberta = a fatura do ciclo atual (a anterior já fechou); depois dela, futuras
+      const [y, mm] = norm(m).split('-').map(Number);
+      const ant = mm === 1 ? `${y - 1}-12-01` : `${y}-${String(mm - 1).padStart(2, '0')}-01`;
+      return hojeDia >= dataFechamento(card, ant) ? 'aberta' : 'futura';
+    }
+    return norm(m) <= mesHoje ? 'aberta' : 'futura';
+  }
+  const ROTULO = { paga: '✓ Paga', fechada: 'Fechada', aberta: 'Aberta', futura: 'Futura' };
 
   async function confirmar(cid, m) {
     const res = await fetch('/api/invoice-payment', {
@@ -293,7 +309,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
           const [ay, am] = (m || mesHoje).split('-');
           const vence = `${String(c.due_day).padStart(2, '0')}/${am}`;
           const foto = fotoCartao(c.name);
-          const status = temFatura ? (paga ? '✓ Paga' : norm(m) <= mesHoje ? 'Aberta' : 'Futura') : null;
+          const status = temFatura ? ROTULO[situacao(c, m)] : null;
           if (foto) {
             return (
               <button type="button" role="tab" key={c.id} data-id={c.id} aria-selected={c.id === cardId} onClick={(e) => tocarCartao(c.id, e.currentTarget)}
@@ -311,7 +327,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
               className={`cc${c.ativo === false ? ' cc-inativo' : ''}`} style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
               <span className="cc-topo">
                 <span className="cc-nome">{c.name}</span>
-                {temFatura && <span className="cc-status">{paga ? '✓ Paga' : norm(m) <= mesHoje ? 'Aberta' : 'Futura'}</span>}
+                {temFatura && <span className="cc-status">{ROTULO[situacao(c, m)]}</span>}
               </span>
               <span className="cc-meio"><ChipCartao /><span className="cc-ondas" aria-hidden="true">)))</span></span>
               <span className="cc-base">
@@ -349,7 +365,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
                   <button type="button" key={m} className="pf" aria-pressed={ativo} onClick={() => setMes(m)}>
                     <span className="pf-nivel" style={{ height: `${Math.max(6, (total / maior) * 62)}%` }} aria-hidden="true" />
                     <span className="pf-mes">{rotuloMes(m)}</span>
-                    {paga ? <span className="pf-tag pf-paga">✓ paga</span> : norm(m) <= mesHoje ? <span className="pf-tag">aberta</span> : null}
+                    {paga ? <span className="pf-tag pf-paga">✓ paga</span> : situacao(cartao, m) === 'fechada' ? <span className="pf-tag pf-fechada">fechada</span> : situacao(cartao, m) === 'aberta' ? <span className="pf-tag">aberta</span> : null}
                     <span className="pf-valor">{fmt(total)}</span>
                   </button>
                 );
@@ -367,7 +383,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
           <section className="card">
             <div style={{ padding: '18px 20px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <div>
-                <div className="eyebrow">{cartao?.name} · vence dia {cartao?.due_day}</div>
+                <div className="eyebrow">{cartao?.name} · vence dia {cartao?.due_day}{cartao && dataFechamento(cartao, mes) ? ` · ${hojeDia >= dataFechamento(cartao, mes) ? 'fechou' : 'fecha'} ${fmtData(dataFechamento(cartao, mes)).slice(0, 5)}` : ''}</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 28, letterSpacing: '-.02em', marginTop: 4 }}>
                   {fmt(tSel.total)}
                 </div>
