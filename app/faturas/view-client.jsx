@@ -187,8 +187,14 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
     return meses[meses.length - 1] || mesAlvo;
   }
 
-  const [cardId, setCardId] = useState(cards[0]?.id ?? null);
-  const [mes, setMes] = useState(cards[0]?.id ? mesPadrao(cards[0].id) : mesHoje);
+  // só aparecem os cartões com alguma fatura em aberto (com valor e não paga)
+  const temAberta = (cid) => mesesDoCartao(cid).some((m) => !pagoDe(cid, m) && totaisDe(cid, m).total > 0.005);
+  const [verTodos, setVerTodos] = useState(false);
+  const primeiro = cards.find((c) => temAberta(c.id)) || cards[0];
+  const [cardId, setCardId] = useState(primeiro?.id ?? null);
+  const [mes, setMes] = useState(primeiro?.id ? mesPadrao(primeiro.id) : mesHoje);
+  const cardsVisiveis = verTodos ? cards : cards.filter((c) => c.id === cardId || temAberta(c.id));
+  const escondidos = cards.length - cards.filter((c) => c.id === cardId || temAberta(c.id)).length;
   const [verPagas, setVerPagas] = useState(false);
 
   function trocarCartao(id) {
@@ -226,8 +232,10 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
 
   const cartao = cards.find((c) => c.id === cardId);
   const meses = mesesDoCartao(cardId);
-  const pagasEscondidas = meses.filter((m) => pagoDe(cardId, m) && m !== mes);
-  const mesesVisiveis = verPagas ? meses : meses.filter((m) => !pagoDe(cardId, m) || m === mes);
+  // faturas zeradas não aparecem; as pagas ficam atrás do botão "✓ pagas"
+  const vazia = (m) => totaisDe(cardId, m).total <= 0.005 && m !== mes;
+  const pagasEscondidas = meses.filter((m) => pagoDe(cardId, m) && m !== mes && !vazia(m));
+  const mesesVisiveis = meses.filter((m) => !vazia(m) && (verPagas || !pagoDe(cardId, m) || m === mes));
   const faturaSel = invoices.find((i) => i.card_id === cardId && norm(i.bill_month) === mes);
   const itensSel = itensState
     .filter((i) => i.card_id === cardId && norm(i.bill_month) === mes)
@@ -276,7 +284,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
 
       {/* cartões desenhados: tocar escolhe o cartão */}
       <div className="cc-fila" role="tablist" aria-label="Cartões" ref={filaRef} onScroll={aoRolar}>
-        {cards.map((c) => {
+        {cardsVisiveis.map((c) => {
           const [c1, c2] = corCartao(c.name);
           const m = c.id === cardId ? mes : mesPadrao(c.id);
           const temFatura = invoices.some((i) => i.card_id === c.id && norm(i.bill_month) === m);
@@ -314,6 +322,11 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
           );
         })}
       </div>
+      {(escondidos > 0 || verTodos) && (
+        <button type="button" className="cc-todos" onClick={() => setVerTodos((v) => !v)}>
+          {verTodos ? 'Mostrar só os com fatura aberta' : `Mostrar todos os cartões (+${escondidos} sem fatura aberta)`}
+        </button>
+      )}
 
       {meses.length === 0 && (
         <div className="card" style={{ padding: '20px', fontSize: 13, color: 'var(--ink-faint)' }}>
