@@ -637,3 +637,4 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .cc-legenda > b{font-family:var(--font-display);font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
 .cc-legenda-status{font-weight:600;color:var(--forest);margin-right:2px}
 .cc-foto:not([aria-selected="true"]) .cc-legenda{opacity:.6}
+.cc-todos{border:0;background:none;color:var(--ink-faint);font-size:12px;text-decoration:underline;cursor:pointer;padding:0 2px;margin:-4px 0 12px}
