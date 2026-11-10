@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { brl as fmt } from '../../lib/format';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
 import { arcPath, fatiar } from '../ui/donut';
@@ -192,8 +192,36 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
   const [verPagas, setVerPagas] = useState(false);
 
   function trocarCartao(id) {
+    if (id === cardId) return;
     setCardId(id);
     setMes(mesPadrao(id));
+  }
+
+  // o cartão que fica na frente da fila é o selecionado: deslizar troca o cartão, e tocar
+  // num cartão leva ele para a frente (antes dava para ver um e estar com outro selecionado)
+  const filaRef = useRef(null);
+  const rolando = useRef(null);
+  function tocarCartao(id, el) {
+    trocarCartao(id);
+    const fila = filaRef.current;
+    if (fila && el) fila.scrollTo({ left: el.offsetLeft - fila.offsetLeft - 2, behavior: 'smooth' });
+  }
+  function aoRolar() {
+    clearTimeout(rolando.current);
+    rolando.current = setTimeout(() => {
+      const fila = filaRef.current; if (!fila) return;
+      const filhos = [...fila.children];
+      const x0 = fila.scrollLeft, x1 = x0 + fila.clientWidth;
+      const pos = (f) => f.offsetLeft - fila.offsetLeft;
+      // o selecionado ainda está inteiro na tela: fica como está (ex.: tocou no último cartão)
+      const sel = filhos.find((f) => f.dataset.id === String(cardId));
+      if (sel && pos(sel) >= x0 - 4 && pos(sel) + sel.offsetWidth <= x1 + 4) return;
+      // senão, vale o cartão que está na frente
+      let melhor = null, dist = Infinity;
+      filhos.forEach((f) => { const d = Math.abs(pos(f) - x0); if (d < dist) { dist = d; melhor = f; } });
+      const c = melhor && cards.find((x) => String(x.id) === melhor.dataset.id);
+      if (c) trocarCartao(c.id);
+    }, 120);
   }
 
   const cartao = cards.find((c) => c.id === cardId);
@@ -247,7 +275,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
       )}
 
       {/* cartões desenhados: tocar escolhe o cartão */}
-      <div className="cc-fila" role="tablist" aria-label="Cartões">
+      <div className="cc-fila" role="tablist" aria-label="Cartões" ref={filaRef} onScroll={aoRolar}>
         {cards.map((c) => {
           const [c1, c2] = corCartao(c.name);
           const m = c.id === cardId ? mes : mesPadrao(c.id);
@@ -260,7 +288,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
           const status = temFatura ? (paga ? '✓ Paga' : norm(m) <= mesHoje ? 'Aberta' : 'Futura') : null;
           if (foto) {
             return (
-              <button type="button" role="tab" key={c.id} aria-selected={c.id === cardId} onClick={() => trocarCartao(c.id)}
+              <button type="button" role="tab" key={c.id} data-id={c.id} aria-selected={c.id === cardId} onClick={(e) => tocarCartao(c.id, e.currentTarget)}
                 aria-label={c.name} className={`cc-foto${c.ativo === false ? ' cc-inativo' : ''}`}>
                 <img src={foto} alt="" className="cc cc-img" />
                 <span className="cc-legenda">
@@ -271,7 +299,7 @@ export default function FaturasView({ cards, invoices, items, payments = [] }) {
             );
           }
           return (
-            <button type="button" role="tab" key={c.id} aria-selected={c.id === cardId} onClick={() => trocarCartao(c.id)}
+            <button type="button" role="tab" key={c.id} data-id={c.id} aria-selected={c.id === cardId} onClick={(e) => tocarCartao(c.id, e.currentTarget)}
               className={`cc${c.ativo === false ? ' cc-inativo' : ''}`} style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
               <span className="cc-topo">
                 <span className="cc-nome">{c.name}</span>
