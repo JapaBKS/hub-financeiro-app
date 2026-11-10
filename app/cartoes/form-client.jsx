@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { CATEGORIAS } from '../../lib/dominio/categorias';
 import { hojeISO } from '../../lib/dominio/datas';
-import { mesDaFatura, dataFechamento } from '../../lib/dominio/fatura';
+import { mesDaFatura, dataFechamento, temFechamento } from '../../lib/dominio/fatura';
 
 
 const inputStyle = {
@@ -144,7 +144,7 @@ export default function FormCartao({ cards, defaultCardId, defaultMes, onSaved }
         const rot = (ym) => `${MESES[Number(ym.slice(5, 7)) - 1]}/${ym.slice(2, 4)}`;
         const dm = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
         const sugerido = mesSugerido(card, purchasedAt);
-        if (!card.closing_day) {
+        if (!temFechamento(card)) {
           return <div className="fc-dica fc-aviso">{card.name} sem dia de fechamento: cadastre em Meus cartões para a fatura certa cair sozinha.</div>;
         }
         const anterior = (() => { const [y, m] = sugerido.split('-').map(Number); return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`; })();
