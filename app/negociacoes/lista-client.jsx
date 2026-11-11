@@ -136,7 +136,7 @@ async function apagar(id) {
                   {t.side === 'compra' ? '−' : '+'}{fmt(Number(t.quantity) * Number(t.price))}
                 </span>
                 <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-faint)' }}>
-                  {Number(t.quantity).toLocaleString('pt-BR')} × {fmt(t.price)}
+                  {Number(t.quantity).toLocaleString('pt-BR', { maximumFractionDigits: 8 })} × {fmt(t.price)}
                   {t.saldo != null && (
                     <>
                       {' · '}
