@@ -1,11 +1,8 @@
 import { supabaseServer } from '../../lib/supabase';
 import { hojeISO as hojeDeBrasilia } from '../../lib/dominio/datas';
-import { brl } from '../../lib/format';
 import { emTransicao } from '../../lib/dominio/classes';
 import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import { detectarPadraoPagamento } from '../../lib/dominio/proventos';
-import { distribuirAporte } from '../../lib/dominio/aporte';
-import RecomendacoesLista from './lista-client';
 import PassosInvestir from './passos-client';
 import { faturasPorSalario } from '../../lib/faturas-salario';
 
@@ -229,49 +226,8 @@ export default async function Recomendacoes() {
   const reservaClasse = (classes || []).find((c) => c.name === NOME_RESERVA);
   const reservaAlvo = reservaClasse && reservaClasse.alvo_valor != null ? Number(reservaClasse.alvo_valor) : 0;
   const reservaFalta = Math.max(0, reservaAlvo - (valorClasse[NOME_RESERVA] || 0));
-  let reservaAporte = 0;
-
-  if (municao > 0) {
-    const compraveis = itens.filter((i) => i.acao === 'comprar' && i.sugestaoRs > 0);
-    const entradas = compraveis.map((i) => ({ ticker: i.ticker, buraco: i.sugestaoRs, preco: i.precoUnit, inteiro: i.inteiro }));
-    // a reserva não tem cota: é valor livre (inteiro = false, sem preço)
-    if (reservaFalta > 0) entradas.push({ ticker: NOME_RESERVA, buraco: reservaFalta, preco: 0, inteiro: false });
-    const fatias = distribuirAporte(entradas, municao);
-    reservaAporte = fatias[NOME_RESERVA] || 0;
-    for (const i of compraveis) {
-      i.buraco = i.sugestaoRs;
-      i.sugestaoRs = fatias[i.ticker] || 0;
-      if (i.precoUnit > 0) {
-        if (i.inteiro) {
-          i.qtd = Math.floor(i.sugestaoRs / i.precoUnit);
-          i.umaCotaPassa = i.qtd < 1 && i.precoUnit > i.sugestaoRs;
-        } else {
-          i.qtd = i.sugestaoRs / i.precoUnit;
-          i.umaCotaPassa = false;
-        }
-      }
-    }
-  }
-
-  // novas primeiro, depois clean vs atenção; dentro de cada grupo, MAIOR valor no topo
-  // se nem 1 cota cabe no ajuste, não conta como compra
-  const comprar = itens.filter((i) => i.acao === 'comprar' && !i.umaCotaPassa)
-    .sort((a, b) => (b.nova - a.nova) || (a.atencao - b.atencao) || (Math.abs(b.sugestaoRs) - Math.abs(a.sugestaoRs)));
-  const reduzir = itens.filter((i) => i.acao === 'reduzir')
-    .sort((a, b) => (a.atencao - b.atencao) || (Math.abs(b.sugestaoRs) - Math.abs(a.sugestaoRs)));
-  // a reserva não é um ativo negociável: entra como linha própria, sem cotas
-  if (reservaAporte > 0) {
-    comprar.push({
-      ticker: NOME_RESERVA, classe: NOME_RESERVA, reserva: true,
-      acao: 'comprar', tom: 'buy', motivo: `abaixo do alvo · reserva de ${brl(reservaAlvo)}`,
-      nova: false, atencao: false, held: false,
-      sugestaoRs: reservaAporte, buraco: reservaFalta,
-      saldo: valorClasse[NOME_RESERVA] || 0, alvoRs: reservaAlvo,
-      precoUnit: 0, qtd: null, inteiro: false, umaCotaPassa: false,
-    });
-  }
+  const reserva = { nome: NOME_RESERVA, alvo: reservaAlvo, falta: reservaFalta, saldo: valorClasse[NOME_RESERVA] || 0 };
   const manter = itens.filter((i) => i.acao === 'manter');
-  const novasN = comprar.filter((i) => i.nova).length;
 
   // saldos "A investir": manuais em classe fora do rateio e sem alvo em R$ (mesma regra da munição)
   const saldosAInvestir = (saldosManuais || [])
@@ -287,21 +243,9 @@ export default async function Recomendacoes() {
         <a href="/alvos">Editar alvos</a>
       </header>
 
-      <PassosInvestir faturasSal={faturasSal} saldos={saldosAInvestir} />
-
-      <div className="inv-passo"><span>3</span>O que comprar</div>
-
-      <RecomendacoesLista
-        comprar={comprar}
-        reduzir={reduzir}
-        manterN={manter.length}
-        novasN={novasN}
-        municao={municao}
-        reservaAporte={reservaAporte}
-        tol={TOL}
-        assets={listaAssets || []}
-        classes={listaClasses || []}
-      />
+      <PassosInvestir faturasSal={faturasSal} saldos={saldosAInvestir}
+        itens={itens} municao={municao} reserva={reserva} manterN={manter.length}
+        tol={TOL} assets={listaAssets || []} classes={listaClasses || []} />
     </div>
   );
 }

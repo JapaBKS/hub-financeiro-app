@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { brl, numeroBR } from '../../lib/format';
 
 // Atualiza o saldo "A investir" (saldos manuais das classes fora do rateio) sem sair da tela.
-export default function AInvestir({ saldos, somar = 0 }) {
+export default function AInvestir({ saldos, somar = 0, onTotal }) {
   const [valores, setValores] = useState(() => Object.fromEntries(saldos.map((s) => [s.id, String(s.amount).replace('.', ',')])));
   const [estado, setEstado] = useState(null);
   // o total do passo 1 (salário + o que já estava na corretora) vira o saldo do primeiro
@@ -17,6 +17,8 @@ export default function AInvestir({ saldos, somar = 0 }) {
     setValores((ant) => ({ ...ant, [primeiro.id]: v.toFixed(2).replace('.', ',') }));
   }, [somar, manual, primeiro]);
   const total = saldos.reduce((t, s) => t + (numeroBR(valores[s.id]) || 0), 0);
+  // avisa o total digitado (sem salvar) para o passo 3 refazer a divisão na hora
+  useEffect(() => { if (onTotal) onTotal(total); }, [total, onTotal]);
   const mudou = saldos.some((s) => Math.abs((numeroBR(valores[s.id]) || 0) - Number(s.amount)) > 0.004);
 
   async function salvar() {
