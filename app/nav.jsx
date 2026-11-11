@@ -47,7 +47,7 @@ const GRUPOS = [
     { href: '/desempenho', label: 'Desempenho', icone: 'desempenho' },
   ] },
   { titulo: 'Investir', itens: [
-    { href: '/recomendacoes', label: 'Recomendações', icone: 'recomendacoes' },
+    { href: '/recomendacoes', label: 'Investir', icone: 'recomendacoes' },
     { href: '/negociacoes', label: 'Negociações', icone: 'negociacoes' },
     { href: '/dividendos', label: 'Proventos', icone: 'proventos' },
     { href: '/impostos', label: 'Impostos', icone: 'recibo' },

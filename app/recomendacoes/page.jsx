@@ -6,6 +6,9 @@ import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import { detectarPadraoPagamento } from '../../lib/dominio/proventos';
 import { distribuirAporte } from '../../lib/dominio/aporte';
 import RecomendacoesLista from './lista-client';
+import AInvestir from './a-investir-client';
+import CalculadoraAporte from '../meta/calculadora-aporte';
+import { faturasPorSalario } from '../../lib/faturas-salario';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -18,7 +21,7 @@ const NOME_RESERVA = 'Reserva de Emergência';
 
 export default async function Recomendacoes() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: alvoAssets }, { data: allocPorClasse }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }, { data: manuais }, { data: congelados }, { data: recebidos }, { data: pendentes }] = await Promise.all([
+  const [{ data: pos }, { data: alvoAssets }, { data: allocPorClasse }, { data: classes }, { data: precos }, { data: listaAssets }, { data: listaClasses }, { data: manuais }, { data: congelados }, { data: recebidos }, { data: pendentes }, { data: saldosManuais }, faturasSal] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('assets').select('ticker, target_pct, asset_classes(name, target_pct)').gt('target_pct', 0),
     sb.from('v_class_allocation').select('classe, valor'),
@@ -30,6 +33,8 @@ export default async function Recomendacoes() {
     sb.from('assets').select('ticker, congelado'),
     sb.from('dividends').select('ticker, paid_at'),
     sb.from('dividends_pending').select('ticker, pay_date, amount'),
+    sb.from('manual_holdings').select('id, label, amount, asset_classes(name, fora_rateio, alvo_valor)').order('id'),
+    faturasPorSalario(sb),
   ]);
 
   const precoDe = criarResolvedorDePreco(precos, manuais);
@@ -269,14 +274,30 @@ export default async function Recomendacoes() {
   const manter = itens.filter((i) => i.acao === 'manter');
   const novasN = comprar.filter((i) => i.nova).length;
 
+  // saldos "A investir": manuais em classe fora do rateio e sem alvo em R$ (mesma regra da munição)
+  const saldosAInvestir = (saldosManuais || [])
+    .filter((h) => h.asset_classes?.fora_rateio && !(Number(h.asset_classes?.alvo_valor) > 0) && !emTransicao(h.asset_classes?.name))
+    .map((h) => ({ id: h.id, label: h.label, amount: Number(h.amount) || 0 }));
+
   return (
     <div className="wrap" style={{ maxWidth: 760 }}>
       <header className="topbar">
         <div className="brand">
-          <div><b>Recomendações</b><span>o que comprar e reduzir</span></div>
+          <div><b>Investir</b><span>quanto separar, quanto tem e o que comprar</span></div>
         </div>
         <a href="/alvos">Editar alvos</a>
       </header>
+
+      <div className="inv-passo"><span>1</span>Quanto separar do salário</div>
+      <CalculadoraAporte reservaFalta={reservaFalta} faturasDia15={faturasSal.faturasDia15} faturasDia30={faturasSal.faturasDia30} diaInicial={faturasSal.diaInicial} />
+
+      <div className="inv-passo"><span>2</span>Quanto tenho para investir</div>
+      <section className="card" style={{ padding: '14px 20px 16px', marginBottom: 16 }}>
+        <AInvestir saldos={saldosAInvestir} />
+        <p className="ir-nota" style={{ margin: '8px 0 0' }}>Depois de transferir para a corretora, atualize aqui. A divisão abaixo usa esse valor.</p>
+      </section>
+
+      <div className="inv-passo"><span>3</span>O que comprar</div>
 
       <RecomendacoesLista
         comprar={comprar}
