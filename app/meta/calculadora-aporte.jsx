@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Campo } from '../ui/campos';
 import { brl } from '../../lib/format';
 
@@ -8,7 +8,7 @@ const num = (v) => Number(String(v).replace(',', '.')) || 0;
 
 // Calculadora do aporte: nada é salvo. Do que entrou, desconta faturas e fluxo; o resto é o que
 // vai para investir, em R$ e em % do recebido, comparado com a referência de 30%.
-export default function CalculadoraAporte({ faturasDia15 = [], faturasDia30 = [], diaInicial = 15 }) {
+export default function CalculadoraAporte({ onInvestir, faturasDia15 = [], faturasDia30 = [], diaInicial = 15 }) {
   const somaF = (l) => Math.round(l.reduce((t, f) => t + f.valor, 0) * 100) / 100;
   const textoF = (l) => (somaF(l) ? String(somaF(l)) : '');
   const [dia, setDia] = useState(diaInicial);
@@ -20,20 +20,24 @@ export default function CalculadoraAporte({ faturasDia15 = [], faturasDia30 = []
     setFatura(textoF(d === 15 ? faturasDia15 : faturasDia30)); // preenche com a sua parte; segue editável
   }
   const [fluxo, setFluxo] = useState('');
+  const [corretora, setCorretora] = useState(''); // proventos e sobras parados na corretora (rendendo CDI)
 
   const x = num(valor);
   const contas = num(fatura) + num(fluxo);
   // o que sobra depois das contas vai todo para investir; compara com a referência dos 30%
-  const investir = x - contas;
-  const pctInvestir = x > 0 ? investir / x : 0;
+  // a % e a comparação com os 30% olham só o salário; o que já está na corretora soma no total
+  const doSalario = x - contas;
+  const extra = num(corretora);
+  const investir = doSalario + extra;
+  const pctInvestir = x > 0 ? doSalario / x : 0;
   const ref = x * PCT;
-  const dif = investir - ref;
+  const dif = doSalario - ref;
+  useEffect(() => { if (onInvestir) onInvestir(x > 0 || extra > 0 ? Math.max(0, Math.round(investir * 100) / 100) : 0); }, [x, extra, investir, onInvestir]);
 
   return (
     <section className="card" style={{ marginBottom: 16, padding: '4px 0 16px' }}>
       <div className="card-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <h2>Quanto vou investir</h2>
-        <span style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>recebido − faturas − fluxo</span>
       </div>
       <div style={{ padding: '4px 20px 0' }}>
         <div className="calc30-dias" role="group" aria-label="Qual salário">
@@ -58,6 +62,11 @@ export default function CalculadoraAporte({ faturasDia15 = [], faturasDia30 = []
             <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" inputMode="decimal" placeholder="0,00"
               value={fluxo} onChange={(e) => setFluxo(e.target.value)} />
           </div>
+          <div>
+            <label className="calc30-rot">Já na corretora</label>
+            <Campo tamanho="sm" numerico largura="100%" type="number" step="any" min="0" inputMode="decimal" placeholder="0,00"
+              value={corretora} onChange={(e) => setCorretora(e.target.value)} />
+          </div>
         </div>
 
         <p style={{ fontSize: 11, color: 'var(--ink-faint)', margin: '6px 0 0' }}>
@@ -74,11 +83,12 @@ export default function CalculadoraAporte({ faturasDia15 = [], faturasDia30 = []
           </div>
           <div className="calc30-bloco calc30-sep">
             <span>Vou investir</span>
-            {x > 0 ? (
+            {x > 0 || extra > 0 ? (
               <b style={{ color: investir < 0 ? 'var(--down)' : undefined }}>
-                {investir < 0 ? '−' : ''}{brl(Math.abs(investir))} <small className="calc30-pct">{(pctInvestir * 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%</small>
+                {investir < 0 ? '−' : ''}{brl(Math.abs(investir))}{x > 0 && <small className="calc30-pct">{(pctInvestir * 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}% do salário</small>}
               </b>
             ) : <b style={{ color: 'var(--ink-faint)' }}>—</b>}
+            {extra > 0 && x > 0 && <small className="calc30-extra">{brl(doSalario)} do salário + {brl(extra)} da corretora</small>}
           </div>
         </div>
 
