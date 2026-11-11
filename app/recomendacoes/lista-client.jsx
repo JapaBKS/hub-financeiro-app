@@ -163,7 +163,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
       </section>
 
       <p style={{ fontSize: 12, color: 'var(--ink-faint)', textAlign: 'center', margin: '4px 0 16px' }}>
-        {manterN} ativos no alvo. ⚠ = fora da condição de preço. Tolerância {(tol * 100).toFixed(0)}%. Clique numa recomendação para registrar.
+        {manterN} ativos no alvo. ⚠ na venda = abaixo do PM além de {(tol * 100).toFixed(0)}% (vender seria no prejuízo). Clique numa recomendação para registrar.
       </p>
 
       <div>
