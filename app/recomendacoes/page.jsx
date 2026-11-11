@@ -163,14 +163,12 @@ export default async function Recomendacoes() {
 
       if (abaixoAlvo) {
         acao = 'comprar'; tom = 'buy';
-        const precoOk = d != null && d <= TOL; // no PM ou até 3% acima
-        if (precoOk) {
-          if (d < -0.005) { motivo = `abaixo do alvo · ${dPct}% abaixo do PM`; forca = 4; }
-          else { motivo = 'abaixo do alvo · preço perto do PM'; forca = 3; }
-        } else {
-          atencao = true; forca = 1;
-          motivo = d != null ? `abaixo do alvo, mas ${dPct}% acima do PM` : 'abaixo do alvo · sem cotação';
-        }
+        // na compra o PM é só informação: o buraco decide (se pulasse quem subiu, o ativo
+        // nunca mais voltaria ao alvo). O ⚠ fica para a venda e para quando falta cotação.
+        if (d == null) { atencao = true; forca = 1; motivo = 'abaixo do alvo · sem cotação'; }
+        else if (d < -0.005) { motivo = `abaixo do alvo · ${dPct}% abaixo do PM`; forca = 4; }
+        else if (d > TOL) { motivo = `abaixo do alvo · ${dPct}% acima do PM`; forca = 3; }
+        else { motivo = 'abaixo do alvo · preço perto do PM'; forca = 3; }
       } else if (acimaAlvo) {
         acao = 'reduzir'; tom = 'sell';
         const precoOk = d != null && d >= -TOL; // no PM ou até 3% abaixo (não vende no prejuízo)
