@@ -6,8 +6,7 @@ import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import { detectarPadraoPagamento } from '../../lib/dominio/proventos';
 import { distribuirAporte } from '../../lib/dominio/aporte';
 import RecomendacoesLista from './lista-client';
-import AInvestir from './a-investir-client';
-import CalculadoraAporte from '../meta/calculadora-aporte';
+import PassosInvestir from './passos-client';
 import { faturasPorSalario } from '../../lib/faturas-salario';
 
 export const dynamic = 'force-dynamic';
@@ -288,14 +287,7 @@ export default async function Recomendacoes() {
         <a href="/alvos">Editar alvos</a>
       </header>
 
-      <div className="inv-passo"><span>1</span>Do salário</div>
-      <CalculadoraAporte faturasDia15={faturasSal.faturasDia15} faturasDia30={faturasSal.faturasDia30} diaInicial={faturasSal.diaInicial} />
-
-      <div className="inv-passo"><span>2</span>Quanto tenho para investir</div>
-      <section className="card" style={{ padding: '14px 20px 16px', marginBottom: 16 }}>
-        <AInvestir saldos={saldosAInvestir} />
-        <p className="ir-nota" style={{ margin: '8px 0 0' }}>Depois de transferir para a corretora, atualize aqui. A divisão abaixo usa esse valor.</p>
-      </section>
+      <PassosInvestir faturasSal={faturasSal} saldos={saldosAInvestir} />
 
       <div className="inv-passo"><span>3</span>O que comprar</div>
 

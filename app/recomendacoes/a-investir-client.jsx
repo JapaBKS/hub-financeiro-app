@@ -1,11 +1,21 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { brl, numeroBR } from '../../lib/format';
 
 // Atualiza o saldo "A investir" (saldos manuais das classes fora do rateio) sem sair da tela.
-export default function AInvestir({ saldos }) {
+export default function AInvestir({ saldos, somar = 0 }) {
   const [valores, setValores] = useState(() => Object.fromEntries(saldos.map((s) => [s.id, String(s.amount).replace('.', ',')])));
   const [estado, setEstado] = useState(null);
+  // o total do passo 1 (salário + o que já estava na corretora) vira o saldo do primeiro
+  // "A investir"; se você digitar no campo, para de acompanhar
+  const [manual, setManual] = useState(false);
+  const primeiro = saldos[0];
+  useEffect(() => {
+    if (manual || !primeiro) return;
+    if (!(Number(somar) > 0)) return;
+    const v = Number(somar);
+    setValores((ant) => ({ ...ant, [primeiro.id]: v.toFixed(2).replace('.', ',') }));
+  }, [somar, manual, primeiro]);
   const total = saldos.reduce((t, s) => t + (numeroBR(valores[s.id]) || 0), 0);
   const mudou = saldos.some((s) => Math.abs((numeroBR(valores[s.id]) || 0) - Number(s.amount)) > 0.004);
 
@@ -29,13 +39,16 @@ export default function AInvestir({ saldos }) {
       {saldos.map((s) => (
         <label key={s.id}>
           <span>{s.label}</span>
-          <input className="campo" inputMode="decimal" value={valores[s.id]} onChange={(e) => setValores((v) => ({ ...v, [s.id]: e.target.value }))} />
+          <input className="campo" inputMode="decimal" value={valores[s.id]} onChange={(e) => { setManual(true); setValores((v) => ({ ...v, [s.id]: e.target.value })); }} />
         </label>
       ))}
       <button type="button" className="btn btn-primario" disabled={!mudou || estado === 'salvando'} onClick={salvar}>
         {estado === 'salvando' ? 'Salvando…' : `Salvar ${saldos.length > 1 ? `(${brl(total)})` : ''}`}
       </button>
       {estado === 'erro' && <span className="inv-erro">Não foi possível salvar.</span>}
+      {somar > 0 && !manual && primeiro && (
+        <span className="inv-soma">Preenchido com o total do passo 1 (era {brl(Number(primeiro.amount))}).</span>
+      )}
     </div>
   );
 }
