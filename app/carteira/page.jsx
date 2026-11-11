@@ -9,6 +9,8 @@ import SaldosClient from './saldos-client';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// quantidade: inteira sem casas; fracionada (cripto) com até 8 casas, sem zeros à direita
+const fmtQtd = (n) => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 8 });
 const fmtNum = (n, d = 2) => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
 
 export default async function Carteira() {
@@ -114,7 +116,7 @@ export default async function Carteira() {
             )}
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 2, fontFamily: 'var(--font-display)' }}>
-            {fmtNum(p.quantidade, Number.isInteger(Number(p.quantidade)) ? 0 : 2)} · PM {fmtNum(p.preco_medio)}
+            {fmtQtd(p.quantidade)} · PM {fmtNum(p.preco_medio)}
             {p.semAuto ? (p.usouManual ? ` · manual ${fmtNum(p.manual)}` : '') : ` · agora ${fmtNum(p.preco_atual)}`}
           </div>
           {p.semAuto && (
