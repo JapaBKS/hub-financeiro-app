@@ -78,7 +78,7 @@ export default function CalculadoraAporte({ reservaFalta = 0, faturasDia15 = [],
 
         <div className="calc30-bloco" style={{ marginTop: 10 }}>
           <span>Sobra</span>
-          <b style={{ color: sobra < 0 ? 'var(--down)' : undefined }}>{sobra < 0 ? '−' : ''}{brl(Math.abs(sobra))}</b>
+          {x > 0 ? <b style={{ color: sobra < 0 ? 'var(--down)' : undefined }}>{sobra < 0 ? '−' : ''}{brl(Math.abs(sobra))}</b> : <b style={{ color: 'var(--ink-faint)' }}>—</b>}
         </div>
 
         {x > 0 && sobra > 0 && (

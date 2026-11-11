@@ -642,3 +642,10 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .fc-dica{font-size:12px;color:var(--ink-soft);margin-top:6px;line-height:1.45}
 .fc-dica button{border:0;background:none;color:var(--forest);font-weight:600;text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;padding:0}
 .fc-aviso{color:var(--amber)}
+.inv-passo{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-weight:600;font-size:15px;margin:6px 0 8px}
+.inv-passo span{width:22px;height:22px;border-radius:50%;background:var(--forest);color:#fff;display:inline-grid;place-items:center;font-size:12px}
+.inv-saldo{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.inv-saldo label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-faint)}
+.inv-saldo .campo{width:150px;text-align:right;font-size:16px}
+.inv-erro{font-size:12px;color:var(--down)}
+.inv-vazio{font-size:13px;color:var(--ink-soft);margin:0}
