@@ -25,13 +25,13 @@ export default function CalculadoraAporte({ onInvestir, faturasDia15 = [], fatur
   const x = num(valor);
   const contas = num(fatura) + num(fluxo);
   // o que sobra depois das contas vai todo para investir; compara com a referência dos 30%
-  // a % e a comparação com os 30% olham só o salário; o que já está na corretora soma no total
+  // a % e a comparação com os 30% contam tudo que vai para investir (salário + corretora)
   const doSalario = x - contas;
   const extra = num(corretora);
   const investir = doSalario + extra;
-  const pctInvestir = x > 0 ? doSalario / x : 0;
+  const pctInvestir = x > 0 ? investir / x : 0;
   const ref = x * PCT;
-  const dif = doSalario - ref;
+  const dif = investir - ref;
   useEffect(() => { if (onInvestir) onInvestir(x > 0 || extra > 0 ? Math.max(0, Math.round(investir * 100) / 100) : 0); }, [x, extra, investir, onInvestir]);
 
   return (
@@ -85,7 +85,7 @@ export default function CalculadoraAporte({ onInvestir, faturasDia15 = [], fatur
             <span>Vou investir</span>
             {x > 0 || extra > 0 ? (
               <b style={{ color: investir < 0 ? 'var(--down)' : undefined }}>
-                {investir < 0 ? '−' : ''}{brl(Math.abs(investir))}{x > 0 && <small className="calc30-pct">{(pctInvestir * 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}% do salário</small>}
+                {investir < 0 ? '−' : ''}{brl(Math.abs(investir))}{x > 0 && <small className="calc30-pct">{(pctInvestir * 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}% do recebido</small>}
               </b>
             ) : <b style={{ color: 'var(--ink-faint)' }}>—</b>}
             {extra > 0 && x > 0 && <small className="calc30-extra">{brl(doSalario)} do salário + {brl(extra)} da corretora</small>}
