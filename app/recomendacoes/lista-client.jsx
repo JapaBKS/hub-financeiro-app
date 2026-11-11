@@ -5,7 +5,7 @@ import FormNegociacao from '../negociacoes/form-client';
 import PrecoManual from '../preco-manual-client';
 import { segmento } from '../../lib/dominio/segmentos';
 
-export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, municao = 0, reservaAporte = 0, tol, assets, classes }) {
+export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, municao = 0, reservaAporte = 0, sobra = 0, tol, assets, classes }) {
   const [preset, setPreset] = useState(null);
   const [abertoTicker, setAbertoTicker] = useState(null); // abre inline sob a linha
   const [aberto, setAberto] = useState(false);            // form avulso no rodapé
@@ -144,8 +144,9 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
           <div style={{ padding: '8px 20px 0', fontSize: 12, color: 'var(--ink-soft)' }}>
             Distribuindo <b style={{ fontFamily: 'var(--font-display)', color: 'var(--forest-2)' }}>{brl(municao)}</b> disponíveis
             {reservaAporte > 0
-              ? <>: <b>{brl(reservaAporte)}</b> para a reserva e <b>{brl(municao - reservaAporte)}</b> entre os ativos, tudo na proporção do buraco de cada um.</>
+              ? <>: <b>{brl(municao - reservaAporte - sobra)}</b> em cotas inteiras e <b>{brl(reservaAporte)}</b> para a reserva (a fatia dela + o troco das cotas).</>
               : ' na proporção do buraco de cada ativo.'}
+            {sobra > 0 && <> Sobram <b>{brl(sobra)}</b>, que ficam rendendo para o próximo mês.</>}
           </div>
         )}
         <div style={{ marginTop: 6 }}>

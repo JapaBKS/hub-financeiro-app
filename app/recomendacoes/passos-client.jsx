@@ -13,7 +13,7 @@ export default function PassosInvestir({ faturasSal, saldos, itens, municao, res
   const [digitado, setDigitado] = useState(salvo);
   // munição = outras classes fora do rateio (que não são editadas aqui) + o que está no passo 2
   const disponivel = Math.max(0, municao - salvo + digitado);
-  const { comprar, reduzir, reservaAporte, novasN } = useMemo(() => montarCompras(itens, disponivel, reserva), [itens, disponivel, reserva]);
+  const { comprar, reduzir, reservaAporte, sobra, novasN } = useMemo(() => montarCompras(itens, disponivel, reserva), [itens, disponivel, reserva]);
 
   return (
     <>
@@ -34,6 +34,7 @@ export default function PassosInvestir({ faturasSal, saldos, itens, municao, res
         novasN={novasN}
         municao={disponivel}
         reservaAporte={reservaAporte}
+        sobra={sobra}
         tol={tol}
         assets={assets}
         classes={classes}
