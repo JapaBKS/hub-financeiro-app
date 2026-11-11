@@ -283,13 +283,13 @@ export default async function Recomendacoes() {
     <div className="wrap" style={{ maxWidth: 760 }}>
       <header className="topbar">
         <div className="brand">
-          <div><b>Investir</b><span>quanto separar, quanto tem e o que comprar</span></div>
+          <div><b>Investir</b><span>quanto investir, quanto tem e o que comprar</span></div>
         </div>
         <a href="/alvos">Editar alvos</a>
       </header>
 
-      <div className="inv-passo"><span>1</span>Quanto separar do salário</div>
-      <CalculadoraAporte reservaFalta={reservaFalta} faturasDia15={faturasSal.faturasDia15} faturasDia30={faturasSal.faturasDia30} diaInicial={faturasSal.diaInicial} />
+      <div className="inv-passo"><span>1</span>Do salário</div>
+      <CalculadoraAporte faturasDia15={faturasSal.faturasDia15} faturasDia30={faturasSal.faturasDia30} diaInicial={faturasSal.diaInicial} />
 
       <div className="inv-passo"><span>2</span>Quanto tenho para investir</div>
       <section className="card" style={{ padding: '14px 20px 16px', marginBottom: 16 }}>
