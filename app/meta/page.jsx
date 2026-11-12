@@ -14,7 +14,7 @@ import SimularRenda from './simular-renda';
 const PLANO = {
   inflacaoAno: 0.045,      // 4,5% ao ano (teto da meta do Banco Central; IPCA 12m em set/26 era 4,58%)
   baseInflacao: '2026-11', // mês a partir do qual a meta passa a ser corrigida
-  rendimentoRealAno: 0.06, // 6% ao ano acima da inflação, já com os proventos (perto do Tesouro IPCA+)
+  valorizacaoAno: 0.10, // as cotas sobem 10% ao ano (nominal); os proventos (PROVENTOS_MES) vêm por cima e são reinvestidos
 };
 
 const brlCompacto = (n) => (n >= 999500 ? `R$ ${(n / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} mi` : `R$ ${(n / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} mil`);
@@ -83,13 +83,13 @@ export default async function Meta() {
 
   // ---- projeção personalizada ----
   // Começa jul/2024 com 8.200. Cada mês: saldo = saldo_ant × (1 + valorização) + aporte(ano) + dividendos_mês_anterior.
-  // Valorização + proventos = 6% reais ao ano + inflação (≈ 10,8% nominal); antes era 1% ao mês (~9,4% real, otimista demais).
+  // Valorização das cotas 10% ao ano (nominal) + proventos de 0,12% ao mês reinvestidos ≈ 6,7% real com inflação de 4,5%.
   // dividendos = 0,12% do saldo do mês (0,8% ao mês nos FIIs × 15% do alvo). Aporte: 1.000 em 2024, +10% a cada virada de ano. Vai até 1 milhão.
   const META = 1000000;
   const PROJ_INICIO = ymIndex('2024-07-01');
   const PROJ_SALDO0 = 8200;
   const DIV_PCT = PROVENTOS_MES;
-  const CRESC_MES = Math.pow((1 + PLANO.rendimentoRealAno) * (1 + PLANO.inflacaoAno), 1 / 12) - 1 - DIV_PCT;
+  const CRESC_MES = Math.pow(1 + PLANO.valorizacaoAno, 1 / 12) - 1;
   const APORTE_BASE = 1000;
   const APORTE_ANO0 = 2024;
   const APORTE_CRESC = 0.10;
@@ -348,7 +348,7 @@ export default async function Meta() {
           ))}
         </div>
         <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>
-          Premissas: rendimento de {pct(PLANO.rendimentoRealAno, 0)} ao ano acima da inflação e inflação fixa de {pct(PLANO.inflacaoAno, 1)} ao ano. Valores em dinheiro de nov/2026; embaixo da data, quanto o marco vai valer em reais na época.
+          Premissas: cotas valorizando {pct(PLANO.valorizacaoAno, 0)} ao ano, mais {pct(PROVENTOS_MES * 12, 1)} ao ano de proventos reinvestidos, e inflação fixa de {pct(PLANO.inflacaoAno, 1)} ao ano (≈ {pct((1 + PLANO.valorizacaoAno) * Math.pow(1 + PROVENTOS_MES, 12) / (1 + PLANO.inflacaoAno) - 1, 1)} real no total). Valores em dinheiro de nov/2026; embaixo da data, quanto o marco vai valer em reais na época.
           "Pela projeção" não muda mês a mês (é a régua); "No seu ritmo" parte do seu valor de hoje e mostra se você está chegando antes ou depois.
         </p>
       </section>
