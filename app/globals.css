@@ -659,3 +659,4 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--forest-2);outline-o
 .calc30-contas{grid-template-columns:1fr 1fr 1fr}
 @media(max-width:520px){.calc30-contas{grid-template-columns:1fr 1fr}}
 .calc30-pct{display:block;margin:2px 0 0 !important;font-family:var(--font-body,inherit)}
+.neg-periodo{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
