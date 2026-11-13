@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { apagarNegociacao, atualizarNegociacao } from './actions';
 import { brl as fmt } from '../../lib/format';
+import { hojeISO } from '../../lib/dominio/datas';
 
 const fmtData = (iso) => (iso || '').slice(0, 10).split('-').reverse().join('/');
 
@@ -16,6 +17,11 @@ export default function ListaNegociacoes({ trades }) {
   const [tipo, setTipo] = useState('todos');
   const [ano, setAno] = useState('todos');
   const [mes, setMes] = useState('todos');
+  // atalho de período: hoje, últimos 7 dias, este mês (soma com os outros filtros)
+  const [periodo, setPeriodo] = useState('todos');
+  const hoje = hojeISO();
+  const seteDias = new Date(Date.parse(hoje) - 6 * 864e5).toISOString().slice(0, 10);
+  const PERIODOS = [['hoje', 'Hoje'], ['7d', '7 dias'], ['mes', 'Este mês'], ['todos', 'Tudo']];
 
   const anos = [...new Set(lista.map((t) => (t.traded_at || '').slice(0, 4)).filter(Boolean))].sort((a, b) => b.localeCompare(a));
   const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -26,12 +32,15 @@ export default function ListaNegociacoes({ trades }) {
     const d = (t.traded_at || '').slice(0, 10);
     if (ano !== 'todos' && d.slice(0, 4) !== ano) return false;
     if (mes !== 'todos' && d.slice(5, 7) !== mes) return false;
+    if (periodo === 'hoje' && d !== hoje) return false;
+    if (periodo === '7d' && (d < seteDias || d > hoje)) return false;
+    if (periodo === 'mes' && d.slice(0, 7) !== hoje.slice(0, 7)) return false;
     return true;
   });
 
   const totC = filtradas.filter((t) => t.side === 'compra').reduce((s, t) => s + Number(t.quantity) * Number(t.price), 0);
   const totV = filtradas.filter((t) => t.side === 'venda').reduce((s, t) => s + Number(t.quantity) * Number(t.price), 0);
-  const temFiltro = tipo !== 'todos' || busca || ano !== 'todos' || mes !== 'todos';
+  const temFiltro = tipo !== 'todos' || busca || ano !== 'todos' || mes !== 'todos' || periodo !== 'todos';
 
 
   function abrirEdicao(t) {
@@ -70,6 +79,11 @@ async function apagar(id) {
 
   return (
     <div>
+      <div className="neg-periodo" role="group" aria-label="Período">
+        {PERIODOS.map(([id, rot]) => (
+          <button key={id} type="button" className="chip" aria-pressed={periodo === id} onClick={() => setPeriodo(id)}>{rot}</button>
+        ))}
+      </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
         <input className="campo" style={{ flex: 1, minWidth: 150 }} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar ticker (ex.: PETR4)" />
         <select className="campo" style={{ width: 120 }} value={tipo} onChange={(e) => setTipo(e.target.value)}>
@@ -91,7 +105,7 @@ async function apagar(id) {
           ))}
         </select>
         {temFiltro && (
-          <button onClick={() => { setBusca(''); setTipo('todos'); setAno('todos'); setMes('todos'); }} style={{
+          <button onClick={() => { setBusca(''); setTipo('todos'); setAno('todos'); setMes('todos'); setPeriodo('todos'); }} style={{
             padding: '7px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
             border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-faint)',
           }}>limpar filtros</button>
@@ -102,6 +116,8 @@ async function apagar(id) {
         <span>{filtradas.length} {filtradas.length === 1 ? 'negociação' : 'negociações'}</span>
         {totC > 0 && <span>compras <b style={{ fontFamily: 'var(--font-display)', color: 'var(--down)' }}>{fmt(totC)}</b></span>}
         {totV > 0 && <span>vendas <b style={{ fontFamily: 'var(--font-display)', color: 'var(--up)' }}>{fmt(totV)}</b></span>}
+        {totC > 0 && totV > 0 && <span>líquido <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)' }}>{totC - totV >= 0 ? '' : '−'}{fmt(Math.abs(totC - totV))}</b></span>}
+        {filtradas.length === 0 && periodo === 'hoje' && <span>nenhuma negociação hoje</span>}
       </div>
 
       <section className="card">
