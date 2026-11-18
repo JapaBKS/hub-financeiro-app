@@ -9,6 +9,7 @@ import Municao from './municao';
 import AlocacaoDonut from './alocacao-donut';
 import { emTransicao } from '../lib/dominio/classes';
 import { hojeISO, inicioDoMes, FUSO } from '../lib/dominio/datas';
+import { MARCOS } from '../lib/dominio/plano';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -154,7 +155,9 @@ export default async function Home() {
     .filter((f) => !pagosSet.has(`${f.card_id}|${(f.bill_month || '').slice(0, 10)}`))
     .sort((a, b) => a.due_day - b.due_day);
 
-  const alvo = Number(goal.data?.target_value || 1000000);
+  // mesma régua da tela Meta: próximo marco (R$ 100 mil, 500 mil…) e a meta final (o último)
+  const metaFinal = MARCOS[MARCOS.length - 1];
+  const alvo = MARCOS.find((m) => total < m) || metaFinal;
   const progresso = Math.min(1, total / alvo);
   const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short', timeZone: FUSO }).replace('.', '');
 
@@ -209,10 +212,13 @@ export default async function Home() {
         </div>
         <div className="meta">
           <div className="meta-row">
-            <span>Rumo à meta de <b>{brlShort(alvo)}</b></span>
+            <span>Próximo marco: <b>{brlShort(alvo)}</b></span>
             <span><b>{pct(progresso)}</b> do caminho</span>
           </div>
           <div className="track"><i style={{ width: `${progresso * 100}%` }} /></div>
+          {alvo !== metaFinal && (
+            <a href="/meta" className="meta-final">Meta de {brlShort(metaFinal)}: {pct(total / metaFinal)} ›</a>
+          )}
         </div>
       </section>
 

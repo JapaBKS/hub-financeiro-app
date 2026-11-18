@@ -6,6 +6,9 @@ import PrecoManual from '../preco-manual-client';
 import { segmento } from '../../lib/dominio/segmentos';
 
 export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, municao = 0, reservaAporte = 0, sobra = 0, tol, assets, classes }) {
+  // vender abaixo do PM além da tolerância seria realizar prejuízo: essas ficam num grupo fechado
+  const vendaveis = reduzir.filter((i) => !i.atencao);
+  const aguardando = reduzir.filter((i) => i.atencao);
   const [preset, setPreset] = useState(null);
   const [abertoTicker, setAbertoTicker] = useState(null); // abre inline sob a linha
   const [aberto, setAberto] = useState(false);            // form avulso no rodapé
@@ -80,7 +83,7 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
       </div>
       <div style={{ textAlign: 'right' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: i.tom === 'buy' ? 'var(--up)' : 'var(--down)' }}>
-          {i.sugestaoRs >= 0 ? 'comprar ' : 'reduzir '}{brl(Math.abs(i.sugestaoRs))}
+          {i.sugestaoRs >= 0 ? (municao > 0 || i.reserva ? 'comprar ' : 'faltam ') : 'reduzir '}{brl(Math.abs(i.sugestaoRs))}
         </div>
         {!i.reserva && (i.acao === 'comprar' || i.acao === 'reduzir') && (
           i.precoUnit > 0 ? (
@@ -140,6 +143,11 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
           <h2>Comprar ({comprar.length})</h2>
           {novasN > 0 && <span style={{ fontSize: 12, color: 'var(--up)', fontWeight: 600 }}>{novasN} {novasN === 1 ? 'nova' : 'novas'}</span>}
         </div>
+        {municao <= 0 && comprar.length > 0 && (
+          <div style={{ padding: '8px 20px 0', fontSize: 12, color: 'var(--ink-soft)' }}>
+            Sem saldo no passo 2: cada linha mostra quanto falta para o ativo chegar ao alvo.
+          </div>
+        )}
         {municao > 0 && (
           <div style={{ padding: '8px 20px 0', fontSize: 12, color: 'var(--ink-soft)' }}>
             Distribuindo <b style={{ fontFamily: 'var(--font-display)', color: 'var(--forest-2)' }}>{brl(municao)}</b> disponíveis
@@ -156,11 +164,17 @@ export default function RecomendacoesLista({ comprar, reduzir, manterN, novasN, 
       </section>
 
       <section className="card" style={{ marginBottom: 16 }}>
-        <div className="card-h"><h2>Reduzir ({reduzir.length})</h2></div>
+        <div className="card-h"><h2>Reduzir ({vendaveis.length})</h2></div>
         <div style={{ marginTop: 6 }}>
-          {reduzir.map((i) => linhaComForm(i))}
-          {reduzir.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>Nenhum ativo acima do alvo.</div>}
+          {vendaveis.map((i) => linhaComForm(i))}
+          {vendaveis.length === 0 && <div style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ink-faint)' }}>{aguardando.length ? 'Nenhuma venda sem prejuízo agora.' : 'Nenhum ativo acima do alvo.'}</div>}
         </div>
+        {aguardando.length > 0 && (
+          <details className="rec-aguardando">
+            <summary>Aguardando voltar ao PM ({aguardando.length}) · {brl(aguardando.reduce((t, i) => t + Math.abs(i.sugestaoRs), 0))}</summary>
+            <div>{aguardando.map((i) => linhaComForm(i))}</div>
+          </details>
+        )}
       </section>
 
       <p style={{ fontSize: 12, color: 'var(--ink-faint)', textAlign: 'center', margin: '4px 0 16px' }}>

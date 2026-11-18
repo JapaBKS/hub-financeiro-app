@@ -5,14 +5,14 @@ const mesLabelPadrao = (idx) => String(idx);
 // Cada linha: mês (+ selo ATUAL) à esquerda; valor e variação EMPILHADOS à direita.
 // Antes eram quatro itens lado a lado (mês, selo, valor, variação). No mês atual o selo
 // "ATUAL" somava ~50px e, em tela de celular, empurrava o valor para fora da linha.
-export default function HistoricoMensal({ historico, mesLabel = mesLabelPadrao }) {
+export default function HistoricoMensal({ historico, mesLabel = mesLabelPadrao, recentes = Infinity }) {
   return (
     <div style={{ padding: '4px 0 8px' }}>
       {historico.map((h, n) => {
         const sobe = h.deltaVal != null && h.deltaVal >= 0;
         const atual = n === 0;
         return (
-          <div key={h.idx} className="hist-linha" style={{
+          <div key={h.idx} className={`hist-linha${n >= recentes ? ' linha-antiga' : ''}`} style={{
             background: atual ? 'var(--up-bg)' : 'transparent',
             borderLeft: atual ? '3px solid var(--forest)' : '3px solid transparent',
           }}>
