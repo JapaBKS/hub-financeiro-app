@@ -2,6 +2,7 @@ import { supabaseServer, lerTudo } from '../../lib/supabase';
 import { hojeISO } from '../../lib/dominio/datas';
 import { brl, pct } from '../../lib/format';
 import GraficoDesempenho from './grafico-client';
+import { categoria } from '../../lib/dominio/posicoes';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -60,7 +61,10 @@ export default async function Desempenho() {
     sb.from('v_class_allocation').select('classe, valor'),
   ]);
   if (tradesRes.error) throw new Error('Não foi possível carregar as negociações.');
-  const trades = tradesRes.data || [];
+  // cripto fica de fora: os lançamentos dela são uma compra única numa data antiga, só para
+  // manter a quantidade de hoje, e distorceriam a comparação com CDI/Ibovespa
+  const ehCripto = (nome) => categoria('', nome) === 'cripto';
+  const trades = (tradesRes.data || []).filter((t) => !ehCripto(t.assets?.asset_classes?.name));
   const hoje = hojeISO();
   const mesHoje = chaveMes(hoje);
 
@@ -106,7 +110,7 @@ export default async function Desempenho() {
   // mensais; o mês atual usa o valor ao vivo
   const fora = new Set((classesRes.data || []).filter((c) => c.fora_rateio).map((c) => c.name));
   const classesNegociadas = new Set(trades.map((t) => t.assets?.asset_classes?.name).filter(Boolean));
-  const conta = (nome) => nome && !fora.has(nome) && classesNegociadas.has(nome);
+  const conta = (nome) => nome && !fora.has(nome) && !ehCripto(nome) && classesNegociadas.has(nome);
   const porMes = {};
   (snapRes.data || []).forEach((s) => {
     const n = s.asset_classes?.name;
@@ -182,7 +186,7 @@ export default async function Desempenho() {
         />
         <p className="ir-nota">
           Cada compra conta como aporte e cada venda como retirada, nas mesmas datas, como se o dinheiro tivesse ido para o CDI, para o Ibovespa ou só corrigido pela inflação.
-          &ldquo;Você&rdquo; é o valor de mercado das classes investidas (sem reserva, fluxo e caixa), pelas fotos mensais da carteira.
+          &ldquo;Você&rdquo; é o valor de mercado das classes investidas (sem reserva, fluxo, caixa e cripto), pelas fotos mensais da carteira.
           {!linhaIbov && ' O Ibovespa não respondeu agora e ficou de fora.'}
         </p>
       </section>
