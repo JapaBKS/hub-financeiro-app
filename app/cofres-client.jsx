@@ -44,7 +44,9 @@ export default function CofresClient({ cofres }) {
                   color: acima ? 'var(--up)' : 'var(--amber)',
                   background: acima ? 'var(--up-bg)' : 'var(--amber-bg)',
                 }}>
-                  {acima ? '+' : ''}{pct.toFixed(2).replace('.', ',')}%
+                  {acima
+                    ? `no alvo${sobra > 0.5 ? ` · +${brl(sobra)}` : ''}`
+                    : `faltam ${brl(-sobra)} · ${Math.round((c.valor / c.alvo) * 100)}% do alvo`}
                 </span>
               </div>
 

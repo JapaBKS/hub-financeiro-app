@@ -1,4 +1,5 @@
 import HistoricoMensal from './historico-mensal';
+import Expandir from './expandir-client';
 import { supabaseServer } from '../../lib/supabase';
 import { PROVENTOS_MES, RENDIMENTO_FII_MES } from '../../lib/dominio/plano';
 import { hojeISO } from '../../lib/dominio/datas';
@@ -203,6 +204,14 @@ export default async function Meta() {
   ['A Investir', 'Renda Fixa Vencendo'].forEach((n) => presentes.delete(n));
   const colunas = [...ORDEM.filter((n) => presentes.has(n)), ...[...presentes].filter((n) => !ORDEM.includes(n)).sort()];
   const mesesComp = Object.keys(porMesClasse).map(Number).sort((a, b) => b - a);
+  // "Outros" (A investir, renda fixa vencendo…): o total da linha bate com o histórico
+  const outrosDe = (m) => {
+    const linha = porMesClasse[m] || {};
+    const soma = Object.values(linha).reduce((t, v) => t + (Number(v) || 0), 0);
+    return soma - colunas.reduce((t, c) => t + (linha[c] || 0), 0);
+  };
+  const temOutros = mesesComp.some((m) => outrosDe(m) > 0.5);
+  const RECENTES = 12;
 
   // projeção atinge a meta (1mi)
   const forecastIdx = targetIdx;
@@ -367,11 +376,12 @@ export default async function Meta() {
             <span style={{ flex: 1, textAlign: 'right' }}>Real</span>
             <span style={{ flex: 1, textAlign: 'right' }}>Diferença</span>
           </div>
+          <Expandir antigas={Math.max(0, compara.length - RECENTES)}>
           {compara.map((c, n) => {
             const diff = c.real != null && c.proj != null ? c.real - c.proj : null;
             const atual = c.idx === todayIdx;
             return (
-              <div key={c.idx} style={{
+              <div key={c.idx} className={n >= RECENTES ? 'linha-antiga' : undefined} style={{
                 display: 'flex', alignItems: 'center', padding: '7px 20px', fontSize: 12.5,
                 borderBottom: '1px solid var(--line-soft)',
                 background: atual ? 'var(--up-bg)' : n % 2 ? 'var(--surface-2)' : 'transparent',
@@ -385,6 +395,7 @@ export default async function Meta() {
               </div>
             );
           })}
+          </Expandir>
         </div>
         <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>Valores em R$, arredondados. Diferença = real − projetado (verde = acima do plano).</p>
       </section>
@@ -397,7 +408,9 @@ export default async function Meta() {
             O histórico começa a se preencher conforme os meses passam (uma foto por mês). Por enquanto só há o mês atual — volte no fim do mês que vem.
           </p>
         ) : (
-          <HistoricoMensal historico={historico} mesLabel={mesLabel} />
+          <Expandir antigas={Math.max(0, historico.length - RECENTES)}>
+            <HistoricoMensal historico={historico} mesLabel={mesLabel} recentes={RECENTES} />
+          </Expandir>
         )}
       </section>
 
@@ -408,6 +421,7 @@ export default async function Meta() {
             <h2>Composição por mês</h2>
             <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>arraste ↔ para ver tudo</span>
           </div>
+          <Expandir antigas={Math.max(0, mesesComp.length - RECENTES)}>
           <div style={{ overflowX: 'auto', padding: '4px 0 8px' }}>
             <table style={{ borderCollapse: 'collapse', fontSize: 12, whiteSpace: 'nowrap', minWidth: '100%' }}>
               <thead>
@@ -416,22 +430,25 @@ export default async function Meta() {
                   {colunas.map((c) => (
                     <th key={c} style={{ textAlign: 'right', padding: '8px 12px', color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>{CURTO[c] || c}</th>
                   ))}
+                  {temOutros && <th style={{ textAlign: 'right', padding: '8px 12px', color: 'var(--ink-faint)', fontWeight: 600, borderBottom: '1px solid var(--line)' }}>Outros</th>}
                   <th style={{ textAlign: 'right', padding: '8px 14px 8px 12px', color: 'var(--forest-2)', fontWeight: 700, borderBottom: '1px solid var(--line)' }}>Total</th>
                 </tr>
               </thead>
               <tbody>
                 {mesesComp.map((m, n) => {
                   const linha = porMesClasse[m] || {};
-                  const total = colunas.reduce((s, c) => s + (linha[c] || 0), 0);
+                  const outros = Math.max(0, outrosDe(m));
+                  const total = colunas.reduce((s, c) => s + (linha[c] || 0), 0) + outros;
                   const atual = m === todayIdx;
                   return (
-                    <tr key={m} style={{ background: atual ? 'var(--up-bg)' : n % 2 ? 'var(--surface-2)' : 'transparent' }}>
+                    <tr key={m} className={n >= RECENTES ? 'linha-antiga' : undefined} style={{ background: atual ? 'var(--up-bg)' : n % 2 ? 'var(--surface-2)' : 'transparent' }}>
                       <td style={{ position: 'sticky', left: 0, background: atual ? 'var(--up-bg)' : n % 2 ? 'var(--surface-2)' : 'var(--surface)', textAlign: 'left', padding: '7px 14px', fontWeight: 600, textTransform: 'capitalize', borderBottom: '1px solid var(--line-soft)' }}>
                         {mesLabel(m)}{atual ? ' •' : ''}
                       </td>
                       {colunas.map((c) => (
                         <td key={c} style={{ textAlign: 'right', padding: '7px 12px', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: linha[c] ? 'var(--ink)' : 'var(--ink-faint)', borderBottom: '1px solid var(--line-soft)' }}>{valor(linha[c])}</td>
                       ))}
+                      {temOutros && <td style={{ textAlign: 'right', padding: '7px 12px', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', color: outros > 0.5 ? 'var(--ink)' : 'var(--ink-faint)', borderBottom: '1px solid var(--line-soft)' }}>{valor(outros > 0.5 ? outros : 0)}</td>}
                       <td style={{ textAlign: 'right', padding: '7px 14px 7px 12px', fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: 'var(--forest-2)', borderBottom: '1px solid var(--line-soft)' }}>{valor(total)}</td>
                     </tr>
                   );
@@ -439,7 +456,8 @@ export default async function Meta() {
               </tbody>
             </table>
           </div>
-          <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>Valores em R$, arredondados. O mês atual (•) é o valor ao vivo de hoje.</p>
+          </Expandir>
+          <p style={{ padding: '2px 20px 0', fontSize: 11, color: 'var(--ink-faint)' }}>Valores em R$, arredondados. O mês atual (•) é o valor ao vivo de hoje.{temOutros ? ' Outros = A investir e renda fixa vencendo.' : ''}</p>
         </section>
       )}
 

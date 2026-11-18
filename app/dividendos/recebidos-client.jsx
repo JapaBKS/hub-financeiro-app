@@ -7,7 +7,7 @@ const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'o
 const rotulo = (ym) => { const [a, m] = ym.split('-'); return `${MESES[Number(m) - 1]}/${a}`; };
 const KIND = { dividendo: 'Dividendo', jcp: 'JCP', rendimento: 'Rendimento' };
 
-export default function RecebidosMes({ meses }) {
+export default function RecebidosMes({ meses, titulo = 'Recebidos por mês', aReceber = false }) {
   const [apagando, setApagando] = useState(null);
 
   async function excluir(corpo, confirmacao, chave) {
@@ -49,7 +49,8 @@ export default function RecebidosMes({ meses }) {
 
   const mesAtualKey = hojeISO().slice(0, 7);
   const anoAtual = mesAtualKey.slice(0, 4);
-  const [anosAbertos, setAnosAbertos] = useState(() => new Set([anoAtual]));
+  // no card "A receber" todos os anos começam abertos (são poucos itens)
+  const [anosAbertos, setAnosAbertos] = useState(() => new Set(aReceber ? meses.map((m) => m.mes.slice(0, 4)) : [anoAtual]));
   const [mesAberto, setMesAberto] = useState(null);
 
   const toggleAno = (ano) => setAnosAbertos((s) => {
@@ -58,6 +59,7 @@ export default function RecebidosMes({ meses }) {
     return n;
   });
 
+  if (!meses.length && aReceber) return null;
   if (!meses.length) {
     return (
       <section className="card" style={{ marginTop: 16, padding: 18, fontSize: 13, color: 'var(--ink-faint)' }}>
@@ -68,7 +70,7 @@ export default function RecebidosMes({ meses }) {
 
   return (
     <section className="card" style={{ marginTop: 16 }}>
-      <div className="card-h"><h2>Recebidos por mês</h2></div>
+      <div className="card-h"><h2>{titulo}</h2>{aReceber && <span className="sub">dos próximos meses</span>}</div>
       <div style={{ marginTop: 4 }}>
         {anos.map((y) => {
           const anoAberto = anosAbertos.has(y.ano);

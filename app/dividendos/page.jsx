@@ -73,13 +73,18 @@ export default async function Dividendos() {
   const futMeses = Object.values(futMap);
   futMeses.forEach((m) => m.itens.sort((a, b) => a.pay_date.localeCompare(b.pay_date)));
   // junta com os recebidos e ordena do mais recente/futuro pro mais antigo
-  const mesesComFuturo = [...meses, ...futMeses].sort((a, b) => b.mes.localeCompare(a.mes));
+  // recebidos (até o mês atual) e a receber (meses seguintes) ficam em cards separados
+  const mesesRecebidos = [...meses].sort((a, b) => b.mes.localeCompare(a.mes));
+  const mesesAReceber = [...futMeses].sort((a, b) => a.mes.localeCompare(b.mes));
 
   let porMes = [];
   const chavesMes = [...new Set([...Object.keys(totalPorMes), ...Object.keys(pendPorMes)])].sort();
   if (chavesMes.length) {
     const [ya, ma] = chavesMes[0].split('-').map(Number);
-    const fim = chavesMes[chavesMes.length - 1];
+    // o gráfico vai no máximo 12 meses à frente (dividendos anunciados para 2028 esticavam o eixo)
+    const [yh, mh] = mesAtualKey.split('-').map(Number);
+    const limite = `${yh + 1}-${String(mh).padStart(2, '0')}`;
+    const fim = chavesMes.filter((k) => k <= limite).pop() || chavesMes[0];
     let y = ya, mo = ma;
     while (true) {
       const key = `${y}-${String(mo).padStart(2, '0')}`;
@@ -130,7 +135,8 @@ export default async function Dividendos() {
         <p className="ir-nota">Nos marcos, a mesma taxa da Meta: proventos de {(PROVENTOS_MES * 100).toLocaleString('pt-BR')}% do patrimônio por mês (FIIs rendendo ~0,8% e sendo 15% da carteira), em dinheiro de nov/2026.</p>
       </section>
       <EvolucaoProventos porMes={porMes} porAno={porAno} />
-      <RecebidosMes meses={mesesComFuturo} />
+      <RecebidosMes meses={mesesAReceber} titulo="A receber" aReceber />
+      <RecebidosMes meses={mesesRecebidos} />
     </div>
   );
 }

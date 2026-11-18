@@ -19,8 +19,6 @@ export default function EvolucaoProventos({ porMes, porAno }) {
   }
 
   const max = Math.max(...dados.map((d) => d.total + (d.pendente || 0)), 1);
-  const recebidos = dados.filter((d) => d.total > 0);
-  const media = recebidos.length ? recebidos.reduce((s, d) => s + d.total, 0) / recebidos.length : 0;
   const temPendente = dados.some((d) => (d.pendente || 0) > 0);
 
   const btn = (val, label) => (
@@ -44,9 +42,7 @@ export default function EvolucaoProventos({ porMes, porAno }) {
       </div>
 
       <div style={{ padding: '4px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-        <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>
-          média {modo === 'mes' ? 'mensal' : 'anual'} recebida: <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)' }}>{fmt(media)}</b>
-        </span>
+        <span />
         {temPendente && (
           <span style={{ display: 'flex', gap: 12, fontSize: 11 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--ink-soft)' }}><span style={{ width: 10, height: 10, borderRadius: 2, background: 'var(--forest-2)' }} />recebido</span>
@@ -57,9 +53,6 @@ export default function EvolucaoProventos({ porMes, porAno }) {
 
       <div style={{ position: 'relative', padding: '8px 6px 4px' }}>
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }} onMouseLeave={() => setHover(null)}>
-          {media > 0 && (
-            <line x1={padL} y1={baseline - hOf(media)} x2={W - padR} y2={baseline - hOf(media)} stroke="var(--brass)" strokeWidth="1" strokeDasharray="4 4" opacity="0.6" />
-          )}
           {dados.map((d, i) => {
             const ativo = hover === i;
             const hR = hOf(d.total);

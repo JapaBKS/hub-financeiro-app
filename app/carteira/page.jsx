@@ -1,4 +1,4 @@
-import { supabaseServer } from '../../lib/supabase';
+import { supabaseServer, lerTudo } from '../../lib/supabase';
 import { brl, pct } from '../../lib/format';
 import { criarResolvedorDePreco } from '../../lib/dominio/precos';
 import PrecoManual from '../preco-manual-client';
@@ -15,22 +15,37 @@ const fmtNum = (n, d = 2) => Number(n).toLocaleString('pt-BR', { minimumFraction
 
 export default async function Carteira() {
   const sb = supabaseServer();
-  const [{ data: pos }, { data: manuais }, { data: precos }, { data: divs }, { data: resumoTrades }, { data: holdings }, { data: classesTodas }] = await Promise.all([
+  const [{ data: pos }, { data: manuais }, { data: precos }, { data: divs }, { data: resumoTrades }, { data: holdings }, { data: classesTodas }, tradesRes] = await Promise.all([
     sb.from('v_positions').select('*'),
     sb.from('manual_prices').select('ticker, price'),
     sb.from('prices').select('ticker, price, updated_at'),
-    sb.from('dividends').select('ticker, amount'),
+    sb.from('dividends').select('ticker, amount, paid_at'),
     sb.from('v_resumo_trades').select('*').single(),
     sb.from('manual_holdings').select('id, label, amount, class_id, asset_classes(name)').order('id'),
     sb.from('asset_classes').select('id, name').order('name'),
+    lerTudo((de, ate) => sb.from('trades').select('traded_at, side, quantity, assets(ticker)')
+      .order('traded_at', { ascending: true }).order('id', { ascending: true }).range(de, ate)),
   ]);
   // saldos lançados à mão (Tesouro, reserva, Mercado Pago…): antes eram a tela Saldos
   const saldosManuais = (holdings || []).map((h) => ({
     id: h.id, label: h.label, amount: h.amount, class_id: h.class_id, classe: h.asset_classes?.name,
   }));
+  // "c/ prov." conta só os proventos da posição atual: desde a última vez que a quantidade
+  // saiu do zero (quem vendeu tudo e recomprou não herda os proventos da posição antiga)
+  const inicioPosicao = {};
+  const qtdAte = {};
+  (tradesRes?.data || []).forEach((t) => {
+    const tk = t.assets?.ticker; if (!tk) return;
+    const antes = qtdAte[tk] || 0;
+    const depois = antes + (t.side === 'venda' ? -1 : 1) * Number(t.quantity || 0);
+    if (antes <= 1e-9 && depois > 1e-9) inicioPosicao[tk] = String(t.traded_at).slice(0, 10);
+    qtdAte[tk] = depois;
+  });
   const provDe = {};
   (divs || []).forEach((d) => {
     if (!d.ticker) return;
+    const desde = inicioPosicao[d.ticker];
+    if (desde && String(d.paid_at || '').slice(0, 10) < desde) return;
     provDe[d.ticker] = (provDe[d.ticker] || 0) + (Number(d.amount) || 0);
   });
 
