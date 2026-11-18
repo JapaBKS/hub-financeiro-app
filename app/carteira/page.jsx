@@ -67,12 +67,6 @@ export default async function Carteira() {
   });
 
   const totalCarteira = ativos.reduce((s, p) => s + p.valor, 0);
-  const totalLucro = ativos.reduce((s, p) => s + p.lucro, 0);
-  const totalProventos = ativos.reduce((s, p) => s + p.proventos, 0);
-  const totalComProventos = totalLucro + totalProventos;
-  const totalInvestido = totalCarteira - totalLucro;
-  const rentTotal = totalInvestido > 0 ? totalLucro / totalInvestido : 0;
-  const rentComProventos = totalInvestido > 0 ? totalComProventos / totalInvestido : 0;
 
   // RESULTADO TOTAL desde o in cio: vendas + valor de hoje + proventos   compras.
   // Inclui posi es j  encerradas, ent o responde "no fim das contas, estou no lucro?".
@@ -167,46 +161,30 @@ export default async function Carteira() {
         <a href="/negociacoes">+ negociação</a>
       </header>
 
-      <section className="card" style={{ padding: '20px 22px', marginBottom: 16, display: 'flex', gap: 28, flexWrap: 'wrap' }}>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: 3 }}>Valor da carteira</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 26, letterSpacing: '-.02em' }}>{brl(totalCarteira)}</div>
-        </div>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: 3 }}>Investido</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20 }}>{brl(totalInvestido)}</div>
-        </div>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: 3 }}>Lucro · valorização</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20, color: corLucro(totalLucro) }}>
-            {totalLucro >= 0 ? '+' : ''}{brl(totalLucro)} · {pct(rentTotal)}
+      {/* um número só: o resultado de verdade desde o início (vendas + valor de hoje + proventos − compras).
+          O antigo "lucro · valorização" olhava só as posições atuais contra o PM e deixava de fora o
+          que você já realizou vendendo e os proventos, por isso aparecia negativo com o total positivo. */}
+      <section className="card cart-resumo" style={{ borderLeft: `3px solid ${resultadoTotal >= 0 ? 'var(--up)' : 'var(--down)'}` }}>
+        <div className="cart-resumo-topo">
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 3 }}>Resultado desde o início</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 28, letterSpacing: '-.02em', color: corLucro(resultadoTotal) }}>
+              {resultadoTotal >= 0 ? '+' : ''}{brl(resultadoTotal)} <small style={{ fontSize: 15 }}>{pct(rentTotalGeral)}</small>
+            </div>
           </div>
-        </div>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: 3 }}>Com proventos</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20, color: corLucro(totalComProventos) }}>
-            {totalComProventos >= 0 ? '+' : ''}{brl(totalComProventos)} · {pct(rentComProventos)}
+          <div className="cart-resumo-valor">
+            <div className="eyebrow" style={{ marginBottom: 3 }}>Valor da carteira</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20 }}>{brl(totalCarteira)}</div>
           </div>
-          <div style={{ fontSize: 11, color: 'var(--brass)', marginTop: 2 }}
-            title="Só os proventos dos ativos que você ainda tem. O acumulado da Visão geral inclui também os já vendidos.">
-            {brl(totalProventos)} destes ativos
-          </div>
-        </div>
-      </section>
-
-      <section className="card" style={{ padding: '18px 22px', marginBottom: 16, borderLeft: `3px solid ${resultadoTotal >= 0 ? 'var(--up)' : 'var(--down)'}` }}>
-        <div className="eyebrow" style={{ marginBottom: 3 }}>Resultado total desde o início</div>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 26, letterSpacing: '-.02em', color: corLucro(resultadoTotal) }}>
-          {resultadoTotal >= 0 ? '+' : ''}{brl(resultadoTotal)} · {pct(rentTotalGeral)}
         </div>
         <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 10, fontSize: 11.5, color: 'var(--ink-faint)' }}>
           <span>comprei <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-soft)' }}>{brl(compradoTudo)}</b></span>
-          <span>vendi <b style={{ fontFamily: 'var(--font-display)', color: 'var(--up)' }}>{brl(vendidoTudo)}</b></span>
+          <span>vendi <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-soft)' }}>{brl(vendidoTudo)}</b></span>
           <span>tenho hoje <b style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-soft)' }}>{brl(totalCarteira)}</b></span>
           <span>proventos <b style={{ fontFamily: 'var(--font-display)', color: 'var(--brass)' }}>{brl(proventosTudo)}</b></span>
         </div>
         <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 8 }}>
-          Inclui posições já encerradas. Não considera corretagem, emolumentos nem imposto pago.
+          Vendi + tenho hoje + proventos − comprei. Inclui o que você já realizou vendendo e as posições encerradas; não considera corretagem nem imposto pago.
         </div>
       </section>
 
